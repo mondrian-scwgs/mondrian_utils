@@ -4,9 +4,9 @@ import mondrianutils.dtypes.hmmcopy_reads as reads_dtypes
 import mondrianutils.helpers as helpers
 import os
 import pandas as pd
-import mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
-import mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
-import mondrianutils.hmmcopy.readcounter import ReadCounter
+from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
+from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
+from mondrianutils.hmmcopy.readcounter import ReadCounter
 import mondrianutils.hmmcopy.classify as classify
 
 def plot_hmmcopy(

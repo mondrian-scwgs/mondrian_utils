@@ -1,9 +1,9 @@
 import argparse
 import csverve.api as csverve
-import mondrianutils.dtypes import hmmcopy_metrics
-import mondrianutils.dtypes import hmmcopy_params
-import mondrianutils.dtypes import hmmcopy_reads
-import mondrianutils.dtypes import hmmcopy_segs
+from mondrianutils.dtypes import hmmcopy_metrics
+from mondrianutils.dtypes import hmmcopy_params
+from mondrianutils.dtypes import hmmcopy_reads
+from mondrianutils.dtypes import hmmcopy_segs
 
 
 def rewrite_csv(infile, outfile, dtypes):
