@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import shutil
 from collections import defaultdict
-import mondrianutils import helpers
+from mondrianutils import helpers
 import mondrianutils.alignment import fastq_utils
 import mondrianutils.alignment.dtypes import dtypes
 from subprocess import Popen, PIPE

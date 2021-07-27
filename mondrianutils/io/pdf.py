@@ -7,7 +7,7 @@ Created on Feb 20, 2018
 import argparse
 import os
 from PyPDF2 import PdfFileMerger, PdfFileWriter, PdfFileReader
-import mondrianutils import helpers
+from mondrianutils import helpers
 
 
 def merge_pdfs(infiles, outfile):

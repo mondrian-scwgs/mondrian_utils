@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from itertools import islice
 
-import mondrianutils import helpers
+from mondrianutils import helpers
 
 
 class FastqReader(object):
