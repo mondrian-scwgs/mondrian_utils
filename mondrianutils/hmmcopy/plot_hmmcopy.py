@@ -14,7 +14,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
-import mondrian.utils.hmmcopy.plot_hmmcopy_utils as utl
+import mondrianutils.hmmcopy.plot_hmmcopy_utils as utl
 import matplotlib.gridspec as gridspec
 
 from matplotlib.colors import rgb2hex

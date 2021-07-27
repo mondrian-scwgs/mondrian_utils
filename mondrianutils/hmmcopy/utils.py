@@ -1,13 +1,13 @@
 import argparse
 import csverve.api as csverve
-import mondrian.utils.dtypes.hmmcopy_reads as reads_dtypes
-import mondrian.utils.helpers as helpers
+import mondrianutils.dtypes.hmmcopy_reads as reads_dtypes
+import mondrianutils.helpers as helpers
 import os
 import pandas as pd
-from mondrian.utils.hmmcopy.correct_read_count import CorrectReadCount
-from mondrian.utils.hmmcopy.plot_hmmcopy import GenHmmPlots
-from mondrian.utils.hmmcopy.readcounter import ReadCounter
-import mondrian.utils.hmmcopy.classify as classify
+import mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
+import mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
+import mondrianutils.hmmcopy.readcounter import ReadCounter
+import mondrianutils.hmmcopy.classify as classify
 
 def plot_hmmcopy(
         reads, segments, params, metrics, ref_genome, segs_out,

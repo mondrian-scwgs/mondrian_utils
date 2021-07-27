@@ -2,11 +2,11 @@ import argparse
 import pysam
 import subprocess
 import csverve.api as csverve
-from mondrian.utils.alignment.collect_metrics import collect_metrics
-from mondrian.utils.alignment.dtypes import dtypes
-from mondrian.utils.alignment.fastqscreen import merge_fastq_screen_counts
-from mondrian.utils.alignment.fastqscreen import organism_filter
-from mondrian.utils.alignment.classify_fastqscreen import classify_fastqscreen
+import mondrianutils.alignment.collect_metrics import collect_metrics
+import mondrianutils.alignment.dtypes import dtypes
+import mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
+import mondrianutils.alignment.fastqscreen import organism_filter
+import mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
 
 def get_cell_id_from_bam(infile):
     infile = pysam.AlignmentFile(infile, "rb")

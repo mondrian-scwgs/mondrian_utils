@@ -3,9 +3,9 @@ import os
 import pandas as pd
 import shutil
 from collections import defaultdict
-from mondrian.utils import helpers
-from mondrian.utils.alignment import fastq_utils
-from mondrian.utils.alignment.dtypes import dtypes
+import mondrianutils import helpers
+import mondrianutils.alignment import fastq_utils
+import mondrianutils.alignment.dtypes import dtypes
 from subprocess import Popen, PIPE
 
 

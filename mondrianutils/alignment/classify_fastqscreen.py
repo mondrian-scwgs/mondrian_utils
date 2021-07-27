@@ -1,7 +1,7 @@
 import csverve.api as csverve
 import numpy as np
 import pandas as pd
-from mondrian.utils.alignment.dtypes import dtypes
+import mondrianutils.alignment.dtypes import dtypes
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import *
 
