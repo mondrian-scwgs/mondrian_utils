@@ -35,6 +35,7 @@ def dtypes():
         'fastqscreen_mm10': 'int',
         'fastqscreen_nohit': 'int',
         'fastqscreen_mm10_multihit': 'int',
+        'fastqscreen_total_reads': 'int',
         'is_contaminated': 'bool',
         'trim': 'bool',
         'library_id': 'str',
