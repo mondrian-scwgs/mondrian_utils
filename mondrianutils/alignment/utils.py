@@ -109,7 +109,7 @@ def add_contamination_status(
     data['is_contaminated'] = False
 
     for altcol in alts:
-        perc_alt = _get_col_data(data, altcol) / data['total_reads']
+        perc_alt = _get_col_data(data, altcol) / data['fastqscreen_total_reads']
         data.loc[perc_alt > threshold, 'is_contaminated'] = True
 
     col_type = dtypes()['metrics']['is_contaminated']

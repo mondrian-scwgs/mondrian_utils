@@ -164,7 +164,7 @@ def write_summary_counts(counts, outfile, cell_id, fastqscreen_params):
 
     for read_end, read_end_counts in counts.items():
         for flags, count in read_end_counts.items():
-            summary_counts['total_reads'] += 1
+            summary_counts['total_reads'] += count
             hit_orgs = [v[0] for v in flags if v[1] > 0]
 
             for org in hit_orgs:
