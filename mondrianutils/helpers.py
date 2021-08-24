@@ -7,6 +7,7 @@ import errno
 import gzip
 import logging
 import os
+import subprocess
 from subprocess import Popen, PIPE
 
 import pandas as pd
@@ -109,5 +110,4 @@ def run_in_gnu_parallel(commands, tempdir, ncores):
         for scriptfile in scriptfiles:
             outfile.write("sh {}\n".format(scriptfile))
 
-    gnu_parallel_cmd = ['parallel', '--jobs', ncores, '<', parallel_outfile]
-    run_cmd(gnu_parallel_cmd)
+    subprocess.run(['parallel', '--jobs', str(ncores)], stdin=open(parallel_outfile))

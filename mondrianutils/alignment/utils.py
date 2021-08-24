@@ -20,9 +20,11 @@ def get_cell_id_from_bam(infile):
         return read.get_tag('CB')
 
 
-def chunks(bamfiles, num_per_merge):
-    num_per_merge = max(1, num_per_merge)
-    return (bamfiles[i:i + num_per_merge] for i in range(0, len(bamfiles), num_per_merge))
+def chunks(bamfiles, numcores):
+    output = []
+    for i in range(0, len(bamfiles), numcores):
+        output.append(bamfiles[i:i + numcores])
+    return output
 
 
 def get_merge_command(bams, output):
@@ -48,7 +50,7 @@ def get_filtered_files(infiles, cell_ids, metrics):
     metrics = csverve.read_csv_and_yaml(metrics)
     assert set(cell_ids) == set(list(metrics['cell_id']))
     cells_to_skip = set(list(metrics[metrics['is_contaminated']]['cell_id']))
-    infiles = {cell: infile for cell, infile in infiles.items() if cell not in cells_to_skip}
+    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
     return infiles
 
 
@@ -72,7 +74,7 @@ def merge_cells(infiles, cell_ids, outfile, metrics, tempdir, ncores):
         os.makedirs(tempdir)
 
     infiles = get_filtered_files(infiles, cell_ids, metrics)
-    chunked_infiles = chunks(infiles, 100)
+    chunked_infiles = chunks(list(infiles.values()), ncores)
 
     commands = []
     outputs = []
@@ -277,8 +279,8 @@ def parse_args():
     )
     merge_cells.add_argument(
         '--ncores',
+        type=int
     )
-
 
     classifier = subparsers.add_parser('classify_fastqscreen')
     classifier.set_defaults(which='classify_fastqscreen')
