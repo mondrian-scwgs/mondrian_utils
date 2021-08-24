@@ -7,9 +7,9 @@ import errno
 import gzip
 import logging
 import os
+from subprocess import Popen, PIPE
 
 import pandas as pd
-from subprocess import Popen, PIPE
 
 
 def run_cmd(cmd, output=None):
@@ -84,3 +84,30 @@ def makedirs(directory, isfile=False):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+
+def build_shell_script(command, tag, tempdir):
+    outfile = os.path.join(tempdir, "{}.sh".format(tag))
+    with open(outfile, 'w') as scriptfile:
+        scriptfile.write("#!/bin/bash\n")
+        if isinstance(command, list) or isinstance(command, tuple):
+            command = ' '.join(map(str, command)) + '\n'
+        scriptfile.write(command)
+    return outfile
+
+
+def run_in_gnu_parallel(commands, tempdir, ncores):
+    makedirs(tempdir)
+
+    scriptfiles = []
+
+    for tag, command in enumerate(commands):
+        scriptfiles.append(build_shell_script(command, tag, tempdir))
+
+    parallel_outfile = os.path.join(tempdir, "commands.txt")
+    with open(parallel_outfile, 'w') as outfile:
+        for scriptfile in scriptfiles:
+            outfile.write("sh {}\n".format(scriptfile))
+
+    gnu_parallel_cmd = ['parallel', '--jobs', ncores, '<', parallel_outfile]
+    run_cmd(gnu_parallel_cmd)
