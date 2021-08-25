@@ -28,8 +28,11 @@ def chunks(bamfiles, numcores):
 
 
 def get_merge_command(bams, output, ncores=1):
-    command = ['sambamba', 'merge', '-t', str(ncores), output]
-    command.extend(bams)
+    if len(bams) == 1:
+        command = ['cp', bams[0], output]
+    else:
+        command = ['sambamba', 'merge', '-t', str(ncores), output]
+        command.extend(bams)
 
     return command
 
