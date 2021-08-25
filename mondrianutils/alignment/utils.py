@@ -27,21 +27,9 @@ def chunks(bamfiles, numcores):
     return output
 
 
-def get_merge_command(bams, output):
-    command = [
-        'picard',
-        '-Xmx2G',
-        '-Xms2G',
-        'MergeSamFiles',
-        'OUTPUT={}'.format(output),
-        'SORT_ORDER=coordinate',
-        'ASSUME_SORTED=true',
-        'VALIDATION_STRINGENCY=LENIENT',
-        'MAX_RECORDS_IN_RAM=150000'
-    ]
-
-    for bamfile in bams:
-        command.append('I={}'.format(bamfile))
+def get_merge_command(bams, output, ncores=1):
+    command = ['sambamba', 'merge', '-t', str(ncores), output]
+    command.extend(bams)
 
     return command
 
@@ -89,7 +77,7 @@ def merge_cells(infiles, cell_ids, outfile, metrics, tempdir, ncores):
     helpers.run_in_gnu_parallel(commands, parallel_temp_dir, ncores)
 
     final_merge_output = os.path.join(tempdir, 'merged_all.bam')
-    command = get_merge_command(outputs, final_merge_output)
+    command = get_merge_command(outputs, final_merge_output, ncores=ncores)
     helpers.run_cmd(command)
 
     new_header = os.path.join(tempdir, 'header.sam')
