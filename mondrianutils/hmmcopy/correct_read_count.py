@@ -143,6 +143,9 @@ class CorrectReadCount(object):
 
         # need at least 3 values to compute the quantiles
         if len(df_regression) < 10:
+            df_regression['modal_quantile'] = None
+            df_regression['modal_curve'] = None
+            df_regression['modal_corrected'] = None
             return df_regression
 
         poly2_quantile_model = smf.quantreg('reads ~ gc + I(gc ** 2.0)', data=df_regression)
