@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import pysam
+from mondrianutils.variant_calling.snv_genotyper import SnvGenotyper
 
 from . import consensus
 
@@ -295,6 +296,16 @@ def parse_args():
     fix_museq_vcf.add_argument('--input', required=True)
     fix_museq_vcf.add_argument('--output', required=True)
 
+    snv_genotyper = subparsers.add_parser('snv_genotyper')
+    snv_genotyper.set_defaults(which='snv_genotyper')
+    snv_genotyper.add_argument('--bam', required=True)
+    snv_genotyper.add_argument('--output', required=True)
+    snv_genotyper.add_argument('--targets_vcf', required=True)
+    snv_genotyper.add_argument('--interval')
+    snv_genotyper.add_argument('--count_duplicates', default=False)
+    snv_genotyper.add_argument('--sparse', default=False)
+    snv_genotyper.add_argument('--min_mqual', default=20)
+
     args = vars(parser.parse_args())
 
     return args
@@ -328,3 +339,10 @@ def utils():
             args['consensus_output'], args['counts_output'],
             args['chromosomes']
         )
+    elif args['which'] == 'snv_genotyper':
+        with SnvGenotyper(
+            args['bam'], args['targets_vcf'], args['output'],
+            interval=args['interval'], count_duplicates=args['count_duplicates'],
+            sparse=args['sparse'], min_mqual=args['min_mqual']
+        ) as genotyper:
+            genotyper.genotyping()
