@@ -11,7 +11,7 @@ import subprocess
 from subprocess import Popen, PIPE
 
 import pandas as pd
-
+import tarfile
 
 def run_cmd(cmd, output=None):
     stdout = PIPE
@@ -111,3 +111,11 @@ def run_in_gnu_parallel(commands, tempdir, ncores):
             outfile.write("sh {}\n".format(scriptfile))
 
     subprocess.run(['parallel', '--jobs', str(ncores)], stdin=open(parallel_outfile))
+
+
+def make_tarfile(output_filename, source_dir):
+
+    assert output_filename.endswith('.tar.gz')
+
+    with tarfile.open(output_filename, "w:gz") as tar:
+        tar.add(source_dir, arcname=os.path.basename(source_dir))

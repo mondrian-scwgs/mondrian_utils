@@ -1,13 +1,19 @@
+import os
+
 import argparse
 import csverve.api as csverve
 import mondrianutils.dtypes.hmmcopy_reads as reads_dtypes
 import mondrianutils.helpers as helpers
-import os
+import mondrianutils.hmmcopy.classify as classify
 import pandas as pd
+from mondrianutils.dtypes import hmmcopy_metrics
+from mondrianutils.dtypes import hmmcopy_params
+from mondrianutils.dtypes import hmmcopy_reads
+from mondrianutils.dtypes import hmmcopy_segs
 from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
 from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 from mondrianutils.hmmcopy.readcounter import ReadCounter
-import mondrianutils.hmmcopy.classify as classify
+
 
 def plot_hmmcopy(
         reads, segments, params, metrics, ref_genome, segs_out,
@@ -27,7 +33,13 @@ def plot_hmmcopy(
 
 
 def run_hmmcopy(
-        corrected_reads, tempdir,
+        corrected_reads,
+        tempdir,
+        metrics,
+        params,
+        reads,
+        segments,
+        output_tarball,
         multipliers=tuple(range(1, 7)),
         strength=1000,
         e=0.999999,
@@ -40,7 +52,6 @@ def run_hmmcopy(
         g=3,
         s=1
 ):
-
     df = pd.read_csv(corrected_reads)
     cell_id = list(df['cell_id'].unique())
     assert len(cell_id) == 1
@@ -69,6 +80,16 @@ def run_hmmcopy(
 
     helpers.run_cmd(cmd)
 
+    csverve.rewrite_csv_file('output/0/reads.csv', reads, dtypes=hmmcopy_reads.dtypes)
+    csverve.rewrite_csv_file('output/0/params.csv', params, dtypes=hmmcopy_params.dtypes)
+    csverve.rewrite_csv_file('output/0/segs.csv', segments, dtypes=hmmcopy_segs.dtypes)
+    csverve.rewrite_csv_file('output/0/metrics.csv', metrics, dtypes=hmmcopy_metrics.dtypes)
+
+
+    helpers.make_tarfile(output_tarball, tempdir)
+
+
+
 
 def add_mappability(reads, annotated_reads):
     reads = csverve.read_csv_and_yaml(reads, chunksize=100)
@@ -85,8 +106,10 @@ def add_mappability(reads, annotated_reads):
     )
 
 
+def add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output, training_data):
 
-def add_quality(hmmcopy_metrics, alignment_metrics, output, training_data):
+    tempout = os.path.join(tempdir, 'added_quality.csv')
+
     model = classify.train_classifier(training_data)
 
     feature_names = model.feature_names_
@@ -98,8 +121,11 @@ def add_quality(hmmcopy_metrics, alignment_metrics, output, training_data):
 
     classify.write_to_output(
         hmmcopy_metrics,
-        output,
+        tempout,
         predictions)
+
+    csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_metrics.dtypes)
+
 
 
 def parse_args():
@@ -202,6 +228,21 @@ def parse_args():
     run_hmmcopy.add_argument(
         '--tempdir'
     )
+    run_hmmcopy.add_argument(
+        '--metrics'
+    )
+    run_hmmcopy.add_argument(
+        '--params'
+    )
+    run_hmmcopy.add_argument(
+        '--reads'
+    )
+    run_hmmcopy.add_argument(
+        '--segments'
+    )
+    run_hmmcopy.add_argument(
+        '--output_tarball'
+    )
 
     add_mappability = subparsers.add_parser('add_mappability')
     add_mappability.set_defaults(which='add_mappability')
@@ -226,7 +267,9 @@ def parse_args():
     add_quality.add_argument(
         '--output'
     )
-
+    add_quality.add_argument(
+        '--tempdir'
+    )
 
     args = vars(parser.parse_args())
 
@@ -255,12 +298,13 @@ def utils():
         )
     elif args['which'] == 'run_hmmcopy':
         run_hmmcopy(
-            args['corrected_reads'], args['tempdir']
+            args['corrected_reads'], args['tempdir'], args['metrics'], args['params'],
+            args['reads'], args['segments'], args['output_tarball']
         )
     elif args['which'] == 'add_mappability':
         add_mappability(args['infile'], args['outfile'])
     elif args['which'] == 'add_quality':
-        add_quality(args['hmmcopy_metrics'], args['alignment_metrics'], args['output'], args['training_data'])
+        add_quality(args['hmmcopy_metrics'], args['alignment_metrics'],  args['tempdir'], args['output'], args['training_data'])
     else:
         raise Exception()
 
