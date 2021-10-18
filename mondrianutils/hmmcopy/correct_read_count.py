@@ -21,9 +21,7 @@ class CorrectReadCount(object):
     """
 
     def __init__(
-            self, gc, mapp, wig, output, cell_id, mappability=0.9,
-            smoothing_function='lowess',
-            polynomial_degree=2
+            self, gc, mapp, wig, output, cell_id, mappability=0.9
     ):
         self.mappability = mappability
 

@@ -85,10 +85,7 @@ def run_hmmcopy(
     csverve.rewrite_csv_file('output/0/segs.csv', segments, dtypes=hmmcopy_segs.dtypes)
     csverve.rewrite_csv_file('output/0/metrics.csv', metrics, dtypes=hmmcopy_metrics.dtypes)
 
-
     helpers.make_tarfile(output_tarball, tempdir)
-
-
 
 
 def add_mappability(reads, annotated_reads):
@@ -107,7 +104,6 @@ def add_mappability(reads, annotated_reads):
 
 
 def add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output, training_data):
-
     tempout = os.path.join(tempdir, 'added_quality.csv')
 
     model = classify.train_classifier(training_data)
@@ -125,7 +121,6 @@ def add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output, training_da
         predictions)
 
     csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_metrics.dtypes)
-
 
 
 def parse_args():
@@ -199,7 +194,7 @@ def parse_args():
         '--reads'
     )
     plot_hmmcopy.add_argument(
-        '--segs'
+        '--segments'
     )
     plot_hmmcopy.add_argument(
         '--params'
@@ -211,7 +206,7 @@ def parse_args():
         '--reference'
     )
     plot_hmmcopy.add_argument(
-        '--segs_output'
+        '--segments_output'
     )
     plot_hmmcopy.add_argument(
         '--bias_output'
@@ -293,8 +288,8 @@ def utils():
                          mappability=args['map_cutoff']).main()
     elif args['which'] == 'plot_hmmcopy':
         plot_hmmcopy(
-            args['reads'], args['segs'], args['params'], args['metrics'],
-            args['reference'], args['segs_output'], args['bias_output']
+            args['reads'], args['segments'], args['params'], args['metrics'],
+            args['reference'], args['segments_output'], args['bias_output']
         )
     elif args['which'] == 'run_hmmcopy':
         run_hmmcopy(
@@ -304,7 +299,8 @@ def utils():
     elif args['which'] == 'add_mappability':
         add_mappability(args['infile'], args['outfile'])
     elif args['which'] == 'add_quality':
-        add_quality(args['hmmcopy_metrics'], args['alignment_metrics'],  args['tempdir'], args['output'], args['training_data'])
+        add_quality(args['hmmcopy_metrics'], args['alignment_metrics'], args['tempdir'], args['output'],
+                    args['training_data'])
     else:
         raise Exception()
 
