@@ -7,6 +7,7 @@ import mondrianutils.helpers as helpers
 import pysam
 from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
 from mondrianutils.alignment.collect_metrics import collect_metrics
+from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
 from mondrianutils.alignment.dtypes import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
@@ -226,6 +227,18 @@ def parse_args():
         '--cell_id',
     )
 
+    collect_gc_metrics = subparsers.add_parser('collect_gc_metrics')
+    collect_gc_metrics.set_defaults(which='collect_gc_metrics')
+    collect_gc_metrics.add_argument(
+        '--infile',
+    )
+    collect_gc_metrics.add_argument(
+        '--outfile',
+    )
+    collect_gc_metrics.add_argument(
+        '--cell_id',
+    )
+
     tag_bam = subparsers.add_parser('tag_bam_with_cellid')
     tag_bam.set_defaults(which='tag_bam_with_cellid')
     tag_bam.add_argument(
@@ -310,6 +323,11 @@ def utils():
             args['flagstat'], args['markdups_metrics'], args['output'],
             args['cell_id']
         )
+    elif args['which'] == 'collect_gc_metrics':
+        collect_gc_metrics(
+            args['infile'], args['outfile'], args['cell_id']
+        )
+
     elif args['which'] == 'tag_bam_with_cellid':
         tag_bam_with_cellid(
             args['infile'], args['outfile'],
