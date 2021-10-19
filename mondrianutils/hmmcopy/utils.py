@@ -103,7 +103,7 @@ def add_mappability(reads, annotated_reads):
     )
 
 
-def add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output, training_data):
+def add_quality(hmmcopy_metrics_csv, alignment_metrics, tempdir, output, training_data):
     helpers.makedirs(tempdir)
     tempout = os.path.join(tempdir, 'added_quality.csv')
 
@@ -111,13 +111,13 @@ def add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output, training_da
 
     feature_names = model.feature_names_
 
-    data = classify.load_data(hmmcopy_metrics, alignment_metrics,
+    data = classify.load_data(hmmcopy_metrics_csv, alignment_metrics,
                               feature_names)
 
     predictions = classify.classify(model, data)
 
     classify.write_to_output(
-        hmmcopy_metrics,
+        hmmcopy_metrics_csv,
         tempout,
         predictions)
 
