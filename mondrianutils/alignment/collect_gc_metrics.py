@@ -6,7 +6,7 @@ Created on Sep 8, 2015
 import logging
 import numpy as np
 import pandas as pd
-from single_cell.utils import csvutils
+import csverve.api as csverve
 from .dtypes import dtypes
 
 
@@ -46,7 +46,7 @@ class GenerateGcMatrix(object):
             input_df["cell_id"] = input_df.index
 
         input_df.columns = input_df.columns.astype(str)
-        csvutils.write_dataframe_to_csv_and_yaml(input_df, self.output, self.dtypes)
+        csverve.write_dataframe_to_csv_and_yaml(input_df, self.output, self.dtypes, write_header=True)
 
     def read_hmmcopy_corrected_read_file(self, sample_id):
         """
