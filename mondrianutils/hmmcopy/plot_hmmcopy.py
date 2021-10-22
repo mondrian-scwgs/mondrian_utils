@@ -6,7 +6,6 @@ Created on Nov 16, 2016
 from __future__ import division
 
 import argparse
-
 import matplotlib
 import pandas as pd
 
@@ -420,13 +419,16 @@ class GenHmmPlots(object):
         # df["copy"] = np.clip(df["copy"], 0, 40)
 
         utl.add_open_grid_lines(ax)
-
-        fig.suptitle(self.get_sample_id(metrics), x=0.5, y=0.97)
+        cellid = self.get_sample_id(metrics)
+        fig.suptitle(cellid, x=0.5, y=0.97)
         plt.tight_layout(rect=(0, 0.05, 1, 0.95))
         # fig.text(0.85,0.02,"maximum copy number is 40, higher values are set to 40")
 
         plt.savefig(pdfout, format='pdf')
         plt.close()
+
+        with open(pdfout + '.sample', 'wt') as sample:
+            sample.write(cellid)
 
     def plot_dist(self, fig, reads, params,
                   cmap, num_states=7, vertical=False):
@@ -488,6 +490,7 @@ class GenHmmPlots(object):
 
         self.plot_segments(self.segs_pdf)
         self.plot_bias(self.bias_pdf)
+
 
 if __name__ == '__main__':
     args = parse_args()

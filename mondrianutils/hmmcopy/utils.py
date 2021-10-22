@@ -142,7 +142,9 @@ def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
     helpers.makedirs(fail_dir)
 
     for filepath in segs_files:
-        cell_id = os.path.basename(filepath).replace('.png', '')
+        cell_id = open(filepath+'.sample', 'rt').readlines()
+        assert len(cell_id) == 1
+        cell_id = cell_id[0].strip()
 
         if cell_id in good_cells:
             shutil.copyfile(filepath, os.path.join(pass_dir, '{}_segments.png'.format(cell_id)))
