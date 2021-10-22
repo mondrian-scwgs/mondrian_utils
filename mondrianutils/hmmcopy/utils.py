@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import argparse
 import csverve.api as csverve
@@ -122,6 +123,36 @@ def add_quality(hmmcopy_metrics_csv, alignment_metrics, tempdir, output, trainin
         predictions)
 
     csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_metrics.dtypes)
+
+
+def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
+    helpers.makedirs(tempdir)
+
+    metrics_data = csverve.read_csv_and_yaml(metrics)
+    all_cells = metrics_data.cell_id.tolist()
+    metrics_data = metrics_data[metrics_data['quality'] >= 0.75]
+    metrics_data = metrics_data[metrics_data['is_contaminated'] == True]
+
+    good_cells = metrics_data.cell_id.tolist()
+    bad_cells = [cell for cell in all_cells if cell not in good_cells]
+
+    pass_dir = os.path.join(tempdir, 'segs_pass')
+    helpers.makedirs(pass_dir)
+    fail_dir = os.path.join(tempdir, 'segs_fail')
+    helpers.makedirs(fail_dir)
+
+    for filepath in segs_files:
+        cell_id = os.path.basename(filepath).replace('.png', '')
+
+        if cell_id in good_cells:
+            shutil.copyfile(filepath, os.path.join(pass_dir, '{}_segments.png'.format(cell_id)))
+        elif cell_id in bad_cells:
+            shutil.copyfile(filepath, os.path.join(fail_dir, '{}_segments.png'.format(cell_id)))
+        else:
+            raise Exception('cell_id {} for file {} not found in metrics file {}'.format(cell_id, filepath, metrics))
+
+    helpers.make_tarfile(pass_tar, pass_dir)
+    helpers.make_tarfile(fail_tar, fail_dir)
 
 
 def parse_args():
@@ -267,6 +298,25 @@ def parse_args():
         '--tempdir'
     )
 
+    create_segs_tar = subparsers.add_parser('create_segs_tar')
+    create_segs_tar.set_defaults(which='create_segs_tar')
+    create_segs_tar.add_argument(
+        '--segs_png',
+        nargs='*'
+    )
+    create_segs_tar.add_argument(
+        '--metrics'
+    )
+    create_segs_tar.add_argument(
+        '--pass_output'
+    )
+    create_segs_tar.add_argument(
+        '--fail_output'
+    )
+    create_segs_tar.add_argument(
+        '--tempdir'
+    )
+
     args = vars(parser.parse_args())
 
     return args
@@ -302,6 +352,8 @@ def utils():
     elif args['which'] == 'add_quality':
         add_quality(args['hmmcopy_metrics'], args['alignment_metrics'], args['tempdir'], args['output'],
                     args['training_data'])
+    elif args['which'] == 'create_segs_tar':
+        create_segs_tar(args['segs_png'], args['metrics'], args['pass_output'], args['fail_output'], args['tempdir'])
     else:
         raise Exception()
 
