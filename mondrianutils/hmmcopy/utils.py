@@ -12,8 +12,21 @@ from mondrianutils.dtypes import hmmcopy_params
 from mondrianutils.dtypes import hmmcopy_reads
 from mondrianutils.dtypes import hmmcopy_segs
 from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
+from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
 from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 from mondrianutils.hmmcopy.readcounter import ReadCounter
+
+
+def plot_heatmap(reads, metrics, output):
+    plot = PlotPcolor(
+        reads, metrics, output,
+        column_name='state',
+        plot_by_col='experimental_condition',
+        max_cn=12,
+        scale_by_cells=False,
+        mappability_threshold=0.9
+    )
+    plot.main()
 
 
 def plot_hmmcopy(
@@ -142,7 +155,7 @@ def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
     helpers.makedirs(fail_dir)
 
     for filepath in segs_files:
-        cell_id = open(filepath+'.sample', 'rt').readlines()
+        cell_id = open(filepath + '.sample', 'rt').readlines()
         assert len(cell_id) == 1
         cell_id = cell_id[0].strip()
 
@@ -282,6 +295,21 @@ def parse_args():
         '--outfile'
     )
 
+
+    heatmap = subparsers.add_parser('heatmap')
+    heatmap.set_defaults(which='heatmap')
+    heatmap.add_argument(
+        '--reads'
+    )
+    heatmap.add_argument(
+        '--metrics'
+    )
+
+    heatmap.add_argument(
+        '--output'
+    )
+
+
     add_quality = subparsers.add_parser('add_quality')
     add_quality.set_defaults(which='add_quality')
     add_quality.add_argument(
@@ -356,6 +384,8 @@ def utils():
                     args['training_data'])
     elif args['which'] == 'create_segs_tar':
         create_segs_tar(args['segs_png'], args['metrics'], args['pass_output'], args['fail_output'], args['tempdir'])
+    elif args['which'] == 'heatmap':
+        plot_heatmap(args['reads'], args['metrics'], args['output'])
     else:
         raise Exception()
 
