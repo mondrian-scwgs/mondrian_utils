@@ -69,4 +69,5 @@ dtypes = {
     'fastqscreen_mm10_ratio': float,
     'fastqscreen_salmon_ratio': float,
     'species': 'str',
+    'pick_met': 'str'
 }
