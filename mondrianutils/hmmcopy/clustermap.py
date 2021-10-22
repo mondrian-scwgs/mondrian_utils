@@ -39,7 +39,7 @@ class ClusterMap(object):
 
         self.bins = data.columns.values
 
-        self.data = data.as_matrix()
+        self.data = data.to_numpy()
 
         # set max for data
         self.data = np.clip(self.data, 0, self.max_cn)
