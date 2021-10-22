@@ -36,7 +36,7 @@ dtypes = {
     'order': 'int',
     'row': 'int',
     'trim': 'bool',
-    'is_s_phase_prob': 'bool',
-    'is_s_phase': 'float',
+    'is_s_phase_prob': 'float',
+    'is_s_phase': 'bool',
     'quality': 'float'
 }
