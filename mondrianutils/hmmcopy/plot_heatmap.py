@@ -17,9 +17,9 @@ from collections import defaultdict
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import logging
-from single_cell.utils import helpers
-from single_cell.utils import csvutils
+from mondrianutils import helpers
 from .clustermap import ClusterMap
+import csverve.api as csverve
 
 sys.setrecursionlimit(2000)
 
@@ -175,13 +175,10 @@ class PlotPcolor(object):
 
         bins = {}
 
-        header, _, columns = csvutils.get_metadata(self.input)
+        columns = csverve.get_columns(self.input)
 
         with helpers.getFileHandle(self.input, 'rt') as freader:
             idxs = self.build_label_indices(columns)
-
-            if header:
-                assert freader.readline().strip().split(',') == columns
 
             for line in freader:
                 line = line.strip().split(self.sep)
@@ -254,16 +251,14 @@ class PlotPcolor(object):
         sepdata = defaultdict(list)
         colordata = {}
 
-        header, dtypes, columns = csvutils.get_metadata(self.metrics)
+        columns = csverve.get_columns(self.metrics)
+
         idxs = self.build_label_indices(columns)
 
         color_col = self.color_by_col
         sep_col = self.plot_by_col
 
         with helpers.getFileHandle(self.metrics) as freader:
-
-            if header:
-                assert freader.readline().strip().split(',') == columns
 
             for line in freader:
                 line = line.strip().split(self.sep)
