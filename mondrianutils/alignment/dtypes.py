@@ -38,7 +38,6 @@ def dtypes():
         'fastqscreen_total_reads': 'int',
         'is_contaminated': 'bool',
         'trim': 'bool',
-        'library_id': 'str',
         'sample_id':'str',
         'fastqscreen_nohit_ratio': float,
         'fastqscreen_grch37_ratio': float,
