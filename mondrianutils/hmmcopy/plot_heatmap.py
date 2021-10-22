@@ -180,6 +180,9 @@ class PlotPcolor(object):
         with helpers.getFileHandle(self.input, 'rt') as freader:
             idxs = self.build_label_indices(columns)
 
+            # skip header
+            freader.readline()
+
             for line in freader:
                 line = line.strip().split(self.sep)
 
@@ -259,6 +262,10 @@ class PlotPcolor(object):
         sep_col = self.plot_by_col
 
         with helpers.getFileHandle(self.metrics) as freader:
+
+            # skip header
+            freader.readline()
+
 
             for line in freader:
                 line = line.strip().split(self.sep)
