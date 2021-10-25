@@ -6,8 +6,8 @@ import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pysam
 from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
-from mondrianutils.alignment.collect_metrics import collect_metrics
 from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
+from mondrianutils.alignment.collect_metrics import collect_metrics
 from mondrianutils.alignment.dtypes import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
@@ -38,14 +38,6 @@ def get_merge_command(bams, output, ncores=1):
     return command
 
 
-def get_filtered_files(infiles, cell_ids, metrics):
-    metrics = csverve.read_csv_and_yaml(metrics)
-    assert set(cell_ids) == set(list(metrics['cell_id']))
-    cells_to_skip = set(list(metrics[metrics['is_contaminated']]['cell_id']))
-    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
-    return infiles
-
-
 def get_new_header(cells, bamfile, new_header):
     subprocess.run(['samtools', 'view', '-H', bamfile, '-o', new_header])
     with open(new_header, 'at') as header:
@@ -61,11 +53,31 @@ def reheader(infile, new_header, outfile):
     )
 
 
-def merge_cells(infiles, cell_ids, outfile, metrics, tempdir, ncores):
-    if not os.path.exists(tempdir):
-        os.makedirs(tempdir)
+def get_pass_files(infiles, cell_ids, metrics):
+    metrics = csverve.read_csv_and_yaml(metrics)
+    assert set(cell_ids) == set(list(metrics['cell_id']))
+    cells_to_skip = set(list(metrics[metrics['is_contaminated']]['cell_id']))
+    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
+    return infiles
 
-    infiles = get_filtered_files(infiles, cell_ids, metrics)
+
+def get_control_files(infiles, cell_ids, metrics):
+    metrics = csverve.read_csv_and_yaml(metrics)
+    assert set(cell_ids) == set(list(metrics['cell_id']))
+    control_cells = set(list(metrics[metrics['is_control'] == True]['cell_id']))
+    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell in control_cells}
+    return infiles
+
+
+def get_contaminated_files(infiles, cell_ids, metrics):
+    metrics = csverve.read_csv_and_yaml(metrics)
+    assert set(cell_ids) == set(list(metrics['cell_id']))
+    contaminated_cells = set(list(metrics[metrics['is_contaminated']]['cell_id']))
+    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell in contaminated_cells}
+    return infiles
+
+
+def merge_cells(infiles, tempdir, ncores, outfile):
     chunked_infiles = chunks(list(infiles.values()), ncores)
 
     commands = []
@@ -88,6 +100,30 @@ def merge_cells(infiles, cell_ids, outfile, metrics, tempdir, ncores):
     get_new_header(infiles.keys(), final_merge_output, new_header)
 
     reheader(final_merge_output, new_header, outfile)
+
+
+def generate_bams(
+        infiles, cell_ids, metrics,
+        control_outfile, contaminated_outfile, pass_outfile,
+        tempdir, ncores
+):
+    # controls
+    control_bams = get_control_files(infiles, cell_ids, metrics)
+    control_tempdir = os.path.join(tempdir, 'control')
+    helpers.makedirs(control_tempdir)
+    merge_cells(control_bams, control_tempdir, ncores, control_outfile)
+
+    # contaminated
+    contaminated_bams = get_contaminated_files(infiles, cell_ids, metrics)
+    contaminated_tempdir = os.path.join(tempdir, 'contaminated')
+    helpers.makedirs(contaminated_tempdir)
+    merge_cells(contaminated_bams, contaminated_tempdir, ncores, contaminated_outfile)
+
+    # pass
+    pass_bams = get_pass_files(infiles, cell_ids, metrics)
+    pass_tempdir = os.path.join(tempdir, 'pass')
+    helpers.makedirs(pass_tempdir)
+    merge_cells(pass_bams, pass_tempdir, ncores, pass_outfile)
 
 
 def tag_bam_with_cellid(infile, outfile, cell_id):
@@ -269,8 +305,6 @@ def parse_args():
         '--is_control',
     )
 
-
-
     collect_gc_metrics = subparsers.add_parser('collect_gc_metrics')
     collect_gc_metrics.set_defaults(which='collect_gc_metrics')
     collect_gc_metrics.add_argument(
@@ -317,7 +351,13 @@ def parse_args():
         '--cell_ids', nargs='*'
     )
     merge_cells.add_argument(
-        '--outfile',
+        '--control_outfile',
+    )
+    merge_cells.add_argument(
+        '--contaminated_outfile',
+    )
+    merge_cells.add_argument(
+        '--pass_outfile',
     )
     merge_cells.add_argument(
         '--metrics',
@@ -365,11 +405,11 @@ def utils():
         collect_metrics(
             args['wgs_metrics'], args['insert_metrics'],
             args['flagstat'], args['markdups_metrics'], args['output'],
-            args['cell_id'], args['column'],  args['condition'],  args['img_col'],
-            args['index_i5'],args['index_i7'],args['index_sequence'],
-            args['library_id'],args['pick_met'],args['primer_i5'],
-            args['primer_i7'],args['row'],args['sample_id'],
-            args['sample_type'],args['is_control']
+            args['cell_id'], args['column'], args['condition'], args['img_col'],
+            args['index_i5'], args['index_i7'], args['index_sequence'],
+            args['library_id'], args['pick_met'], args['primer_i5'],
+            args['primer_i7'], args['row'], args['sample_id'],
+            args['sample_type'], args['is_control']
         )
     elif args['which'] == 'collect_gc_metrics':
         collect_gc_metrics(
@@ -387,9 +427,10 @@ def utils():
             args['reference']
         )
     elif args['which'] == 'merge_cells':
-        merge_cells(
-            args['infiles'], args['cell_ids'], args['outfile'],
-            args['metrics'], args['tempdir'], args['ncores']
+        generate_bams(
+            args['infiles'], args['cell_ids'], args['metrics'],
+            args['control_outfile'], args['contaminated_outfile'],
+            args['pass_outfile'], args['tempdir'], args['ncores']
         )
     elif args['which'] == 'classify_fastqscreen':
         classify_fastqscreen(
