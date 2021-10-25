@@ -5,14 +5,17 @@ Extract metrics table.
 from __future__ import division
 
 import os
-import pandas as pd
-from .dtypes import dtypes
+
 import csverve.api as csverve
+import pandas as pd
+
+from .dtypes import dtypes
+
 
 class CollectMetrics(object):
     def __init__(
             self, wgs_metrics, insert_metrics, flagstat_metrics,
-            markdups_metrics, output, sample_id, dtypes
+            markdups_metrics, output, sample_id, dtypes, annotation_data={}
     ):
         self.wgs_metrics = wgs_metrics
         self.flagstat_metrics = flagstat_metrics
@@ -21,6 +24,7 @@ class CollectMetrics(object):
         self.output = output
         self.sample_id = sample_id
         self.dtypes = dtypes
+        self.annotation_data = annotation_data
 
     def extract_wgs_metrics(self):
         """
@@ -226,17 +230,33 @@ class CollectMetrics(object):
                        'mean_insert_size',
                        'standard_deviation_insert_size']
 
+        header += self.annotation_data.keys()
+        output += [self.annotation_data[key] for key in self.annotation_data.keys()]
+
         self.write_data(header, output)
 
 
 def collect_metrics(
         wgs_metrics, insert_metrics,
         flagstat, markdups, output,
-        sample_id
+        cell_id, column, condition, img_col,
+        index_i5, index_i7, index_sequence,
+        library_id, pick_met, primer_i5, primer_i7,
+        row, sample_id, sample_type, is_control
 ):
+    annotation_data = {
+        'column': column, 'condition': condition,
+        'img_col': img_col, 'index_i5': index_i5,
+        'index_i7': index_i7, 'index_sequence': index_sequence,
+        'library_id': library_id, 'pick_met': pick_met,
+        'primer_i5': primer_i5, 'primer_i7': primer_i7,
+        'row': row, 'sample_id': sample_id,
+        'sample_type': sample_type, 'is_control': is_control
+    }
+
     collmet = CollectMetrics(
         wgs_metrics, insert_metrics,
         flagstat, markdups, output,
-        sample_id, dtypes()['metrics']
+        cell_id, dtypes()['metrics'], annotation_data=annotation_data
     )
     collmet.main()

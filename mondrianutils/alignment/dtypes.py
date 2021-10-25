@@ -44,6 +44,11 @@ def dtypes():
         'fastqscreen_mm10_ratio': float,
         'fastqscreen_salmon_ratio': float,
         'species': 'str',
+        'condition': 'str',
+        'index_sequence': 'str',
+        'pick_met': 'str',
+        'is_control': 'bool'
+
     }
 
     gc = {str(i): 'float' for i in range(0,101)}
