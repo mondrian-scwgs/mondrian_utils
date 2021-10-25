@@ -77,7 +77,19 @@ def get_contaminated_files(infiles, cell_ids, metrics):
     return infiles
 
 
+def samtools_index(infile):
+    cmd = ['samtools','index', infile]
+    helpers.run_cmd(cmd)
+
+
+
 def merge_cells(infiles, tempdir, ncores, outfile):
+    if len(infiles.values()) == 0:
+        open(outfile, 'wt').write("NO DATA").close()
+        open(outfile+'.bai', 'wt').write("NO DATA").close()
+        return
+
+
     chunked_infiles = chunks(list(infiles.values()), ncores)
 
     commands = []
@@ -100,6 +112,8 @@ def merge_cells(infiles, tempdir, ncores, outfile):
     get_new_header(infiles.keys(), final_merge_output, new_header)
 
     reheader(final_merge_output, new_header, outfile)
+
+    samtools_index(outfile)
 
 
 def generate_bams(
