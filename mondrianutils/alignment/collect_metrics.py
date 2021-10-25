@@ -230,6 +230,7 @@ class CollectMetrics(object):
                        'mean_insert_size',
                        'standard_deviation_insert_size']
 
+        output = list(output)
         header += self.annotation_data.keys()
         output += [self.annotation_data[key] for key in self.annotation_data.keys()]
 
