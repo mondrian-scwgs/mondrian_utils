@@ -85,10 +85,11 @@ def samtools_index(infile):
 
 def merge_cells(infiles, tempdir, ncores, outfile):
     if len(infiles.values()) == 0:
-        open(outfile, 'wt').write("NO DATA").close()
-        open(outfile+'.bai', 'wt').write("NO DATA").close()
+        with open(outfile, 'wt') as writer:
+            writer.write("NO DATA")
+        with open(outfile + '.bai', 'wt') as writer:
+            writer.write("NO DATA")
         return
-
 
     chunked_infiles = chunks(list(infiles.values()), ncores)
 
