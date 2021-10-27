@@ -11,7 +11,7 @@ from mondrianutils.alignment.collect_metrics import collect_metrics
 from mondrianutils.alignment.dtypes import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
-
+from mondrianutils.alignment.coverage_metrics import annotate_coverage_metrics
 
 def get_cell_id_from_bam(infile):
     infile = pysam.AlignmentFile(infile, "rb")
@@ -397,6 +397,19 @@ def parse_args():
         '--output',
     )
 
+
+    coverage_metrics = subparsers.add_parser('coverage_metrics')
+    coverage_metrics.set_defaults(which='coverage_metrics')
+    coverage_metrics.add_argument(
+        '--metrics'
+    )
+    coverage_metrics.add_argument(
+        '--bamfile'
+    )
+    coverage_metrics.add_argument(
+        '--output',
+    )
+
     args = vars(parser.parse_args())
 
     return args
@@ -450,6 +463,10 @@ def utils():
     elif args['which'] == 'classify_fastqscreen':
         classify_fastqscreen(
             args['training_data'], args['metrics'], args['output']
+        )
+    elif args['which'] == 'coverage_metrics':
+        annotate_coverage_metrics(
+            args['metrics'], args['bamfile'], args['output']
         )
     else:
         raise Exception()
