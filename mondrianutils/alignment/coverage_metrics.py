@@ -196,8 +196,7 @@ def annotate_coverage_metrics(
     assert len(cell_id) == 1
 
     data['cell_id'] = cell_id[0]
-
-    df = pd.DataFrame(data)
+    df = pd.DataFrame.from_dict({k:[v] for k,v in data.items()})
 
     csverve.annotate_csv(
         metrics, df, output, dtypes()['metrics']
