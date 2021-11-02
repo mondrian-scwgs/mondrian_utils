@@ -124,7 +124,7 @@ class GenHmmPlots(object):
         pass
 
     def read_csv(self, infile):
-        return csverve.read_csv_and_yaml(infile)
+        return csverve.read_csv(infile)
 
     def read_metrics(self):
         """

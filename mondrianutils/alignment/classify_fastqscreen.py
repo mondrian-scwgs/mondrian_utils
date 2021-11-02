@@ -31,7 +31,7 @@ def train(training_data_path):
 
 
 def classify_fastqscreen(training_data_path, metrics_path, metrics_output):
-    df = csverve.read_csv_and_yaml(metrics_path)
+    df = csverve.read_csv(metrics_path)
     features_train, feature_transformer, model = train(training_data_path)
 
     features = ["fastqscreen_nohit_ratio", "fastqscreen_grch37_ratio", "fastqscreen_mm10_ratio",

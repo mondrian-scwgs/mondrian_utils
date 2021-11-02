@@ -191,7 +191,7 @@ def annotate_coverage_metrics(
         bamfile, mapping_qual=mapping_qual, base_qual=base_qual
     )
 
-    cell_id = csverve.read_csv_and_yaml(metrics)['cell_id'].to_list()
+    cell_id = csverve.read_csv(metrics)['cell_id'].to_list()
 
     assert len(cell_id) == 1
 

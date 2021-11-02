@@ -19,9 +19,9 @@ def read_data(filename, tablename):
     if filename.endswith('.h5'):
         data = read_from_h5(filename, tablename)
     elif filename.endswith('.csv'):
-        data = csverve.read_csv_and_yaml(filename)
+        data = csverve.read_csv(filename)
     elif filename.endswith('.csv.gz'):
-        data = csverve.read_csv_and_yaml(filename)
+        data = csverve.read_csv(filename)
     else:
         raise Exception("unknown file format")
 
@@ -47,8 +47,8 @@ def train_classifier(filename):
 
 def load_data(hmmcopy_filename, alignment_filename,
               colnames):
-    hmmcopy_data = csverve.read_csv_and_yaml(hmmcopy_filename)
-    alignment_data = csverve.read_csv_and_yaml(alignment_filename)
+    hmmcopy_data = csverve.read_csv(hmmcopy_filename)
+    alignment_data = csverve.read_csv(alignment_filename)
 
     hmmcopy_data = hmmcopy_data.set_index('cell_id')
     alignment_data = alignment_data.set_index('cell_id')
@@ -101,7 +101,7 @@ def write_to_csv(output, data, gzipped=False):
 
 
 def write_to_output(hmmcopy_filename, output, predictions):
-    data = csverve.read_csv_and_yaml(hmmcopy_filename)
+    data = csverve.read_csv(hmmcopy_filename)
 
     data['quality'] = data['cell_id'].map(predictions)
     data.quality = data.quality.astype(float)

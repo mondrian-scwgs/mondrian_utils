@@ -103,7 +103,7 @@ def run_hmmcopy(
 
 
 def add_mappability(reads, annotated_reads):
-    reads = csverve.read_csv_and_yaml(reads, chunksize=100)
+    reads = csverve.read_csv(reads, chunksize=100)
 
     alldata = []
     for read_data in reads:
@@ -141,7 +141,7 @@ def add_quality(hmmcopy_metrics_csv, alignment_metrics, tempdir, output, trainin
 def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
     helpers.makedirs(tempdir)
 
-    metrics_data = csverve.read_csv_and_yaml(metrics)
+    metrics_data = csverve.read_csv(metrics)
     all_cells = metrics_data.cell_id.tolist()
     metrics_data = metrics_data[metrics_data['quality'] >= 0.75]
     metrics_data = metrics_data[metrics_data['is_contaminated'] == True]

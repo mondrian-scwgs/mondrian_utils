@@ -54,7 +54,7 @@ def reheader(infile, new_header, outfile):
 
 
 def get_pass_files(infiles, cell_ids, metrics):
-    metrics = csverve.read_csv_and_yaml(metrics)
+    metrics = csverve.read_csv(metrics)
     assert set(cell_ids) == set(list(metrics['cell_id']))
     cells_to_skip = set(list(metrics[metrics['is_contaminated']]['cell_id']))
     infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
@@ -62,7 +62,7 @@ def get_pass_files(infiles, cell_ids, metrics):
 
 
 def get_control_files(infiles, cell_ids, metrics):
-    metrics = csverve.read_csv_and_yaml(metrics)
+    metrics = csverve.read_csv(metrics)
     assert set(cell_ids) == set(list(metrics['cell_id']))
     control_cells = set(list(metrics[metrics['is_control'] == True]['cell_id']))
     infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell in control_cells}
@@ -70,7 +70,7 @@ def get_control_files(infiles, cell_ids, metrics):
 
 
 def get_contaminated_files(infiles, cell_ids, metrics):
-    metrics = csverve.read_csv_and_yaml(metrics)
+    metrics = csverve.read_csv(metrics)
     assert set(cell_ids) == set(list(metrics['cell_id']))
     contaminated_cells = set(list(metrics[metrics['is_contaminated']]['cell_id']))
     infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell in contaminated_cells}
@@ -161,7 +161,7 @@ def add_contamination_status(
         infile, outfile,
         reference='grch37', threshold=0.05
 ):
-    data = csverve.read_csv_and_yaml(infile)
+    data = csverve.read_csv(infile)
 
     data = data.set_index('cell_id', drop=False)
 
