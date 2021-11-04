@@ -318,6 +318,8 @@ def parse_args():
     )
     collect_metrics.add_argument(
         '--is_control',
+        default=False,
+        action='store_true',
     )
 
     collect_gc_metrics = subparsers.add_parser('collect_gc_metrics')
