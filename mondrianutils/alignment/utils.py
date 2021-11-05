@@ -8,10 +8,11 @@ import pysam
 from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
 from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
 from mondrianutils.alignment.collect_metrics import collect_metrics
+from mondrianutils.alignment.coverage_metrics import annotate_coverage_metrics
 from mondrianutils.alignment.dtypes import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
-from mondrianutils.alignment.coverage_metrics import annotate_coverage_metrics
+
 
 def get_cell_id_from_bam(infile):
     infile = pysam.AlignmentFile(infile, "rb")
@@ -56,8 +57,13 @@ def reheader(infile, new_header, outfile):
 def get_pass_files(infiles, cell_ids, metrics):
     metrics = csverve.read_csv(metrics)
     assert set(cell_ids) == set(list(metrics['cell_id']))
+
     cells_to_skip = set(list(metrics[metrics['is_contaminated']]['cell_id']))
     infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
+
+    cells_to_skip = set(list(metrics[metrics['is_control']]['cell_id']))
+    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
+
     return infiles
 
 
@@ -72,15 +78,19 @@ def get_control_files(infiles, cell_ids, metrics):
 def get_contaminated_files(infiles, cell_ids, metrics):
     metrics = csverve.read_csv(metrics)
     assert set(cell_ids) == set(list(metrics['cell_id']))
+
+    cells_to_skip = set(list(metrics[metrics['is_control']]['cell_id']))
+    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
+
     contaminated_cells = set(list(metrics[metrics['is_contaminated']]['cell_id']))
     infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell in contaminated_cells}
+
     return infiles
 
 
 def samtools_index(infile):
-    cmd = ['samtools','index', infile]
+    cmd = ['samtools', 'index', infile]
     helpers.run_cmd(cmd)
-
 
 
 def merge_cells(infiles, tempdir, ncores, outfile):
@@ -398,7 +408,6 @@ def parse_args():
     classifier.add_argument(
         '--output',
     )
-
 
     coverage_metrics = subparsers.add_parser('coverage_metrics')
     coverage_metrics.set_defaults(which='coverage_metrics')
