@@ -62,7 +62,7 @@ def get_pass_files(infiles, cell_ids, metrics):
     infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
 
     cells_to_skip = set(list(metrics[metrics['is_control']]['cell_id']))
-    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
+    infiles = {cell: infile for cell, infile in infiles.items() if cell not in cells_to_skip}
 
     return infiles
 
@@ -83,7 +83,7 @@ def get_contaminated_files(infiles, cell_ids, metrics):
     infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell not in cells_to_skip}
 
     contaminated_cells = set(list(metrics[metrics['is_contaminated']]['cell_id']))
-    infiles = {cell: infile for cell, infile in zip(cell_ids, infiles) if cell in contaminated_cells}
+    infiles = {cell: infile for cell, infile in infiles.items() if cell in contaminated_cells}
 
     return infiles
 
