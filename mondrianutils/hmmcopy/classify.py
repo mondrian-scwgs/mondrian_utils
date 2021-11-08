@@ -97,7 +97,7 @@ def write_to_hdf(output, hmmcopy_tablename, data):
 
 def write_to_csv(output, data, gzipped=False):
     compression = 'gzip' if gzipped else None
-    data.to_csv(output, index=False, compression=compression)
+    data.to_csv(output, index=False, compression=compression, na_rep='NA')
 
 
 def write_to_output(hmmcopy_filename, output, predictions):
