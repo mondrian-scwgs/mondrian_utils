@@ -69,5 +69,14 @@ dtypes = {
     'fastqscreen_mm10_ratio': float,
     'fastqscreen_salmon_ratio': float,
     'species': 'str',
-    'pick_met': 'str'
+    'condition': 'str',
+    'index_sequence': 'str',
+    'pick_met': 'str',
+    'is_control': 'bool',
+    'aligned': 'float',
+    'expected': 'float',
+    'overlap_with_all_filters': 'float',
+    'overlap_with_all_filters_and_qual': 'float',
+    'overlap_with_dups': 'float',
+    'overlap_without_dups': 'float',
 }
