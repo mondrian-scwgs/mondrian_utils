@@ -5,6 +5,7 @@ import argparse
 import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pysam
+import yaml
 from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
 from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
 from mondrianutils.alignment.collect_metrics import collect_metrics
@@ -196,6 +197,22 @@ def add_contamination_status(
     )
 
 
+def add_metadata(metrics, metadata_yaml, output):
+    df = csverve.read_csv(metrics)
+
+    metadata = yaml.load(open(metadata_yaml, 'rt'))
+
+    cells = metadata['meta']['cells'].keys()
+
+    assert set(cells) == set(df['cell_id'])
+
+    for cellid, cell_info in metadata['meta']['cells'].items():
+        for colname, val in cell_info.items():
+            df.loc[df['cell_id'] == cellid, colname] = val
+
+    csverve.write_dataframe_to_csv_and_yaml(df, output, dtypes=dtypes()['metrics'])
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -377,6 +394,18 @@ def parse_args():
         '--output',
     )
 
+    add_metadata = subparsers.add_parser('add_metadata')
+    add_metadata.set_defaults(which='add_metadata')
+    add_metadata.add_argument(
+        '--metrics'
+    )
+    add_metadata.add_argument(
+        '--metadata_yaml'
+    )
+    add_metadata.add_argument(
+        '--output',
+    )
+
     args = vars(parser.parse_args())
 
     return args
@@ -430,6 +459,10 @@ def utils():
     elif args['which'] == 'coverage_metrics':
         annotate_coverage_metrics(
             args['metrics'], args['bamfile'], args['output']
+        )
+    elif args['which'] == 'add_metadata':
+        add_metadata(
+            args['metrics'], args['metadata_yaml'], args['output']
         )
     else:
         raise Exception()
