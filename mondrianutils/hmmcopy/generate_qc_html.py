@@ -8,12 +8,10 @@ matplotlib.use('Agg')
 
 from matplotlib import pyplot as plt
 import seaborn as sns
-
 import os
-
 import base64
-
 import csverve.api as csverve
+from mondrianutils import helpers
 
 sns.set(context='talk',
         style='darkgrid',
@@ -211,7 +209,7 @@ def get_hq_metrics(hq_df, total_breakdown):
 def generate_qc_table(df):
     # assign species labels to the cells
     df = get_fraction_unmapped(df)
-    df = df.rename(columns={"condition": "Experimental Condition", "cell_call": "Cell Call"})
+    df = df.rename(columns={"condition": "Experimental Condition", "pick_met": "Cell Call"})
     # get high quality cells
     hq_df = df[df["quality"] >= 0.75]
 
@@ -450,6 +448,8 @@ def generate_html(dataframes, pngs, html_file):
 
 
 def generate_html_report(tempdir, html, reference_gc, metrics, gc_metrics):
+    helpers.makedirs(tempdir)
+
     gc_plot = os.path.join(tempdir, "gc.png")
     heatmap = os.path.join(tempdir, 'heatmap.png')
 
