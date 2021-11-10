@@ -211,7 +211,7 @@ def get_hq_metrics(hq_df, total_breakdown):
 def generate_qc_table(df):
     # assign species labels to the cells
     df = get_fraction_unmapped(df)
-    df = df.rename(columns={"experimental_condition": "Experimental Condition", "cell_call": "Cell Call"})
+    df = df.rename(columns={"condition": "Experimental Condition", "cell_call": "Cell Call"})
     # get high quality cells
     hq_df = df[df["quality"] >= 0.75]
 
