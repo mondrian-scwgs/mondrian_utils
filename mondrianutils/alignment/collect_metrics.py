@@ -15,12 +15,13 @@ from .dtypes import dtypes
 class CollectMetrics(object):
     def __init__(
             self, wgs_metrics, insert_metrics, flagstat_metrics,
-            markdups_metrics, output, sample_id, dtypes
+            markdups_metrics, coverage_metrics, output, sample_id, dtypes
     ):
         self.wgs_metrics = wgs_metrics
         self.flagstat_metrics = flagstat_metrics
         self.insert_metrics = insert_metrics
         self.markdups_metrics = markdups_metrics
+        self.coverage_metrics = coverage_metrics
         self.output = output
         self.sample_id = sample_id
         self.dtypes = dtypes
@@ -229,17 +230,24 @@ class CollectMetrics(object):
                        'mean_insert_size',
                        'standard_deviation_insert_size']
 
+        coverage = csverve.read_csv(self.coverage_metrics)
+        coverage = coverage.iloc[0].to_dict()
+
+        header += coverage.keys()
+        output = list(output)
+        output += [coverage[k] for k in coverage.keys()]
+
         self.write_data(header, output)
 
 
 def collect_metrics(
         wgs_metrics, insert_metrics,
-        flagstat, markdups, output,
+        flagstat, markdups, coverage, output,
         cell_id
 ):
     collmet = CollectMetrics(
         wgs_metrics, insert_metrics,
-        flagstat, markdups, output,
+        flagstat, markdups, coverage, output,
         cell_id, dtypes()['metrics']
     )
     collmet.main()

@@ -184,20 +184,16 @@ def get_coverage_data(bamfile, mapping_qual=10, base_qual=10):
     return outdata
 
 
-def annotate_coverage_metrics(
-        metrics, bamfile, output, mapping_qual=10, base_qual=10
+def get_coverage_metrics(
+        bamfile, output, mapping_qual=10, base_qual=10
 ):
     data = get_coverage_data(
         bamfile, mapping_qual=mapping_qual, base_qual=base_qual
     )
 
-    cell_id = csverve.read_csv(metrics)['cell_id'].to_list()
+    df = pd.DataFrame.from_dict(data)
 
-    assert len(cell_id) == 1
-
-    data['cell_id'] = cell_id[0]
-    df = pd.DataFrame.from_dict({k:[v] for k,v in data.items()})
-
-    csverve.annotate_csv(
-        metrics, df, output, dtypes()['metrics']
+    csverve.write_dataframe_to_csv_and_yaml(
+        df, output, dtypes()['metrics']
     )
+

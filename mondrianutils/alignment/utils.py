@@ -9,7 +9,7 @@ import yaml
 from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
 from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
 from mondrianutils.alignment.collect_metrics import collect_metrics
-from mondrianutils.alignment.coverage_metrics import annotate_coverage_metrics
+from mondrianutils.alignment.coverage_metrics import get_coverage_metrics
 from mondrianutils.alignment.dtypes import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
@@ -299,6 +299,9 @@ def parse_args():
         '--markdups_metrics',
     )
     collect_metrics.add_argument(
+        '--coverage_metrics',
+    )
+    collect_metrics.add_argument(
         '--output',
     )
     collect_metrics.add_argument(
@@ -428,7 +431,8 @@ def utils():
     elif args['which'] == 'collect_metrics':
         collect_metrics(
             args['wgs_metrics'], args['insert_metrics'],
-            args['flagstat'], args['markdups_metrics'], args['output'],
+            args['flagstat'], args['markdups_metrics'],
+            args['coverage_metrics'], args['output'],
             args['cell_id']
         )
     elif args['which'] == 'collect_gc_metrics':
@@ -457,9 +461,7 @@ def utils():
             args['training_data'], args['metrics'], args['output']
         )
     elif args['which'] == 'coverage_metrics':
-        annotate_coverage_metrics(
-            args['metrics'], args['bamfile'], args['output']
-        )
+        get_coverage_metrics(args['bamfile'], args['output'])
     elif args['which'] == 'add_metadata':
         add_metadata(
             args['metrics'], args['metadata_yaml'], args['output']
