@@ -287,50 +287,6 @@ def parse_args():
     collect_metrics.add_argument(
         '--cell_id',
     )
-    collect_metrics.add_argument(
-        '--column',
-    )
-    collect_metrics.add_argument(
-        '--condition',
-    )
-    collect_metrics.add_argument(
-        '--img_col',
-    )
-    collect_metrics.add_argument(
-        '--index_i5',
-    )
-    collect_metrics.add_argument(
-        '--index_i7',
-    )
-    collect_metrics.add_argument(
-        '--index_sequence',
-    )
-    collect_metrics.add_argument(
-        '--library_id',
-    )
-    collect_metrics.add_argument(
-        '--pick_met',
-    )
-    collect_metrics.add_argument(
-        '--primer_i5',
-    )
-    collect_metrics.add_argument(
-        '--primer_i7',
-    )
-    collect_metrics.add_argument(
-        '--row',
-    )
-    collect_metrics.add_argument(
-        '--sample_id',
-    )
-    collect_metrics.add_argument(
-        '--sample_type',
-    )
-    collect_metrics.add_argument(
-        '--is_control',
-        default=False,
-        action='store_true',
-    )
 
     collect_gc_metrics = subparsers.add_parser('collect_gc_metrics')
     collect_gc_metrics.set_defaults(which='collect_gc_metrics')
@@ -444,11 +400,7 @@ def utils():
         collect_metrics(
             args['wgs_metrics'], args['insert_metrics'],
             args['flagstat'], args['markdups_metrics'], args['output'],
-            args['cell_id'], args['column'], args['condition'], args['img_col'],
-            args['index_i5'], args['index_i7'], args['index_sequence'],
-            args['library_id'], args['pick_met'], args['primer_i5'],
-            args['primer_i7'], args['row'], args['sample_id'],
-            args['sample_type'], args['is_control']
+            args['cell_id']
         )
     elif args['which'] == 'collect_gc_metrics':
         collect_gc_metrics(
