@@ -13,7 +13,7 @@ import os
 
 import base64
 
-from single_cell.utils import csvutils
+import csverve.api as csverve
 
 sns.set(context='talk',
         style='darkgrid',
@@ -38,7 +38,7 @@ def load_reference(infile):
 
 
 def load_data(infile, gc=False):
-    df = csvutils.read_csv_and_yaml(infile)
+    df = csverve.read_csv(infile)
 
     if gc:
         df.index = df.cell_id
