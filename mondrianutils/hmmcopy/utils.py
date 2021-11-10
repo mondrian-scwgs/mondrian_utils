@@ -12,6 +12,7 @@ from mondrianutils.dtypes import hmmcopy_params
 from mondrianutils.dtypes import hmmcopy_reads
 from mondrianutils.dtypes import hmmcopy_segs
 from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
+from mondrianutils.hmmcopy.generate_qc_html import generate_html_report
 from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
 from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 from mondrianutils.hmmcopy.readcounter import ReadCounter
@@ -295,7 +296,6 @@ def parse_args():
         '--outfile'
     )
 
-
     heatmap = subparsers.add_parser('heatmap')
     heatmap.set_defaults(which='heatmap')
     heatmap.add_argument(
@@ -308,7 +308,6 @@ def parse_args():
     heatmap.add_argument(
         '--output'
     )
-
 
     add_quality = subparsers.add_parser('add_quality')
     add_quality.set_defaults(which='add_quality')
@@ -347,6 +346,24 @@ def parse_args():
         '--tempdir'
     )
 
+    generate_html_report = subparsers.add_parser('generate_html_report')
+    generate_html_report.set_defaults(which='generate_html_report')
+    generate_html_report.add_argument(
+        '--tempdir',
+    )
+    generate_html_report.add_argument(
+        '--html'
+    )
+    generate_html_report.add_argument(
+        '--reference_gc'
+    )
+    generate_html_report.add_argument(
+        '--metrics'
+    )
+    generate_html_report.add_argument(
+        '--gc_metrics'
+    )
+
     args = vars(parser.parse_args())
 
     return args
@@ -383,9 +400,18 @@ def utils():
         add_quality(args['hmmcopy_metrics'], args['alignment_metrics'], args['tempdir'], args['output'],
                     args['training_data'])
     elif args['which'] == 'create_segs_tar':
-        create_segs_tar(args['segs_png'], args['metrics'], args['pass_output'], args['fail_output'], args['tempdir'])
+        create_segs_tar(
+            args['segs_png'], args['metrics'],
+            args['pass_output'], args['fail_output'],
+            args['tempdir']
+        )
     elif args['which'] == 'heatmap':
         plot_heatmap(args['reads'], args['metrics'], args['output'])
+    elif args['which'] == 'generate_html_report':
+        generate_html_report(
+            args['tempdir'], args['html'], args['reference_gc'], args['metrics'], args['gc_metricss']
+        )
+
     else:
         raise Exception()
 
