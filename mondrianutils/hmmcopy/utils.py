@@ -409,7 +409,7 @@ def utils():
         plot_heatmap(args['reads'], args['metrics'], args['output'])
     elif args['which'] == 'generate_html_report':
         generate_html_report(
-            args['tempdir'], args['html'], args['reference_gc'], args['metrics'], args['gc_metricss']
+            args['tempdir'], args['html'], args['reference_gc'], args['metrics'], args['gc_metrics']
         )
 
     else:
