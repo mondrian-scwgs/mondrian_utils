@@ -191,7 +191,7 @@ def get_coverage_metrics(
         bamfile, mapping_qual=mapping_qual, base_qual=base_qual
     )
 
-    df = pd.DataFrame.from_dict(data, index=[1])
+    df = pd.DataFrame(data, index=[1])
 
     csverve.write_dataframe_to_csv_and_yaml(
         df, output, dtypes()['metrics']
