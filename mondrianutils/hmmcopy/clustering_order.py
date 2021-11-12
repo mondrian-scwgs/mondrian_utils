@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as hc
 from mondrianutils.dtypes import hmmcopy_metrics
+import scipy.spatial as sp
+
 
 def sort_bins(bins, chromosomes):
     bins = bins.drop_duplicates()
