@@ -33,7 +33,7 @@ dtypes = {
     'experimental_condition': 'str',
     'cell_call': 'str',
     'index_i7': 'str',
-    'order': 'int',
+    'clustering_order': 'int',
     'row': 'int',
     'trim': 'bool',
     'is_s_phase_prob': 'float',
