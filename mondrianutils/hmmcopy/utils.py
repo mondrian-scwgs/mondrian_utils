@@ -16,6 +16,7 @@ from mondrianutils.hmmcopy.generate_qc_html import generate_html_report
 from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
 from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 from mondrianutils.hmmcopy.readcounter import ReadCounter
+from mondrianutils.hmmcopy.clustering_order import add_clustering_order
 
 
 def plot_heatmap(reads, metrics, output):
@@ -364,6 +365,18 @@ def parse_args():
         '--gc_metrics'
     )
 
+    add_clustering_order = subparsers.add_parser('add_clustering_order')
+    add_clustering_order.set_defaults(which='add_clustering_order')
+    add_clustering_order.add_argument(
+        '--reads',
+    )
+    add_clustering_order.add_argument(
+        '--metrics'
+    )
+    add_clustering_order.add_argument(
+        '--output'
+    )
+
     args = vars(parser.parse_args())
 
     return args
@@ -411,6 +424,9 @@ def utils():
         generate_html_report(
             args['tempdir'], args['html'], args['reference_gc'], args['metrics'], args['gc_metrics']
         )
+    elif args['which'] == 'add_clustering_order':
+        add_clustering_order(args['reads'], args['metrics'], args['output'])
+
 
     else:
         raise Exception()
