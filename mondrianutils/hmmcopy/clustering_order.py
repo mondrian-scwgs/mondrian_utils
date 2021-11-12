@@ -79,7 +79,7 @@ def add_clustering_order(
 
     annotation_df = []
     for cellid, rank in order.items():
-        annotation_df.append({'cell_id': cellid, 'order': rank})
+        annotation_df.append({'cell_id': cellid, 'clustering_order': rank})
     annotation_df = pd.DataFrame(annotation_df)
 
     csverve.annotate_csv(metrics, annotation_df, output, hmmcopy_metrics.dtypes)
