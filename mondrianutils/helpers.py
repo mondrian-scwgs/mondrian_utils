@@ -8,10 +8,11 @@ import gzip
 import logging
 import os
 import subprocess
+import tarfile
 from subprocess import Popen, PIPE
 
 import pandas as pd
-import tarfile
+
 
 def run_cmd(cmd, output=None):
     stdout = PIPE
@@ -114,8 +115,29 @@ def run_in_gnu_parallel(commands, tempdir, ncores):
 
 
 def make_tarfile(output_filename, source_dir):
-
     assert output_filename.endswith('.tar.gz')
 
     with tarfile.open(output_filename, "w:gz") as tar:
         tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+
+def validate_outputs(files, name):
+    if name == 'hmmcopy':
+        expected_files = [
+            'hmmcopy_params.csv.gz', 'hmmcopy_segments_fail.tar.gz', 'hmmcopy_reads.csv.gz',
+            'hmmcopy_segments.csv.gz', 'metadata.yaml', 'hmmcopy_params.csv.gz.yaml',
+            'hmmcopy_reads.csv.gz.yaml', 'hmmcopy_segments_pass.tar.gz', 'hmmcopy_metrics.csv.gz',
+            'hmmcopy_metrics.csv.gz.yaml', 'input.json', 'hmmcopy_heatmap.pdf', 'hmmcopy_segments.csv.gz.yaml'
+        ]
+        assert sorted(files) == sorted(expected_files)
+    elif name == 'alignment':
+        expected_files = [
+            'alignment_gc_metrics.csv.gz', 'alignment_gc_metrics.csv.gz.yaml', 'alignment_metrics.csv.gz',
+            'alignment_metrics.csv.gz.yaml', 'alignment_metrics.tar.gz', 'all_cells_bulk.bam', 'all_cells_bulk.bam.bai',
+            'all_cells_bulk_contaminated.bam', 'all_cells_bulk_contaminated.bam.bai', 'all_cells_bulk_control.bam',
+            'all_cells_bulk_control.bam.bai', 'detailed_fastqscreen_breakdown.csv.gz',
+            'detailed_fastqscreen_breakdown.csv.gz.yaml', 'input.json'
+        ]
+        assert sorted(files) == sorted(expected_files)
+    else:
+        raise NotImplementedError()
