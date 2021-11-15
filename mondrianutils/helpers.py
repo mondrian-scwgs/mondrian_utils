@@ -122,6 +122,9 @@ def make_tarfile(output_filename, source_dir):
 
 
 def validate_outputs(files, name, samples=[]):
+    if 'metadata.yaml' in files:
+        files.remove('metadata.yaml')
+
     if name == 'hmmcopy':
         expected_files = [
             'hmmcopy_params.csv.gz', 'hmmcopy_params.csv.gz.yaml',
