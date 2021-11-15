@@ -1,9 +1,0 @@
-[console_scripts]
-alignment_utils = mondrianutils.alignment.utils:utils
-breakpoint_utils = mondrianutils.breakpoint_calling.utils:utils
-csverve_utils = mondrianutils.io.csverve:utils
-hmmcopy_utils = mondrianutils.hmmcopy.utils:utils
-mondrianutils = mondrianutils.run:main
-pdf_utils = mondrianutils.io.pdf:utils
-variant_utils = mondrianutils.variant_calling.utils:utils
-
