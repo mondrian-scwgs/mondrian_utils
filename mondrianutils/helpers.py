@@ -150,6 +150,7 @@ def validate_outputs(files, name, samples=[]):
         for sample in samples:
             expected_files += [
                 '{}_breakpoint_library_table.csv'.format(sample),
+                '{}_breakpoint_read_table.csv'.format(sample),
                 '{}_breakpoint_table.csv'.format(sample),
                 '{}_gridss.vcf.gz'.format(sample),
                 '{}_lumpy.vcf'.format(sample),
