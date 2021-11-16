@@ -163,6 +163,7 @@ def validate_outputs(files, name, samples=[]):
             'final_vcf_all_samples.vcf.gz',
             'final_vcf_all_samples.vcf.gz.csi',
             'final_vcf_all_samples.vcf.gz.tbi',
+            'input.json'
         ]
         for sample in samples:
             expected_files += [
@@ -185,7 +186,7 @@ def validate_outputs(files, name, samples=[]):
             ]
         assert sorted(files) == sorted(expected_files)
     elif name == 'snv_genotyping':
-        expected_files = ['snv_genotyping.csv.gz', 'snv_genotyping.csv.gz.yaml']
+        expected_files = ['snv_genotyping.csv.gz', 'snv_genotyping.csv.gz.yaml', 'input.json']
         assert sorted(files) == sorted(expected_files)
     else:
         raise NotImplementedError()
