@@ -3,13 +3,14 @@ Created on Oct 10, 2017
 
 @author: dgrewal
 '''
-import argparse
 import glob
-import numpy as np
 import os
+from collections import defaultdict
+
+import argparse
+import numpy as np
 import pandas as pd
 import pysam
-from collections import defaultdict
 
 
 class ReadCounter(object):
@@ -135,12 +136,17 @@ class ReadCounter(object):
 
         return False
 
-    def write_header(self, chrom, outfile):
+    def add_track_header(self, outfile, cell_id):
+        outstr = "track type=wiggle_0 name={}\n".format(cell_id)
+        outfile.write(outstr)
+
+    def write_header(self, chrom, outfile, add_track=False, cell_id=None):
         """writes headers, single header if seg format,
         one header per chromosome otherwise.
         :param chrom: chromosome name
         :param outfile: output file object.
         """
+
         outstr = "fixedStep chrom=%s start=1 step=%s span=%s\n" \
                  % (chrom, self.window_size, self.window_size)
         outfile.write(outstr)
@@ -217,6 +223,7 @@ class ReadCounter(object):
         else:
             os.makedirs(self.output)
 
+        add_track = True
         for chrom in self.chromosomes:
 
             data = self.get_data(chrom)
@@ -225,9 +232,12 @@ class ReadCounter(object):
 
             for cell in data:
                 with open(os.path.join(self.output, '{}.wig'.format(cell)), 'at') as outfile:
+                    if add_track:
+                        self.add_track_header(outfile, cell)
                     self.write_header(chrom, outfile)
                     for binval in bins:
                         self.write(data[cell][binval], outfile)
+            add_track = False
 
 
 def parse_args():
