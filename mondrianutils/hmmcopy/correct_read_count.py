@@ -44,6 +44,9 @@ class CorrectReadCount(object):
             for line in wig:
                 line = line.strip()
 
+                if line.startswith("track type"):
+                    continue
+
                 if line.startswith('fixedStep'):
                     line = line.strip().split()
 

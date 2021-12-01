@@ -2,8 +2,8 @@ import csverve.api as csverve
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as hc
-from mondrianutils.dtypes import hmmcopy_metrics
 import scipy.spatial as sp
+from mondrianutils.dtypes import hmmcopy_metrics
 
 
 def sort_bins(bins, chromosomes):
@@ -25,6 +25,7 @@ def get_hierarchical_clustering_order(
         reads_filename, chromosomes=None):
     data = []
     chunksize = 10 ** 5
+    columns = None
     for chunk in csverve.read_csv(
             reads_filename, chunksize=chunksize):
         chunk["bin"] = list(zip(chunk.chr, chunk.start, chunk.end))
@@ -33,6 +34,14 @@ def get_hierarchical_clustering_order(
         chunk['state'] = chunk['state'].astype('float')
 
         chunk = chunk.pivot(index='cell_id', columns='bin', values='state')
+
+        if columns is None:
+            columns = list(chunk.columns.values)
+
+        if not list(chunk.columns.values) == columns:
+            newdf = pd.DataFrame(columns=columns)
+            chunk = pd.concat([chunk, newdf])
+            chunk = chunk.fillna(0)
 
         data.append(chunk)
 

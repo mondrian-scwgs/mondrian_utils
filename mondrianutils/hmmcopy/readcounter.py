@@ -22,7 +22,7 @@ class ReadCounter(object):
             self, bam, output, window_size, chromosomes, mapq,
             seg=None, excluded=None, reference=None
     ):
-        self.bam = bam
+        self.bamfile = bam
 
         self.output = output
 
@@ -99,7 +99,7 @@ class ReadCounter(object):
         """returns pysam bam object
         :returns pysam bam object
         """
-        return pysam.AlignmentFile(self.bam, 'rb')
+        return pysam.AlignmentFile(self.bamfile, 'rb')
 
     def __get_chr_names(self):
         """extracts chromosome names from the bam file
@@ -212,10 +212,19 @@ class ReadCounter(object):
             data[cell_id][binval] += 1
         return data
 
+    def is_empty(self):
+        if os.path.getsize(self.bamfile) < 10:
+            with open(self.bamfile, 'rt') as reader:
+                if reader.readline().startswith('NO DATA'):
+                    return True
+
     def main(self):
         """for each chromosome, iterate over all reads. use starting position
         of the read to calculate read counts per bin (no double counting).
         """
+        if self.is_empty():
+            return
+
         if os.path.exists(self.output):
             files = glob.glob('{}/*'.format(self.output))
             for f in files:
