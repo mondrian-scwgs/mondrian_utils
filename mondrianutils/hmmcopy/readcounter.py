@@ -237,7 +237,6 @@ class ReadCounter(object):
         if self.is_empty():
             return
 
-
         add_track = True
         for chrom in self.chromosomes:
 

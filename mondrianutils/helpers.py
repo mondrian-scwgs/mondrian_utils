@@ -132,7 +132,7 @@ def validate_outputs(files, name, samples=[]):
             'hmmcopy_reads.csv.gz', 'hmmcopy_reads.csv.gz.yaml',
             'hmmcopy_metrics.csv.gz', 'hmmcopy_metrics.csv.gz.yaml',
             'hmmcopy_segments_pass.tar.gz', 'hmmcopy_segments_fail.tar.gz',
-            'hmmcopy_heatmap.pdf', 'input.json'
+            'hmmcopy_heatmap.pdf', 'input.json',  'qc_html_report.html'
         ]
         assert sorted(files) == sorted(expected_files)
     elif name == 'alignment':
