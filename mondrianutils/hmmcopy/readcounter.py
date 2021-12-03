@@ -33,19 +33,24 @@ class ReadCounter(object):
         else:
             self.chromosomes = self.__get_chr_names()
 
-        self.bam = self.__get_bam_reader()
-        self.chr_lengths = self.__get_chr_lengths()
-
         self.mapq_threshold = mapq
 
         self.seg = seg
-        self.cells = self.get_cells()
 
         if excluded is not None:
             self.excluded = pd.read_csv(excluded, sep="\t", )
             self.excluded.columns = ["chrom", "start", "end"]
         else:
             self.excluded = None
+
+        if self.is_empty():
+            self.bam = None
+            self.chr_lengths = None
+            self.cells = []
+        else:
+            self.bam = self.__get_bam_reader()
+            self.chr_lengths = self.__get_chr_lengths()
+            self.cells = self.get_cells()
 
     def __get_bam_header(self):
         return self.bam.header
@@ -222,15 +227,16 @@ class ReadCounter(object):
         """for each chromosome, iterate over all reads. use starting position
         of the read to calculate read counts per bin (no double counting).
         """
-        if self.is_empty():
-            return
-
         if os.path.exists(self.output):
             files = glob.glob('{}/*'.format(self.output))
             for f in files:
                 os.remove(f)
         else:
             os.makedirs(self.output)
+
+        if self.is_empty():
+            return
+
 
         add_track = True
         for chrom in self.chromosomes:
