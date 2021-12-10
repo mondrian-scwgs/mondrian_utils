@@ -1,4 +1,6 @@
+import json
 import os
+import pathlib
 import subprocess
 
 import argparse
@@ -213,6 +215,89 @@ def add_metadata(metrics, metadata_yaml, output):
     csverve.write_dataframe_to_csv_and_yaml(df, output, dtypes=dtypes()['metrics'])
 
 
+def generate_metadata(
+        bam, control, contaminated, metrics, gc_metrics,
+        fastqscreen, tarfile, metadata_input, metadata_output
+):
+    with open(metadata_input, 'rt') as reader:
+        data = yaml.safe_load(reader)
+
+    lane_data = data['meta']['lanes']
+
+    samples = set()
+    libraries = set()
+    cells = []
+    for cell in data['meta']['cells']:
+        cells.append(cell)
+        samples.add(data['meta']['cells'][cell]['sample_id'])
+        libraries.add(data['meta']['cells'][cell]['library_id'])
+
+    data = dict()
+    data['files'] = {
+        os.path.basename(metrics[0]): {'result_type': 'alignment_metrics'},
+        os.path.basename(metrics[1]): {'result_type': 'alignment_metrics'},
+        os.path.basename(gc_metrics[0]): {'result_type': 'alignment_gc_metrics'},
+        os.path.basename(gc_metrics[1]): {'result_type': 'alignment_gc_metrics'},
+        os.path.basename(bam[0]): {'result_type': 'merged_cells_bam', 'filtering': 'passed'},
+        os.path.basename(bam[1]): {'result_type': 'merged_cells_bam', 'filtering': 'passed'},
+        os.path.basename(control[0]): {'result_type': 'merged_cells_bam', 'filtering': 'control'},
+        os.path.basename(control[1]): {'result_type': 'merged_cells_bam', 'filtering': 'control'},
+        os.path.basename(contaminated[0]): {'result_type': 'merged_cells_bam', 'filtering': 'contaminated'},
+        os.path.basename(contaminated[1]): {'result_type': 'merged_cells_bam', 'filtering': 'contaminated'},
+        os.path.basename(fastqscreen[0]): {'result_type': 'detailed_fastqscreen_breakdown'},
+        os.path.basename(fastqscreen[1]): {'result_type': 'detailed_fastqscreen_breakdown'},
+        os.path.basename(tarfile): {'result_type': 'alignment_metrics_plots'}
+    }
+
+    data['meta'] = {
+        'name': 'alignment',
+        'version': 'v0.0.8',
+        'samples': sorted(samples),
+        'libraries': sorted(libraries),
+        'cells': sorted(cells),
+        'lanes': lane_data
+    }
+
+    with open(metadata_output, 'wt') as writer:
+        yaml.dump(data, writer, default_flow_style=False)
+
+
+def load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id):
+    with open(metadata_yaml, 'rt') as reader:
+        data = yaml.safe_load(reader)
+
+    lane_data = data['meta']['lanes'][flowcell_id][lane_id]
+
+    center = lane_data['sequencing_centre']
+
+    cell_data = data['meta']['cells']
+    library_id = cell_data[cell_id]['library_id']
+    sample_id = cell_data[cell_id]['sample_id']
+
+    return center, library_id, sample_id
+
+
+def bwa_align(
+        fastq1, fastq2, reference, metadata_yaml,
+        output, lane_id, flowcell_id, cell_id
+):
+    center, library_id, sample_id = load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id)
+
+    script_path = pathlib.Path(__file__).parent.resolve()
+    script_path = os.path.join(script_path, 'bwa_align.sh')
+
+    cmd = [
+        script_path, fastq1, fastq2, reference, output,
+        sample_id, library_id, cell_id, lane_id,
+        flowcell_id, center
+    ]
+    helpers.run_cmd(cmd)
+
+
+def _json_file_parser(filepath):
+    return json.load(open(filepath, 'rt'))
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -397,6 +482,54 @@ def parse_args():
         '--output',
     )
 
+    get_sample_id = subparsers.add_parser('get_sample_id')
+    get_sample_id.set_defaults(which='get_sample_id')
+    get_sample_id.add_argument(
+        '--metadata_yaml'
+    )
+    get_sample_id.add_argument(
+        '--cell_id'
+    )
+
+    get_library_id = subparsers.add_parser('get_library_id')
+    get_library_id.set_defaults(which='get_library_id')
+    get_library_id.add_argument(
+        '--metadata_yaml'
+    )
+    get_library_id.add_argument(
+        '--cell_id'
+    )
+
+    generate_metadata = subparsers.add_parser('generate_metadata')
+    generate_metadata.set_defaults(which='generate_metadata')
+    generate_metadata.add_argument(
+        '--metrics', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--gc_metrics', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--bam', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--control', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--contaminated', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--fastqscreen_detailed', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--tarfile'
+    )
+    generate_metadata.add_argument(
+        '--metadata_input'
+    )
+    generate_metadata.add_argument(
+        '--metadata_output'
+    )
+
     add_metadata = subparsers.add_parser('add_metadata')
     add_metadata.set_defaults(which='add_metadata')
     add_metadata.add_argument(
@@ -407,6 +540,33 @@ def parse_args():
     )
     add_metadata.add_argument(
         '--output',
+    )
+
+    bwa_align = subparsers.add_parser('bwa_align')
+    bwa_align.set_defaults(which='bwa_align')
+    bwa_align.add_argument(
+        '--metadata_yaml'
+    )
+    bwa_align.add_argument(
+        '--reference'
+    )
+    bwa_align.add_argument(
+        '--output',
+    )
+    bwa_align.add_argument(
+        '--fastq1',
+    )
+    bwa_align.add_argument(
+        '--fastq2',
+    )
+    bwa_align.add_argument(
+        '--lane_id',
+    )
+    bwa_align.add_argument(
+        '--flowcell_id',
+    )
+    bwa_align.add_argument(
+        '--cell_id',
     )
 
     args = vars(parser.parse_args())
@@ -465,6 +625,16 @@ def utils():
     elif args['which'] == 'add_metadata':
         add_metadata(
             args['metrics'], args['metadata_yaml'], args['output']
+        )
+    elif args['which'] == 'generate_metadata':
+        generate_metadata(
+            args['bam'], args['control'], args['contaminated'], args['metrics'], args['gc_metrics'],
+            args['fastqscreen_detailed'], args['tarfile'], args['metadata_input'], args['metadata_output']
+        )
+    elif args['which'] == 'bwa_align':
+        bwa_align(
+            args['fastq1'], args['fastq2'], args['reference'], args['metadata_yaml'], args['output'],
+            args['lane_id'], args['flowcell_id'], args['cell_id']
         )
     else:
         raise Exception()

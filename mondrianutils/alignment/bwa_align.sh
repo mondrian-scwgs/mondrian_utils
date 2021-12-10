@@ -1,0 +1,16 @@
+#!/bin/bash
+
+FASTQ1=$1
+FASTQ2=$2
+REFERENCE=$3
+OUTPUT=$4
+SAMPLE=$4
+LIBRARY=$5
+CELL=$6
+LANE=$7
+FLOWCELL=$8
+CENTRE=$9
+
+bwa mem -C -M \
+-R "@RG\tID:${SAMPLE}_${LIBRARY}_${LANE}\tSM:${SAMPLE}\tLB:${LIBRARY}\tPL:ILLUMINA\tCN:${CENTRE}" \
+${REFERENCE} ${FASTQ1} ${FASTQ2} | samtools sort -o ${OUTPUT} -

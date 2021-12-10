@@ -7,16 +7,17 @@ import mondrianutils.dtypes.hmmcopy_reads as reads_dtypes
 import mondrianutils.helpers as helpers
 import mondrianutils.hmmcopy.classify as classify
 import pandas as pd
+import yaml
 from mondrianutils.dtypes import hmmcopy_metrics
 from mondrianutils.dtypes import hmmcopy_params
 from mondrianutils.dtypes import hmmcopy_reads
 from mondrianutils.dtypes import hmmcopy_segs
+from mondrianutils.hmmcopy.clustering_order import add_clustering_order
 from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
 from mondrianutils.hmmcopy.generate_qc_html import generate_html_report
 from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
 from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 from mondrianutils.hmmcopy.readcounter import ReadCounter
-from mondrianutils.hmmcopy.clustering_order import add_clustering_order
 
 
 def plot_heatmap(reads, metrics, output):
@@ -170,6 +171,45 @@ def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
 
     helpers.make_tarfile(pass_tar, pass_dir)
     helpers.make_tarfile(fail_tar, fail_dir)
+
+
+def generate_metadata(
+        metrics, params, reads, segments, segments_tar_pass,
+        segments_tar_fail, heatmap, metadata_input, metadata_output
+):
+    with open(metadata_input, 'rt') as reader:
+        data = yaml.safe_load(reader)
+        del data['meta']['name']
+        del data['meta']['version']
+
+    out_data = dict()
+    out_data['meta'] = dict(
+        name='hmmcopy',
+        version='v0.0.8',
+        lanes=data['meta']['lanes'],
+        samples=data['meta']['samples'],
+        libraries=data['meta']['libraries'],
+        cells=data['meta']['cells'],
+    )
+
+    files = {
+        os.path.basename(metrics[0]): {'result_type': 'hmmcopy_metrics'},
+        os.path.basename(metrics[1]): {'result_type': 'hmmcopy_metrics'},
+        os.path.basename(reads[0]): {'result_type': 'hmmcopy_reads'},
+        os.path.basename(reads[1]): {'result_type': 'hmmcopy_reads'},
+        os.path.basename(params[0]): {'result_type': 'hmmcopy_params'},
+        os.path.basename(params[1]): {'result_type': 'hmmcopy_params'},
+        os.path.basename(segments[0]): {'result_type': 'hmmcopy_segments'},
+        os.path.basename(segments[1]): {'result_type': 'hmmcopy_segments'},
+        os.path.basename(segments_tar_pass): {'result_type': 'hmmcopy_segment_plots', 'filtering': 'quality_passed'},
+        os.path.basename(segments_tar_fail): {'result_type': 'hmmcopy_segment_plots', 'filtering': 'quality_failed'},
+        os.path.basename(heatmap): {'result_type': 'hmmcopy_heatmap_plots'}
+    }
+
+    out_data['files'] = files
+
+    with open(metadata_output, 'wt') as writer:
+        yaml.dump(out_data, writer, default_flow_style=False)
 
 
 def parse_args():
@@ -377,6 +417,36 @@ def parse_args():
         '--output'
     )
 
+    generate_metadata = subparsers.add_parser('generate_metadata')
+    generate_metadata.set_defaults(which='generate_metadata')
+    generate_metadata.add_argument(
+        '--metrics', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--params', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--reads', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--segments', nargs=2
+    )
+    generate_metadata.add_argument(
+        '--segments_tar_pass'
+    )
+    generate_metadata.add_argument(
+        '--segments_tar_fail'
+    )
+    generate_metadata.add_argument(
+        '--heatmap'
+    )
+    generate_metadata.add_argument(
+        '--metadata_input'
+    )
+    generate_metadata.add_argument(
+        '--metadata_output'
+    )
+
     args = vars(parser.parse_args())
 
     return args
@@ -427,7 +497,12 @@ def utils():
     elif args['which'] == 'add_clustering_order':
         add_clustering_order(args['reads'], args['metrics'], args['output'])
 
-
+    elif args['which'] == 'generate_metadata':
+        generate_metadata(
+            args['metrics'], args['params'], args['reads'], args['segments'],
+            args['segments_tar_pass'], args['segments_tar_fail'],
+            args['heatmap'], args['metadata_input'], args['metadata_output']
+        )
     else:
         raise Exception()
 

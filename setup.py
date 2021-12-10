@@ -18,7 +18,8 @@ setup(
             'hmmcopy_utils = mondrianutils.hmmcopy.utils:utils',
             'csverve_utils = mondrianutils.io.csverve:utils',
             'pdf_utils = mondrianutils.io.pdf:utils',
+            'snv_genotyping_utils = mondrianutils.snv_genotyping.utils:utils'
         ]
     },
-    package_data={'': ['*.py', '*.R', '*.npz', "*.yaml", "data/*"]}
+    package_data={'': ['*.py', '*.R', '*.npz', "*.yaml", "data/*", "*.sh"]}
 )

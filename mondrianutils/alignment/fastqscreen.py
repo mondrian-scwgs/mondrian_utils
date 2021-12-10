@@ -2,7 +2,6 @@ import csverve.api as csverve
 import os
 import pandas as pd
 import shutil
-from collections import defaultdict
 from mondrianutils import helpers
 from mondrianutils.alignment import fastq_utils
 from mondrianutils.alignment.dtypes import dtypes

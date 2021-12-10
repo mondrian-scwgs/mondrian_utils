@@ -1,10 +1,11 @@
 import gzip
+import os
 
 import argparse
 import numpy as np
 import pandas as pd
 import pysam
-from mondrianutils.variant_calling.snv_genotyper import SnvGenotyper
+import yaml
 
 from . import consensus
 
@@ -197,6 +198,64 @@ def fix_museq_vcf(infile, output):
             writer.write(line)
 
 
+def generate_metadata(
+        maf_file, vcf_files, sample_vcf_files,
+        sample_maf_files, museq_vcf_files, strelka_snv_files,
+        strelka_indel_files, mutect_vcf_files, metadata_yaml_files,
+        samples, metadata_output
+):
+    assert len(samples) == len(metadata_yaml_files)
+
+    data = dict()
+    data['files'] = {
+        os.path.basename(maf_file): {'result_type': 'consensus_maf'},
+    }
+
+    for vcf_file in vcf_files:
+        vcf_file = os.path.basename(vcf_file)
+        data['files'][vcf_file] = {'result_type': 'consensus_vcf'}
+
+    for vcf_file in sample_vcf_files:
+        vcf_file = os.path.basename(vcf_file)
+        data['files'][vcf_file] = {'result_type': 'sample_consensus_vcf'}
+
+    for maf_file in sample_maf_files:
+        maf_file = os.path.basename(maf_file)
+        data['files'][maf_file] = {'result_type': 'sample_consensus_maf'}
+
+    for vcf_file in museq_vcf_files:
+        vcf_file = os.path.basename(vcf_file)
+        data['files'][vcf_file] = {'result_type': 'museq_vcf'}
+
+    for vcf_file in strelka_snv_files:
+        vcf_file = os.path.basename(vcf_file)
+        data['files'][vcf_file] = {'result_type': 'strelka_snv'}
+
+    for vcf_file in strelka_indel_files:
+        vcf_file = os.path.basename(vcf_file)
+        data['files'][vcf_file] = {'result_type': 'strelka_indel'}
+
+    for vcf_file in mutect_vcf_files:
+        vcf_file = os.path.basename(vcf_file)
+        data['files'][vcf_file] = {'result_type': 'mutect_vcf'}
+
+    data['meta'] = {
+        'name': 'variant_calling',
+        'version': 'v0.0.8',
+    }
+
+    for sample, metadata_yaml in zip(samples, metadata_yaml_files):
+        with open(metadata_yaml, 'rt') as reader:
+            meta = yaml.safe_load(reader)
+            del meta['meta']['name']
+            del meta['meta']['version']
+
+        data['meta'][sample] = meta['meta']
+
+    with open(metadata_output, 'wt') as writer:
+        yaml.dump(data, writer, default_flow_style=False)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -296,15 +355,41 @@ def parse_args():
     fix_museq_vcf.add_argument('--input', required=True)
     fix_museq_vcf.add_argument('--output', required=True)
 
-    snv_genotyper = subparsers.add_parser('snv_genotyper')
-    snv_genotyper.set_defaults(which='snv_genotyper')
-    snv_genotyper.add_argument('--bam', required=True)
-    snv_genotyper.add_argument('--output', required=True)
-    snv_genotyper.add_argument('--targets_vcf', required=True)
-    snv_genotyper.add_argument('--interval')
-    snv_genotyper.add_argument('--count_duplicates', default=False)
-    snv_genotyper.add_argument('--sparse', default=False)
-    snv_genotyper.add_argument('--min_mqual', default=20)
+    generate_metadata = subparsers.add_parser('generate_metadata')
+    generate_metadata.set_defaults(which='generate_metadata')
+    generate_metadata.add_argument(
+        '--maf_file'
+    )
+    generate_metadata.add_argument(
+        '--vcf_files', nargs=3
+    )
+    generate_metadata.add_argument(
+        '--sample_vcf_files', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--sample_maf_files', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--museq_vcf_files', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--strelka_snv_files', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--strelka_indel_files', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--mutect_vcf_files', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--metadata_yaml_files', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--samples', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--metadata_output'
+    )
 
     args = vars(parser.parse_args())
 
@@ -339,10 +424,12 @@ def utils():
             args['consensus_output'], args['counts_output'],
             args['chromosomes']
         )
-    elif args['which'] == 'snv_genotyper':
-        with SnvGenotyper(
-            args['bam'], args['targets_vcf'], args['output'],
-            interval=args['interval'], count_duplicates=args['count_duplicates'],
-            sparse=args['sparse'], min_mqual=args['min_mqual']
-        ) as genotyper:
-            genotyper.genotyping()
+    elif args['which'] == 'generate_metadata':
+        generate_metadata(
+            args['maf_file'], args['vcf_files'], args['sample_vcf_files'],
+            args['sample_maf_files'], args['museq_vcf_files'], args['strelka_snv_files'],
+            args['strelka_indel_files'], args['mutect_vcf_files'],
+            args['metadata_yaml_files'], args['samples'], args['metadata_output']
+        )
+    else:
+        raise Exception()
