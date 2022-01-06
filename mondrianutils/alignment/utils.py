@@ -251,7 +251,7 @@ def generate_metadata(
 
     data['meta'] = {
         'name': 'alignment',
-        'version': 'v0.0.8',
+        'version': 'v0.0.9',
         'samples': sorted(samples),
         'libraries': sorted(libraries),
         'cells': sorted(cells),

@@ -21,7 +21,7 @@ def generate_metadata(
 
     meta_dict = {
         'name': 'snv_genotyping',
-        'version': 'v0.0.8'
+        'version': 'v0.0.9'
     }
 
     data['meta'] = {**meta_dict, **meta['meta']}

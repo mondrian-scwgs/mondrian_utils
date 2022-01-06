@@ -241,7 +241,7 @@ def generate_metadata(
 
     data['meta'] = {
         'name': 'variant_calling',
-        'version': 'v0.0.8',
+        'version': 'v0.0.9',
     }
 
     for sample, metadata_yaml in zip(samples, metadata_yaml_files):

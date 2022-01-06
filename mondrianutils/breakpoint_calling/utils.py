@@ -44,7 +44,7 @@ def generate_metadata(
 
     data['meta'] = {
         'name': 'breakpoint_calling',
-        'version': 'v0.0.8',
+        'version': 'v0.0.9',
     }
     for sample, metadata_yaml in zip(samples, metadata_yaml_files):
         with open(metadata_yaml, 'rt') as reader:

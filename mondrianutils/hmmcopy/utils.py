@@ -185,7 +185,7 @@ def generate_metadata(
     out_data = dict()
     out_data['meta'] = dict(
         name='hmmcopy',
-        version='v0.0.8',
+        version='v0.0.9',
         lanes=data['meta']['lanes'],
         samples=data['meta']['samples'],
         libraries=data['meta']['libraries'],
