@@ -1,8 +1,9 @@
 import os
-
+import pysam
 import argparse
 import yaml
 from mondrianutils.snv_genotyping.snv_genotyper import SnvGenotyper
+from mondrianutils.snv_genotyping.parse_vartrix import parse_vartrix
 
 
 def generate_metadata(
@@ -30,6 +31,24 @@ def generate_metadata(
         yaml.dump(data, writer, default_flow_style=False)
 
 
+def generate_cell_barcodes_file(bamfile, output):
+    bamfile = pysam.AlignmentFile(bamfile, 'rb')
+    header = bamfile.header
+
+
+    cells = []
+    for line in str(header).split('\n'):
+        if not line.startswith("@CO"):
+            continue
+        line = line.strip().split()
+        cb = line[1]
+        cell = cb.split(':')[1]
+        cells.append(cell)
+
+    with open(output, 'wt') as writer:
+        for cell in cells:
+            writer.write(cell + '\n')
+
 def parse_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -47,6 +66,32 @@ def parse_args():
     snv_genotyper.add_argument('--sparse', default=False)
     snv_genotyper.add_argument('--min_mqual', default=20)
 
+    parse_vartrix = subparsers.add_parser('parse_vartrix')
+    parse_vartrix.set_defaults(which='parse_vartrix')
+    parse_vartrix.add_argument(
+        '--barcodes'
+    )
+    parse_vartrix.add_argument(
+        '--variants'
+    )
+    parse_vartrix.add_argument(
+        '--ref_counts'
+    )
+    parse_vartrix.add_argument(
+        '--alt_counts'
+    )
+    parse_vartrix.add_argument(
+        '--outfile'
+    )
+
+    generate_cell_barcodes = subparsers.add_parser('generate_cell_barcodes')
+    generate_cell_barcodes.set_defaults(which='generate_cell_barcodes')
+    generate_cell_barcodes.add_argument(
+        '--bamfile'
+    )
+    generate_cell_barcodes.add_argument(
+        '--output'
+    )
 
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
@@ -79,5 +124,12 @@ def utils():
         generate_metadata(
             args['outputs'], args['metadata_input'], args['metadata_output']
         )
+    elif args['which'] == "parse_vartrix":
+        parse_vartrix(
+            args['barcodes'], args['variants'], args['ref_counts'],
+            args['alt_counts'], args['outfile']
+        )
+    elif args['which'] == "generate_cell_barcodes":
+        generate_cell_barcodes_file(args['bamfile'], args['output'])
     else:
         raise Exception()

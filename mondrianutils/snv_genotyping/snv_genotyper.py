@@ -161,7 +161,10 @@ class SnvGenotyper(object):
         ref_count = defaultdict(int)
         alt_count = defaultdict(int)
 
-        for pileupcol in self.bam.pileup(str(chrom), int(pos) - 200, int(pos) + 200):
+        for pileupcol in self.bam.pileup(
+                str(chrom), int(pos) - 200, int(pos) + 200,
+                ignore_overlaps=False, max_depth=1e6
+        ):
             for pileupread in pileupcol.pileups:
 
                 if not self._check_read(pileupread):
@@ -169,7 +172,7 @@ class SnvGenotyper(object):
 
                 if pileupcol.pos == pos - 1 and pileupread.query_position is not None:
                     base = pileupread.alignment.query_sequence[pileupread.query_position]
-                    cell_id = pileupread.get_tag('CB')
+                    cell_id = pileupread.alignment.get_tag('CB')
 
                     if base == ref:
                         ref_count[cell_id] += 1
@@ -207,7 +210,3 @@ class SnvGenotyper(object):
         csverve.write_dataframe_to_csv_and_yaml(
             df, self.output, self.dtypes
         )
-
-
-# with SnvGenotyper('merged.bam', 'museq.vcf.gz', 'out.csv.gz') as genotyper:
-#     genotyper.genotyping()
