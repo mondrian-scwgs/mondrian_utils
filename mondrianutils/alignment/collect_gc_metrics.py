@@ -77,7 +77,7 @@ class GenerateGcMatrix(object):
         # If the file is empty (only header no data) then return 0s (dummy data)
         try:
             data = pd.read_csv(self.input, sep='\t', skiprows=skiprows)
-        except pd.io.common.EmptyDataError:
+        except pd.errors.EmptyDataError:
             logging.getLogger("single_cell.align.gcbias").warn(
                 'No data in the GCBias output')
             # If the file is empty (only header no data) then return 0s (dummy data)
