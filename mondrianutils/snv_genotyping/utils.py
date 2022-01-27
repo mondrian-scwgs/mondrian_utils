@@ -1,9 +1,11 @@
 import os
-import pysam
+
 import argparse
+import pysam
 import yaml
-from mondrianutils.snv_genotyping.snv_genotyper import SnvGenotyper
+from mondrianutils import __version__
 from mondrianutils.snv_genotyping.parse_vartrix import parse_vartrix
+from mondrianutils.snv_genotyping.snv_genotyper import SnvGenotyper
 
 
 def generate_metadata(
@@ -22,7 +24,7 @@ def generate_metadata(
 
     meta_dict = {
         'name': 'snv_genotyping',
-        'version': 'v0.0.9'
+        'version': __version__
     }
 
     data['meta'] = {**meta_dict, **meta['meta']}
@@ -34,7 +36,6 @@ def generate_metadata(
 def generate_cell_barcodes_file(bamfile, output):
     bamfile = pysam.AlignmentFile(bamfile, 'rb')
     header = bamfile.header
-
 
     cells = []
     for line in str(header).split('\n'):
@@ -48,6 +49,7 @@ def generate_cell_barcodes_file(bamfile, output):
     with open(output, 'wt') as writer:
         for cell in cells:
             writer.write(cell + '\n')
+
 
 def parse_args():
     parser = argparse.ArgumentParser(

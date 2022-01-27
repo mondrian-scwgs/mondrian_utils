@@ -2,6 +2,7 @@ import os
 
 import argparse
 import yaml
+from mondrianutils import __version__
 
 from . import consensus
 
@@ -44,7 +45,7 @@ def generate_metadata(
 
     data['meta'] = {
         'name': 'breakpoint_calling',
-        'version': 'v0.0.9',
+        'version': __version__,
     }
     for sample, metadata_yaml in zip(samples, metadata_yaml_files):
         with open(metadata_yaml, 'rt') as reader:

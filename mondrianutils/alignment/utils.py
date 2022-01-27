@@ -8,6 +8,7 @@ import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pysam
 import yaml
+from mondrianutils import __version__
 from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
 from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
 from mondrianutils.alignment.collect_metrics import collect_metrics
@@ -251,7 +252,7 @@ def generate_metadata(
 
     data['meta'] = {
         'name': 'alignment',
-        'version': 'v0.0.9',
+        'version': __version__,
         'samples': sorted(samples),
         'libraries': sorted(libraries),
         'cells': sorted(cells),

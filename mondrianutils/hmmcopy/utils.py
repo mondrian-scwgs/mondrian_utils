@@ -8,6 +8,7 @@ import mondrianutils.helpers as helpers
 import mondrianutils.hmmcopy.classify as classify
 import pandas as pd
 import yaml
+from mondrianutils import __version__
 from mondrianutils.dtypes import hmmcopy_metrics
 from mondrianutils.dtypes import hmmcopy_params
 from mondrianutils.dtypes import hmmcopy_reads
@@ -185,7 +186,7 @@ def generate_metadata(
     out_data = dict()
     out_data['meta'] = dict(
         name='hmmcopy',
-        version='v0.0.9',
+        version=__version__,
         lanes=data['meta']['lanes'],
         samples=data['meta']['samples'],
         libraries=data['meta']['libraries'],
