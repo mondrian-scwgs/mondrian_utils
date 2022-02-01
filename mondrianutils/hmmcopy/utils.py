@@ -21,14 +21,15 @@ from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 from mondrianutils.hmmcopy.readcounter import ReadCounter
 
 
-def plot_heatmap(reads, metrics, output):
+def plot_heatmap(reads, metrics, chromosomes, output):
     plot = PlotPcolor(
         reads, metrics, output,
         plot_title='heatmap',
         column_name='state',
         max_cn=12,
         scale_by_cells=False,
-        mappability_threshold=0.9
+        mappability_threshold=0.9,
+        chromosomes=chromosomes
     )
     plot.main()
 
@@ -346,7 +347,10 @@ def parse_args():
     heatmap.add_argument(
         '--metrics'
     )
-
+    heatmap.add_argument(
+        '--chromosomes',
+        default=[str(v) for v in range(1, 23)] + ['X', 'Y']
+    )
     heatmap.add_argument(
         '--output'
     )
@@ -490,7 +494,7 @@ def utils():
             args['tempdir']
         )
     elif args['which'] == 'heatmap':
-        plot_heatmap(args['reads'], args['metrics'], args['output'])
+        plot_heatmap(args['reads'], args['metrics'], args['chromosomes'], args['output'])
     elif args['which'] == 'generate_html_report':
         generate_html_report(
             args['tempdir'], args['html'], args['reference_gc'], args['metrics'], args['gc_metrics']
