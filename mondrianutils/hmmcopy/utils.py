@@ -349,7 +349,8 @@ def parse_args():
     )
     heatmap.add_argument(
         '--chromosomes',
-        default=[str(v) for v in range(1, 23)] + ['X', 'Y']
+        default=[str(v) for v in range(1, 23)] + ['X', 'Y'],
+        nargs='*'
     )
     heatmap.add_argument(
         '--output'
