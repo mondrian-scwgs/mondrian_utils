@@ -9,12 +9,14 @@ from mondrianutils.snv_genotyping.snv_genotyper import SnvGenotyper
 
 
 def generate_metadata(
-        outputs, metadata_input, metadata_output
+        outputs, vartrix_outputs, metadata_input, metadata_output
 ):
     data = dict()
     data['files'] = {
-        os.path.basename(outputs[0]): {'result_type': 'snv_genotyping_counts', 'auxiliary': False},
-        os.path.basename(outputs[1]): {'result_type': 'snv_genotyping_counts', 'auxiliary': True},
+        os.path.basename(outputs[0]): {'result_type': 'pysam_genotyping_counts', 'auxiliary': False},
+        os.path.basename(outputs[1]): {'result_type': 'pysam_genotyping_counts', 'auxiliary': True},
+        os.path.basename(vartrix_outputs[0]): {'result_type': 'vartrix_genotyping_counts', 'auxiliary': False},
+        os.path.basename(vartrix_outputs[1]): {'result_type': 'vartrix_genotyping_counts', 'auxiliary': True},
     }
 
     with open(metadata_input, 'rt') as reader:
@@ -101,6 +103,9 @@ def parse_args():
         '--outputs', nargs=2
     )
     generate_metadata.add_argument(
+        '--vartrix_outputs', nargs=2
+    )
+    generate_metadata.add_argument(
         '--metadata_input'
     )
     generate_metadata.add_argument(
@@ -124,7 +129,7 @@ def utils():
             genotyper.genotyping()
     elif args['which'] == 'generate_metadata':
         generate_metadata(
-            args['outputs'], args['metadata_input'], args['metadata_output']
+            args['outputs'], args['vartrix_outputs'], args['metadata_input'], args['metadata_output']
         )
     elif args['which'] == "parse_vartrix":
         parse_vartrix(
