@@ -186,10 +186,10 @@ def generate_metadata(
     out_data['meta'] = dict(
         type='hmmcopy',
         version=__version__,
-        lane_ids=data['meta']['lanes'],
-        sample_ids=data['meta']['samples'],
-        library_ids=data['meta']['libraries'],
-        cell_ids=data['meta']['cells'],
+        lane_ids=data['meta']['lane_ids'],
+        sample_ids=data['meta']['sample_ids'],
+        library_ids=data['meta']['library_ids'],
+        cell_ids=data['meta']['cell_ids'],
     )
 
     files = {
