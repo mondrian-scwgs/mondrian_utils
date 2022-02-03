@@ -181,17 +181,15 @@ def generate_metadata(
 ):
     with open(metadata_input, 'rt') as reader:
         data = yaml.safe_load(reader)
-        del data['meta']['name']
-        del data['meta']['version']
 
     out_data = dict()
     out_data['meta'] = dict(
-        name='hmmcopy',
+        type='hmmcopy',
         version=__version__,
-        lanes=data['meta']['lanes'],
-        samples=data['meta']['samples'],
-        libraries=data['meta']['libraries'],
-        cells=data['meta']['cells'],
+        lane_ids=data['meta']['lanes'],
+        sample_ids=data['meta']['samples'],
+        library_ids=data['meta']['libraries'],
+        cell_ids=data['meta']['cells'],
     )
 
     files = {
@@ -208,7 +206,7 @@ def generate_metadata(
         os.path.basename(heatmap): {'result_type': 'hmmcopy_heatmap_plots'}
     }
 
-    out_data['files'] = files
+    out_data['filenames'] = files
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(out_data, writer, default_flow_style=False)

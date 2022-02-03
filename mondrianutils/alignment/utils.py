@@ -234,7 +234,7 @@ def generate_metadata(
         libraries.add(data['meta']['cells'][cell]['library_id'])
 
     data = dict()
-    data['files'] = {
+    data['filenames'] = {
         os.path.basename(metrics[0]): {'result_type': 'alignment_metrics'},
         os.path.basename(metrics[1]): {'result_type': 'alignment_metrics'},
         os.path.basename(gc_metrics[0]): {'result_type': 'alignment_gc_metrics'},
@@ -251,12 +251,12 @@ def generate_metadata(
     }
 
     data['meta'] = {
-        'name': 'alignment',
+        'type': 'alignment',
         'version': __version__,
-        'samples': sorted(samples),
-        'libraries': sorted(libraries),
-        'cells': sorted(cells),
-        'lanes': lane_data
+        'sample_ids': sorted(samples),
+        'library_ids': sorted(libraries),
+        'cell_ids': sorted(cells),
+        'lane_ids': lane_data
     }
 
     with open(metadata_output, 'wt') as writer:

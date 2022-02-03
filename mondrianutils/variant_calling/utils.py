@@ -208,47 +208,47 @@ def generate_metadata(
     assert len(samples) == len(metadata_yaml_files)
 
     data = dict()
-    data['files'] = {
+    data['filenames'] = {
         os.path.basename(maf_file): {'result_type': 'consensus_maf'},
     }
 
     for vcf_file in vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'consensus_vcf'}
+        data['filenames'][vcf_file] = {'result_type': 'consensus_vcf'}
 
     for vcf_file in sample_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'sample_consensus_vcf'}
+        data['filenames'][vcf_file] = {'result_type': 'sample_consensus_vcf'}
 
     for maf_file in sample_maf_files:
         maf_file = os.path.basename(maf_file)
-        data['files'][maf_file] = {'result_type': 'sample_consensus_maf'}
+        data['filenames'][maf_file] = {'result_type': 'sample_consensus_maf'}
 
     for vcf_file in museq_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'museq_vcf'}
+        data['filenames'][vcf_file] = {'result_type': 'museq_vcf'}
 
     for vcf_file in strelka_snv_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'strelka_snv'}
+        data['filenames'][vcf_file] = {'result_type': 'strelka_snv'}
 
     for vcf_file in strelka_indel_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'strelka_indel'}
+        data['filenames'][vcf_file] = {'result_type': 'strelka_indel'}
 
     for vcf_file in mutect_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'mutect_vcf'}
+        data['filenames'][vcf_file] = {'result_type': 'mutect_vcf'}
 
     data['meta'] = {
-        'name': 'variant_calling',
+        'type': 'variant_calling',
         'version': __version__,
     }
 
     for sample, metadata_yaml in zip(samples, metadata_yaml_files):
         with open(metadata_yaml, 'rt') as reader:
             meta = yaml.safe_load(reader)
-            del meta['meta']['name']
+            del meta['meta']['type']
             del meta['meta']['version']
 
         data['meta'][sample] = meta['meta']

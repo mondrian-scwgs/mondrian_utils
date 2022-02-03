@@ -14,43 +14,43 @@ def generate_metadata(
 ):
     assert len(samples) == len(metadata_yaml_files)
     data = dict()
-    data['files'] = {
+    data['filenames'] = {
         os.path.basename(consensus_files[0]): {'result_type': 'breakpoint_consensus'},
         os.path.basename(consensus_files[1]): {'result_type': 'breakpoint_consensus'},
     }
 
     for destruct_file in destruct_files:
         destruct_file = os.path.basename(destruct_file)
-        data['files'][destruct_file] = {'result_type': 'destruct_calls'}
+        data['filenames'][destruct_file] = {'result_type': 'destruct_calls'}
 
     for destruct_reads_file in destruct_reads_files:
         destruct_reads_file = os.path.basename(destruct_reads_file)
-        data['files'][destruct_reads_file] = {'result_type': 'destruct_reads'}
+        data['filenames'][destruct_reads_file] = {'result_type': 'destruct_reads'}
 
     for destruct_library_file in destruct_library_files:
         destruct_library_file = os.path.basename(destruct_library_file)
-        data['files'][destruct_library_file] = {'result_type': 'destruct_library'}
+        data['filenames'][destruct_library_file] = {'result_type': 'destruct_library'}
 
     for lumpy_vcf in lumpy_vcf_files:
         lumpy_vcf = os.path.basename(lumpy_vcf)
-        data['files'][lumpy_vcf] = {'result_type': 'lumpy_vcf'}
+        data['filenames'][lumpy_vcf] = {'result_type': 'lumpy_vcf'}
 
     for gridss_vcf in gridss_vcf_files:
         gridss_vcf = os.path.basename(gridss_vcf)
-        data['files'][gridss_vcf] = {'result_type': 'gridss_vcf'}
+        data['filenames'][gridss_vcf] = {'result_type': 'gridss_vcf'}
 
     for svaba_vcf in svaba_vcf_files:
         svaba_vcf = os.path.basename(svaba_vcf)
-        data['files'][svaba_vcf] = {'result_type': 'svaba_vcf'}
+        data['filenames'][svaba_vcf] = {'result_type': 'svaba_vcf'}
 
     data['meta'] = {
-        'name': 'breakpoint_calling',
+        'type': 'breakpoint_calling',
         'version': __version__,
     }
     for sample, metadata_yaml in zip(samples, metadata_yaml_files):
         with open(metadata_yaml, 'rt') as reader:
             meta = yaml.safe_load(reader)
-            del meta['meta']['name']
+            del meta['meta']['type']
             del meta['meta']['version']
 
         data['meta'][sample] = meta['meta']

@@ -12,14 +12,14 @@ def generate_metadata(
         outputs, metadata_input, metadata_output
 ):
     data = dict()
-    data['files'] = {
+    data['filenames'] = {
         os.path.basename(outputs[0]): {'result_type': 'snv_genotyping_counts'},
         os.path.basename(outputs[1]): {'result_type': 'snv_genotyping_counts'},
     }
 
     with open(metadata_input, 'rt') as reader:
         meta = yaml.safe_load(reader)
-        del meta['meta']['name']
+        del meta['meta']['type']
         del meta['meta']['version']
 
     meta_dict = {
