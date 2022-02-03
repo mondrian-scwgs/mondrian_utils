@@ -193,17 +193,50 @@ def generate_metadata(
     )
 
     files = {
-        os.path.basename(metrics[0]): {'result_type': 'hmmcopy_metrics'},
-        os.path.basename(metrics[1]): {'result_type': 'hmmcopy_metrics'},
-        os.path.basename(reads[0]): {'result_type': 'hmmcopy_reads'},
-        os.path.basename(reads[1]): {'result_type': 'hmmcopy_reads'},
-        os.path.basename(params[0]): {'result_type': 'hmmcopy_params'},
-        os.path.basename(params[1]): {'result_type': 'hmmcopy_params'},
-        os.path.basename(segments[0]): {'result_type': 'hmmcopy_segments'},
-        os.path.basename(segments[1]): {'result_type': 'hmmcopy_segments'},
-        os.path.basename(segments_tar_pass): {'result_type': 'hmmcopy_segment_plots', 'filtering': 'quality_passed'},
-        os.path.basename(segments_tar_fail): {'result_type': 'hmmcopy_segment_plots', 'filtering': 'quality_failed'},
-        os.path.basename(heatmap): {'result_type': 'hmmcopy_heatmap_plots'}
+        os.path.basename(metrics[0]): {
+            'result_type': 'hmmcopy_metrics',
+            'auxiliary': helpers.get_auxiliary_files(metrics[0])
+        },
+        os.path.basename(metrics[1]): {
+            'result_type': 'hmmcopy_metrics',
+            'auxiliary': helpers.get_auxiliary_files(metrics[1])
+        },
+        os.path.basename(reads[0]): {
+            'result_type': 'hmmcopy_reads',
+            'auxiliary': helpers.get_auxiliary_files(reads[0])
+        },
+        os.path.basename(reads[1]): {
+            'result_type': 'hmmcopy_reads',
+            'auxiliary': helpers.get_auxiliary_files(reads[1])
+        },
+        os.path.basename(params[0]): {
+            'result_type': 'hmmcopy_params',
+            'auxiliary': helpers.get_auxiliary_files(params[0])
+        },
+        os.path.basename(params[1]): {
+            'result_type': 'hmmcopy_params',
+            'auxiliary': helpers.get_auxiliary_files(params[1])
+        },
+        os.path.basename(segments[0]): {
+            'result_type': 'hmmcopy_segments',
+            'auxiliary': helpers.get_auxiliary_files(segments[0])
+        },
+        os.path.basename(segments[1]): {
+            'result_type': 'hmmcopy_segments',
+            'auxiliary': helpers.get_auxiliary_files(segments[1])
+        },
+        os.path.basename(segments_tar_pass): {
+            'result_type': 'hmmcopy_segment_plots', 'filtering': 'quality_passed',
+            'auxiliary': helpers.get_auxiliary_files(segments_tar_pass)
+        },
+        os.path.basename(segments_tar_fail): {
+            'result_type': 'hmmcopy_segment_plots', 'filtering': 'quality_failed',
+            'auxiliary': helpers.get_auxiliary_files(segments_tar_fail)
+        },
+        os.path.basename(heatmap): {
+            'result_type': 'hmmcopy_heatmap_plots',
+            'auxiliary': helpers.get_auxiliary_files(heatmap)
+        }
     }
 
     out_data['files'] = files

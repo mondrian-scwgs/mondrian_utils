@@ -14,6 +14,20 @@ from subprocess import Popen, PIPE
 import pandas as pd
 
 
+def get_auxiliary_files(filepath):
+
+    if filepath.endswith('.yaml'):
+        return True
+    elif filepath.endswith('.csi'):
+        return True
+    elif filepath.endswith('.tbi'):
+        return True
+    elif filepath.endswith('.bai'):
+        return True
+    else:
+        return False
+
+
 def run_cmd(cmd, output=None):
     stdout = PIPE
     if output:

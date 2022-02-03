@@ -235,19 +235,58 @@ def generate_metadata(
 
     data = dict()
     data['files'] = {
-        os.path.basename(metrics[0]): {'result_type': 'alignment_metrics'},
-        os.path.basename(metrics[1]): {'result_type': 'alignment_metrics'},
-        os.path.basename(gc_metrics[0]): {'result_type': 'alignment_gc_metrics'},
-        os.path.basename(gc_metrics[1]): {'result_type': 'alignment_gc_metrics'},
-        os.path.basename(bam[0]): {'result_type': 'merged_cells_bam', 'filtering': 'passed'},
-        os.path.basename(bam[1]): {'result_type': 'merged_cells_bam', 'filtering': 'passed'},
-        os.path.basename(control[0]): {'result_type': 'merged_cells_bam', 'filtering': 'control'},
-        os.path.basename(control[1]): {'result_type': 'merged_cells_bam', 'filtering': 'control'},
-        os.path.basename(contaminated[0]): {'result_type': 'merged_cells_bam', 'filtering': 'contaminated'},
-        os.path.basename(contaminated[1]): {'result_type': 'merged_cells_bam', 'filtering': 'contaminated'},
-        os.path.basename(fastqscreen[0]): {'result_type': 'detailed_fastqscreen_breakdown'},
-        os.path.basename(fastqscreen[1]): {'result_type': 'detailed_fastqscreen_breakdown'},
-        os.path.basename(tarfile): {'result_type': 'alignment_metrics_plots'}
+        os.path.basename(metrics[0]): {
+            'result_type': 'alignment_metrics',
+            'auxiliary': helpers.get_auxiliary_files(metrics[0])
+        },
+        os.path.basename(metrics[1]): {
+            'result_type': 'alignment_metrics',
+            'auxiliary': helpers.get_auxiliary_files(metrics[1])
+        },
+        os.path.basename(gc_metrics[0]): {
+            'result_type': 'alignment_gc_metrics',
+            'auxiliary': helpers.get_auxiliary_files(gc_metrics[0])
+        },
+        os.path.basename(gc_metrics[1]): {
+            'result_type': 'alignment_gc_metrics',
+            'auxiliary': helpers.get_auxiliary_files(gc_metrics[1])
+        },
+        os.path.basename(bam[0]): {
+            'result_type': 'merged_cells_bam', 'filtering': 'passed',
+            'auxiliary': helpers.get_auxiliary_files(bam[0])
+        },
+        os.path.basename(bam[1]): {
+            'result_type': 'merged_cells_bam', 'filtering': 'passed',
+            'auxiliary': helpers.get_auxiliary_files(bam[1])
+        },
+        os.path.basename(control[0]): {
+            'result_type': 'merged_cells_bam', 'filtering': 'control',
+            'auxiliary': helpers.get_auxiliary_files(control[0])
+        },
+        os.path.basename(control[1]): {
+            'result_type': 'merged_cells_bam', 'filtering': 'control',
+            'auxiliary': helpers.get_auxiliary_files(control[1])
+        },
+        os.path.basename(contaminated[0]): {
+            'result_type': 'merged_cells_bam', 'filtering': 'contaminated',
+            'auxiliary': helpers.get_auxiliary_files(contaminated[0])
+        },
+        os.path.basename(contaminated[1]): {
+            'result_type': 'merged_cells_bam', 'filtering': 'contaminated',
+            'auxiliary': helpers.get_auxiliary_files(contaminated[1])
+        },
+        os.path.basename(fastqscreen[0]): {
+            'result_type': 'detailed_fastqscreen_breakdown',
+            'auxiliary': helpers.get_auxiliary_files(fastqscreen[0])
+        },
+        os.path.basename(fastqscreen[1]): {
+            'result_type': 'detailed_fastqscreen_breakdown',
+            'auxiliary': helpers.get_auxiliary_files(fastqscreen[1])
+        },
+        os.path.basename(tarfile): {
+            'result_type': 'alignment_metrics_plots',
+            'auxiliary': helpers.get_auxiliary_files(tarfile)
+        }
     }
 
     data['meta'] = {

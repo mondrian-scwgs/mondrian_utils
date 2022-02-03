@@ -7,6 +7,7 @@ import pandas as pd
 import pysam
 import yaml
 from mondrianutils import __version__
+from mondrianutils import helpers
 
 from . import consensus
 
@@ -209,36 +210,60 @@ def generate_metadata(
 
     data = dict()
     data['files'] = {
-        os.path.basename(maf_file): {'result_type': 'consensus_maf'},
+        os.path.basename(maf_file): {
+            'result_type': 'consensus_maf',
+            'auxiliary': helpers.get_auxiliary_files(maf_file)
+        },
     }
 
     for vcf_file in vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'consensus_vcf'}
+        data['files'][vcf_file] = {
+            'result_type': 'consensus_vcf',
+            'auxiliary': helpers.get_auxiliary_files(vcf_file)
+        }
 
     for vcf_file in sample_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'sample_consensus_vcf'}
+        data['files'][vcf_file] = {
+            'result_type': 'sample_consensus_vcf',
+            'auxiliary': helpers.get_auxiliary_files(vcf_file)
+        }
 
     for maf_file in sample_maf_files:
         maf_file = os.path.basename(maf_file)
-        data['files'][maf_file] = {'result_type': 'sample_consensus_maf'}
+        data['files'][maf_file] = {
+            'result_type': 'sample_consensus_maf',
+            'auxiliary': helpers.get_auxiliary_files(maf_file)
+        }
 
     for vcf_file in museq_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'museq_vcf'}
+        data['files'][vcf_file] = {
+            'result_type': 'museq_vcf',
+            'auxiliary': helpers.get_auxiliary_files(vcf_file)
+        }
 
     for vcf_file in strelka_snv_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'strelka_snv'}
+        data['files'][vcf_file] = {
+            'result_type': 'strelka_snv',
+            'auxiliary': helpers.get_auxiliary_files(vcf_file)
+        }
 
     for vcf_file in strelka_indel_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'strelka_indel'}
+        data['files'][vcf_file] = {
+            'result_type': 'strelka_indel',
+            'auxiliary': helpers.get_auxiliary_files(vcf_file)
+        }
 
     for vcf_file in mutect_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {'result_type': 'mutect_vcf'}
+        data['files'][vcf_file] = {
+            'result_type': 'mutect_vcf',
+            'auxiliary': helpers.get_auxiliary_files(vcf_file)
+        }
 
     data['meta'] = {
         'type': 'variant_calling',
