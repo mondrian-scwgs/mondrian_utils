@@ -234,7 +234,7 @@ def generate_metadata(
         libraries.add(data['meta']['cells'][cell]['library_id'])
 
     data = dict()
-    data['filenames'] = {
+    data['files'] = {
         os.path.basename(metrics[0]): {'result_type': 'alignment_metrics'},
         os.path.basename(metrics[1]): {'result_type': 'alignment_metrics'},
         os.path.basename(gc_metrics[0]): {'result_type': 'alignment_gc_metrics'},

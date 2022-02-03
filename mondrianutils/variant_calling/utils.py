@@ -208,37 +208,37 @@ def generate_metadata(
     assert len(samples) == len(metadata_yaml_files)
 
     data = dict()
-    data['filenames'] = {
+    data['files'] = {
         os.path.basename(maf_file): {'result_type': 'consensus_maf'},
     }
 
     for vcf_file in vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['filenames'][vcf_file] = {'result_type': 'consensus_vcf'}
+        data['files'][vcf_file] = {'result_type': 'consensus_vcf'}
 
     for vcf_file in sample_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['filenames'][vcf_file] = {'result_type': 'sample_consensus_vcf'}
+        data['files'][vcf_file] = {'result_type': 'sample_consensus_vcf'}
 
     for maf_file in sample_maf_files:
         maf_file = os.path.basename(maf_file)
-        data['filenames'][maf_file] = {'result_type': 'sample_consensus_maf'}
+        data['files'][maf_file] = {'result_type': 'sample_consensus_maf'}
 
     for vcf_file in museq_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['filenames'][vcf_file] = {'result_type': 'museq_vcf'}
+        data['files'][vcf_file] = {'result_type': 'museq_vcf'}
 
     for vcf_file in strelka_snv_files:
         vcf_file = os.path.basename(vcf_file)
-        data['filenames'][vcf_file] = {'result_type': 'strelka_snv'}
+        data['files'][vcf_file] = {'result_type': 'strelka_snv'}
 
     for vcf_file in strelka_indel_files:
         vcf_file = os.path.basename(vcf_file)
-        data['filenames'][vcf_file] = {'result_type': 'strelka_indel'}
+        data['files'][vcf_file] = {'result_type': 'strelka_indel'}
 
     for vcf_file in mutect_vcf_files:
         vcf_file = os.path.basename(vcf_file)
-        data['filenames'][vcf_file] = {'result_type': 'mutect_vcf'}
+        data['files'][vcf_file] = {'result_type': 'mutect_vcf'}
 
     data['meta'] = {
         'type': 'variant_calling',

@@ -12,7 +12,7 @@ def generate_metadata(
         outputs, metadata_input, metadata_output
 ):
     data = dict()
-    data['filenames'] = {
+    data['files'] = {
         os.path.basename(outputs[0]): {'result_type': 'snv_genotyping_counts'},
         os.path.basename(outputs[1]): {'result_type': 'snv_genotyping_counts'},
     }

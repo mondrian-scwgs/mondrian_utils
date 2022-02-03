@@ -206,7 +206,7 @@ def generate_metadata(
         os.path.basename(heatmap): {'result_type': 'hmmcopy_heatmap_plots'}
     }
 
-    out_data['filenames'] = files
+    out_data['files'] = files
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(out_data, writer, default_flow_style=False)
