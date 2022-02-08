@@ -16,6 +16,7 @@ from mondrianutils.alignment.coverage_metrics import get_coverage_metrics
 from mondrianutils.alignment.dtypes import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
+from mondrianutils.alignment.trim_galore import trim_galore
 
 
 def get_cell_id_from_bam(infile):
@@ -582,6 +583,31 @@ def parse_args():
         '--output',
     )
 
+    trim_galore = subparsers.add_parser('trim_galore')
+    trim_galore.set_defaults(which='trim_galore')
+    trim_galore.add_argument(
+        '--r1'
+    )
+    trim_galore.add_argument(
+        '--r2'
+    )
+    trim_galore.add_argument(
+        '--output_r1',
+    )
+    trim_galore.add_argument(
+        '--output_r2',
+    )
+    trim_galore.add_argument(
+        '--adapter1',
+    )
+    trim_galore.add_argument(
+        '--adapter2',
+    )
+    trim_galore.add_argument(
+        '--tempdir',
+    )
+
+
     bwa_align = subparsers.add_parser('bwa_align')
     bwa_align.set_defaults(which='bwa_align')
     bwa_align.add_argument(
@@ -675,6 +701,11 @@ def utils():
         bwa_align(
             args['fastq1'], args['fastq2'], args['reference'], args['metadata_yaml'], args['output'],
             args['lane_id'], args['flowcell_id'], args['cell_id']
+        )
+    elif args['which'] == 'trim_galore':
+        trim_galore(
+            args['r1'], args['r2'], args['output_r1'], args['output_r2'],
+            args['adapter1'], args['adapter2'], args['tempdir']
         )
     else:
         raise Exception()
