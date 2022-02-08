@@ -1,78 +1,40 @@
-import os
+import json
 
 import argparse
 import yaml
-from mondrianutils import __version__
 from mondrianutils import helpers
 
 from . import consensus
 
 
+def infer_type(files):
+    with open(files, 'rt') as reader:
+        files = json.load(reader)
+
+    filetypes = sorted(set([v['left'] for v in files]))
+
+    # more than one wf
+    if 'svaba_vcf' in filetypes and 'breakpoint_consensus' in filetypes:
+        return 'breakpoint_calling'
+    elif 'breakpoint_consensus' in filetypes:
+        return 'breakpoint_consensus'
+    elif 'lumpy_vcf' in filetypes:
+        return 'breakpoint_lumpy'
+    elif 'svaba_vcf' in filetypes:
+        return 'breakpoint_svaba'
+    elif 'gridss_vcf' in filetypes:
+        return 'breakpoint_gridss'
+    elif 'destruct_calls' in filetypes:
+        return 'breakpoint_destruct'
+    else:
+        raise Exception()
+
+
 def generate_metadata(
-        consensus_files, destruct_files, destruct_reads_files,
-        destruct_library_files, lumpy_vcf_files, svaba_vcf_files,
-        gridss_vcf_files, metadata_yaml_files, samples, metadata_output
+        files, metadata_yaml_files, samples, metadata_output
 ):
-    assert len(samples) == len(metadata_yaml_files)
-    data = dict()
-    data['files'] = {
-        os.path.basename(consensus_files[0]): {'result_type': 'breakpoint_consensus', 'auxiliary': False},
-        os.path.basename(consensus_files[1]): {'result_type': 'breakpoint_consensus', 'auxiliary': True},
-    }
-
-    for destruct_file in destruct_files:
-        destruct_file = os.path.basename(destruct_file)
-        data['files'][destruct_file] = {
-            'result_type': 'destruct_calls',
-            'auxiliary': helpers.get_auxiliary_files(destruct_file)
-        }
-
-    for destruct_reads_file in destruct_reads_files:
-        destruct_reads_file = os.path.basename(destruct_reads_file)
-        data['files'][destruct_reads_file] = {
-            'result_type': 'destruct_reads',
-            'auxiliary': helpers.get_auxiliary_files(destruct_reads_file)
-        }
-
-    for destruct_library_file in destruct_library_files:
-        destruct_library_file = os.path.basename(destruct_library_file)
-        data['files'][destruct_library_file] = {
-            'result_type': 'destruct_library',
-            'auxiliary': helpers.get_auxiliary_files(destruct_library_file)
-        }
-
-    for lumpy_vcf in lumpy_vcf_files:
-        lumpy_vcf = os.path.basename(lumpy_vcf)
-        data['files'][lumpy_vcf] = {
-            'result_type': 'lumpy_vcf',
-            'auxiliary': helpers.get_auxiliary_files(lumpy_vcf)
-        }
-
-    for gridss_vcf in gridss_vcf_files:
-        gridss_vcf = os.path.basename(gridss_vcf)
-        data['files'][gridss_vcf] = {
-            'result_type': 'gridss_vcf',
-            'auxiliary': helpers.get_auxiliary_files(gridss_vcf)
-        }
-
-    for svaba_vcf in svaba_vcf_files:
-        svaba_vcf = os.path.basename(svaba_vcf)
-        data['files'][svaba_vcf] = {
-            'result_type': 'svaba_vcf',
-            'auxiliary': helpers.get_auxiliary_files(svaba_vcf)
-        }
-
-    data['meta'] = {
-        'type': 'breakpoint_calling',
-        'version': __version__,
-    }
-    for sample, metadata_yaml in zip(samples, metadata_yaml_files):
-        with open(metadata_yaml, 'rt') as reader:
-            meta = yaml.safe_load(reader)
-            del meta['meta']['type']
-            del meta['meta']['version']
-
-        data['meta'][sample] = meta['meta']
+    wf_type = infer_type(files)
+    data = helpers.metadata_helper(files, metadata_yaml_files, samples, wf_type)
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(data, writer, default_flow_style=False)
@@ -98,25 +60,7 @@ def parse_args():
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
     generate_metadata.add_argument(
-        '--consensus_files', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--destruct_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--destruct_reads_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--destruct_library_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--lumpy_vcf_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--svaba_vcf_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--gridss_vcf_files', nargs='*'
+        '--files'
     )
     generate_metadata.add_argument(
         '--metadata_yaml_files', nargs='*'
@@ -143,9 +87,7 @@ def utils():
         )
     elif args['which'] == 'generate_metadata':
         generate_metadata(
-            args['consensus_files'], args['destruct_files'], args['destruct_reads_files'],
-            args['destruct_library_files'], args['lumpy_vcf_files'], args['svaba_vcf_files'],
-            args['gridss_vcf_files'], args['metadata_yaml_files'], args['samples'],
+            args['files'], args['metadata_yaml_files'], args['samples'],
             args['metadata_output']
         )
     else:

@@ -5,6 +5,7 @@ Created on Feb 19, 2018
 '''
 import errno
 import gzip
+import json
 import logging
 import os
 import subprocess
@@ -12,10 +13,40 @@ import tarfile
 from subprocess import Popen, PIPE
 
 import pandas as pd
+import yaml
+from mondrianutils import __version__
+
+
+def metadata_helper(files_json, metadata_yamls, samples, wf_type):
+    with open(files_json, 'rt') as files_json:
+        jsondata = json.load(files_json)
+
+    files_dict = {}
+
+    for item in jsondata:
+        filetype = str(item['left'])
+        filepaths = item['right']
+        for filepath in filepaths:
+            filepath = os.path.basename(str(filepath))
+            files_dict[filepath] = {
+                'result_type': filetype, 'auxiliary': get_auxiliary_files(filepath)
+            }
+
+    metadata = {'type': wf_type, 'version': __version__}
+
+    assert len(samples) == len(metadata_yamls)
+    for sample, metadata_yaml in zip(samples, metadata_yamls):
+        with open(metadata_yaml, 'rt') as reader:
+            meta = yaml.safe_load(reader)
+            del meta['meta']['type']
+            del meta['meta']['version']
+
+        metadata[sample] = meta['meta']
+
+    return {'files': files_dict, 'meta': metadata}
 
 
 def get_auxiliary_files(filepath):
-
     if filepath.endswith('.yaml'):
         return True
     elif filepath.endswith('.csi'):
@@ -133,5 +164,3 @@ def make_tarfile(output_filename, source_dir):
 
     with tarfile.open(output_filename, "w:gz") as tar:
         tar.add(source_dir, arcname=os.path.basename(source_dir))
-
-

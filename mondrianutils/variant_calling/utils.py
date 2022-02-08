@@ -1,12 +1,11 @@
 import gzip
-import os
+import json
 
 import argparse
 import numpy as np
 import pandas as pd
 import pysam
 import yaml
-from mondrianutils import __version__
 from mondrianutils import helpers
 
 from . import consensus
@@ -200,83 +199,33 @@ def fix_museq_vcf(infile, output):
             writer.write(line)
 
 
+def infer_type(files):
+    with open(files, 'rt') as reader:
+        files = json.load(reader)
+
+    filetypes = sorted(set([v['left'] for v in files]))
+
+    # more than one wf
+    if 'consensus_maf' in filetypes:
+        return 'variant_calling'
+    elif 'sample_consensus_vcf' in filetypes:
+        return 'variant_consensus'
+    elif 'mutect_vcf' in filetypes:
+        return 'variant_mutect'
+    elif 'museq_vcf' in filetypes:
+        return 'variant_museq'
+    elif 'strelka_indel' in filetypes:
+        return 'variant_strelka'
+    else:
+        raise Exception()
+
+
 def generate_metadata(
-        maf_file, vcf_files, sample_vcf_files,
-        sample_maf_files, museq_vcf_files, strelka_snv_files,
-        strelka_indel_files, mutect_vcf_files, metadata_yaml_files,
+        files, metadata_yaml_files,
         samples, metadata_output
 ):
-    assert len(samples) == len(metadata_yaml_files)
-
-    data = dict()
-    data['files'] = {
-        os.path.basename(maf_file): {
-            'result_type': 'consensus_maf',
-            'auxiliary': helpers.get_auxiliary_files(maf_file)
-        },
-    }
-
-    for vcf_file in vcf_files:
-        vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {
-            'result_type': 'consensus_vcf',
-            'auxiliary': helpers.get_auxiliary_files(vcf_file)
-        }
-
-    for vcf_file in sample_vcf_files:
-        vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {
-            'result_type': 'sample_consensus_vcf',
-            'auxiliary': helpers.get_auxiliary_files(vcf_file)
-        }
-
-    for maf_file in sample_maf_files:
-        maf_file = os.path.basename(maf_file)
-        data['files'][maf_file] = {
-            'result_type': 'sample_consensus_maf',
-            'auxiliary': helpers.get_auxiliary_files(maf_file)
-        }
-
-    for vcf_file in museq_vcf_files:
-        vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {
-            'result_type': 'museq_vcf',
-            'auxiliary': helpers.get_auxiliary_files(vcf_file)
-        }
-
-    for vcf_file in strelka_snv_files:
-        vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {
-            'result_type': 'strelka_snv',
-            'auxiliary': helpers.get_auxiliary_files(vcf_file)
-        }
-
-    for vcf_file in strelka_indel_files:
-        vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {
-            'result_type': 'strelka_indel',
-            'auxiliary': helpers.get_auxiliary_files(vcf_file)
-        }
-
-    for vcf_file in mutect_vcf_files:
-        vcf_file = os.path.basename(vcf_file)
-        data['files'][vcf_file] = {
-            'result_type': 'mutect_vcf',
-            'auxiliary': helpers.get_auxiliary_files(vcf_file)
-        }
-
-    data['meta'] = {
-        'type': 'variant_calling',
-        'version': __version__,
-    }
-
-    for sample, metadata_yaml in zip(samples, metadata_yaml_files):
-        with open(metadata_yaml, 'rt') as reader:
-            meta = yaml.safe_load(reader)
-            del meta['meta']['type']
-            del meta['meta']['version']
-
-        data['meta'][sample] = meta['meta']
+    wf_type = infer_type(files)
+    data = helpers.metadata_helper(files, metadata_yaml_files, samples, wf_type)
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(data, writer, default_flow_style=False)
@@ -384,28 +333,7 @@ def parse_args():
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
     generate_metadata.add_argument(
-        '--maf_file'
-    )
-    generate_metadata.add_argument(
-        '--vcf_files', nargs=3
-    )
-    generate_metadata.add_argument(
-        '--sample_vcf_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--sample_maf_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--museq_vcf_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--strelka_snv_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--strelka_indel_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--mutect_vcf_files', nargs='*'
+        '--files'
     )
     generate_metadata.add_argument(
         '--metadata_yaml_files', nargs='*'
@@ -452,10 +380,8 @@ def utils():
         )
     elif args['which'] == 'generate_metadata':
         generate_metadata(
-            args['maf_file'], args['vcf_files'], args['sample_vcf_files'],
-            args['sample_maf_files'], args['museq_vcf_files'], args['strelka_snv_files'],
-            args['strelka_indel_files'], args['mutect_vcf_files'],
-            args['metadata_yaml_files'], args['samples'], args['metadata_output']
+            args['files'], args['metadata_yaml_files'],
+            args['samples'], args['metadata_output']
         )
     else:
         raise Exception()
