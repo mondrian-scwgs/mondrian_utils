@@ -17,6 +17,7 @@ from mondrianutils.alignment.dtypes import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
 from mondrianutils.alignment.trim_galore import trim_galore
+from mondrianutils.alignment.complete_alignment import alignment
 
 
 def get_cell_id_from_bam(infile):
@@ -303,40 +304,15 @@ def generate_metadata(
         yaml.dump(data, writer, default_flow_style=False)
 
 
-def load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id):
-    with open(metadata_yaml, 'rt') as reader:
-        data = yaml.safe_load(reader)
 
-    lane_data = data['meta']['lanes'][flowcell_id][lane_id]
-
-    center = lane_data['sequencing_centre']
-
-    cell_data = data['meta']['cells']
-    library_id = cell_data[cell_id]['library_id']
-    sample_id = cell_data[cell_id]['sample_id']
-
-    return center, library_id, sample_id
-
-
-def bwa_align(
-        fastq1, fastq2, reference, metadata_yaml,
-        output, lane_id, flowcell_id, cell_id
-):
-    center, library_id, sample_id = load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id)
-
-    script_path = pathlib.Path(__file__).parent.resolve()
-    script_path = os.path.join(script_path, 'bwa_align.sh')
-
-    cmd = [
-        script_path, fastq1, fastq2, reference, output,
-        sample_id, library_id, cell_id, lane_id,
-        flowcell_id, center
-    ]
-    helpers.run_cmd(cmd)
 
 
 def _json_file_parser(filepath):
     return json.load(open(filepath, 'rt'))
+
+
+
+
 
 
 def parse_args():
@@ -635,6 +611,63 @@ def parse_args():
         '--cell_id',
     )
 
+    alignment = subparsers.add_parser('alignment')
+    alignment.set_defaults(which='alignment')
+    alignment.add_argument(
+        '--fastq_files'
+    )
+    alignment.add_argument(
+        '--metadata_yaml'
+    )
+    alignment.add_argument(
+        '--human_reference'
+    )
+    alignment.add_argument(
+        '--mouse_reference'
+    )
+    alignment.add_argument(
+        '--salmon_reference'
+    )
+    alignment.add_argument(
+        '--tempdir',
+    )
+    alignment.add_argument(
+        '--adapter1',
+    )
+    alignment.add_argument(
+        '--adapter2',
+    )
+    alignment.add_argument(
+        '--cell_id',
+    )
+    alignment.add_argument(
+        '--wgs_metrics_mqual',
+    )
+    alignment.add_argument(
+        '--wgs_metrics_bqual',
+    )
+    alignment.add_argument(
+        '--wgs_metrics_count_unpaired',
+    )
+    alignment.add_argument(
+        '--bam_output',
+    )
+    alignment.add_argument(
+        '--metrics_output',
+    )
+    alignment.add_argument(
+        '--metrics_gc_output',
+    )
+    alignment.add_argument(
+        '--fastqscreen_detailed_output',
+    )
+    alignment.add_argument(
+        '--fastqscreen_summary_output',
+    )
+    alignment.add_argument(
+        '--tar_output',
+    )
+
     args = vars(parser.parse_args())
 
     return args
@@ -697,15 +730,20 @@ def utils():
             args['bam'], args['control'], args['contaminated'], args['metrics'], args['gc_metrics'],
             args['fastqscreen_detailed'], args['tarfile'], args['metadata_input'], args['metadata_output']
         )
-    elif args['which'] == 'bwa_align':
-        bwa_align(
-            args['fastq1'], args['fastq2'], args['reference'], args['metadata_yaml'], args['output'],
-            args['lane_id'], args['flowcell_id'], args['cell_id']
-        )
     elif args['which'] == 'trim_galore':
         trim_galore(
             args['r1'], args['r2'], args['output_r1'], args['output_r2'],
             args['adapter1'], args['adapter2'], args['tempdir']
+        )
+    elif args['which'] == 'alignment':
+        alignment(
+            args['fastq_files'], args['metadata_yaml'], args['human_reference'],
+            args['mouse_reference'], args['salmon_reference'], args['tempdir'],
+            args['adapter1'], args['adapter2'], args['cell_id'], args['wgs_metrics_mqual'],
+            args['wgs_metrics_bqual'], args['wgs_metrics_count_unpaired'],
+            args['bam_output'], args['metrics_output'], args['metrics_gc_output'],
+            args['fastqscreen_detailed_output'], args['fastqscreen_summary_output'],
+            args['tar_output']
         )
     else:
         raise Exception()
