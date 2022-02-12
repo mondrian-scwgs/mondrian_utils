@@ -180,9 +180,14 @@ class ReadCounter(object):
         return bins
 
     def get_overlapping_bin(self, pos, chrom):
-
-        start = (pos // self.window_size) * self.window_size
-        end = start + self.window_size
+        ## TODO: refactor.
+        # if pos = 100 and binsize is 10. put it in 90,100. not 100,110
+        if pos % self.window_size == 0:
+            end = (pos // self.window_size) * self.window_size
+            start = end - self.window_size
+        else:
+            start = (pos // self.window_size) * self.window_size
+            end = start + self.window_size
 
         if end > self.chr_lengths[chrom]:
             end = self.chr_lengths[chrom]
