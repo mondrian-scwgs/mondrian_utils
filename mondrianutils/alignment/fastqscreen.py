@@ -1,11 +1,12 @@
-import csverve.api as csverve
 import os
-import pandas as pd
 import shutil
+from subprocess import Popen, PIPE
+
+import csverve.api as csverve
+import pandas as pd
 from mondrianutils import helpers
 from mondrianutils.alignment import fastq_utils
 from mondrianutils.alignment.dtypes import dtypes
-from subprocess import Popen, PIPE
 
 
 def merge_fastq_screen_counts(
@@ -28,8 +29,12 @@ def merge_fastq_screen_counts(
 
     df = df.drop_duplicates(subset=index_cols)
 
+    fastqscreen_genomes = [v for v in df.columns.values if v not in ['cell_id', 'readend', 'count']]
+
     csverve.write_dataframe_to_csv_and_yaml(
-        df, merged_detailed_counts, dtypes()['fastqscreen_detailed'], write_header=True
+        df, merged_detailed_counts,
+        dtypes(fastqscreen_genomes=fastqscreen_genomes)['fastqscreen_detailed'],
+        write_header=True
     )
 
     if isinstance(all_summary_counts, dict):
@@ -46,8 +51,13 @@ def merge_fastq_screen_counts(
 
     df = df.drop_duplicates(subset=['cell_id'])
 
+    fastqscreen_genomes = [v for v in df.columns.values if v.startswith('fastqscreen_')]
+    fastqscreen_genomes = sorted(set([v.split('_')[1] for v in fastqscreen_genomes]))
+    fastqscreen_genomes = [v for v in fastqscreen_genomes if v not in ['nohit', 'total']]
+
     csverve.write_dataframe_to_csv_and_yaml(
-        df, merged_summary_counts, dtypes()['metrics'], write_header=True
+        df, merged_summary_counts,
+        dtypes(fastqscreen_genomes=fastqscreen_genomes)['metrics'], write_header=True
     )
 
 
@@ -214,17 +224,20 @@ def re_tag_reads(infile, outfile):
 def organism_filter(
         fastq_r1, fastq_r2, filtered_fastq_r1, filtered_fastq_r2,
         detailed_metrics, summary_metrics, tempdir, cell_id,
-        human_reference, mouse_reference, salmon_reference
+        reference, reference_name, supplementary_references
 ):
+    genomes = [{'name': reference_name, 'path': reference}]
+
+    for supp_reference in supplementary_references:
+        genomes.append(
+            {'name': supp_reference['genome_name'], 'path': supp_reference['reference']}
+        )
+
     params = {
         'strict_validation': True,
         'filter_contaminated_reads': False,
         'aligner': 'bwa',
-        'genomes': [
-            {'name': 'grch37', 'path': human_reference},
-            {'name': 'mm10', 'path': mouse_reference},
-            {'name': 'salmon', 'path': salmon_reference}
-        ]
+        'genomes': genomes
     }
 
     # fastq screen tries to skip if files from old runs are available

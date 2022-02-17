@@ -1,4 +1,4 @@
-def dtypes():
+def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
     metrics = {
         'cell_id': 'str',
         'total_mapped_reads': 'int',
@@ -28,21 +28,9 @@ def dtypes():
         'primer_i7': 'str',
         'row': 'int',
         'sample_type': 'str',
-        'fastqscreen_grch37': 'int',
-        'fastqscreen_salmon': 'int',
-        'fastqscreen_grch37_multihit': 'int',
-        'fastqscreen_salmon_multihit': 'int',
-        'fastqscreen_mm10': 'int',
-        'fastqscreen_nohit': 'int',
-        'fastqscreen_mm10_multihit': 'int',
-        'fastqscreen_total_reads': 'int',
         'is_contaminated': 'bool',
         'trim': 'bool',
-        'sample_id':'str',
-        'fastqscreen_nohit_ratio': float,
-        'fastqscreen_grch37_ratio': float,
-        'fastqscreen_mm10_ratio': float,
-        'fastqscreen_salmon_ratio': float,
+        'sample_id': 'str',
         'species': 'str',
         'condition': 'str',
         'index_sequence': 'str',
@@ -54,19 +42,27 @@ def dtypes():
         'overlap_with_all_filters_and_qual': 'float',
         'overlap_with_dups': 'float',
         'overlap_without_dups': 'float',
+        'fastqscreen_nohit': 'int',
+        'fastqscreen_total_reads': 'int',
+        'fastqscreen_nohit_ratio': float,
     }
 
-    gc = {str(i): 'float' for i in range(0,101)}
+    for genome in fastqscreen_genomes:
+        metrics['fastqscreen_{}'.format(genome)] = 'int'
+        metrics['fastqscreen_{}_multihit'.format(genome)] = 'int'
+        metrics['fastqscreen_{}_ratio'.format(genome)] = 'int'
+
+    gc = {str(i): 'float' for i in range(0, 101)}
     gc['cell_id'] = 'str'
 
     fastqscreen_detailed = {
         'cell_id': 'str',
         'readend': 'str',
-        'grch37': 'int',
-        'mm10': 'int',
-        'salmon': 'int',
         'count': 'int'
     }
+    for genome in fastqscreen_genomes:
+        fastqscreen_detailed[genome] = 'int'
+
 
     dtypes = locals()
 

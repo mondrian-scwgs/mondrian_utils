@@ -228,11 +228,15 @@ def bam_index(infile):
 
 
 def alignment(
-        fastq_files, metadata_yaml, human_reference, mouse_reference, salmon_reference, tempdir,
+        fastq_files, metadata_yaml, reference, reference_name, supplementary_references, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output, fastqscreen_detailed_output, fastqscreen_summary_output,
         tar_output
 ):
+
+    with open(supplementary_references, 'rt') as reader:
+        supplementary_references = json.load(reader)
+
     with open(fastq_files, 'rt') as reader:
         fastqdata = json.load(reader)
 
@@ -255,8 +259,7 @@ def alignment(
         organism_filter(
             r1, r2, fastqscreen_r1, fastqscreen_r2,
             detailed_metrics, summary_metrics, fastqscreen_temp,
-            cell_id, human_reference,
-            mouse_reference, salmon_reference
+            cell_id, reference, reference_name, supplementary_references
         )
         all_detailed_counts.append(detailed_metrics)
         all_summary_counts.append(summary_metrics)
@@ -273,7 +276,7 @@ def alignment(
         helpers.makedirs(os.path.join(tempdir, lane_id, 'bwa_mem'))
         lane_aligned_bam = os.path.join(tempdir, lane_id, 'bwa_mem', 'aligned.bam')
         bwa_align(
-            trim_galore_r1, trim_galore_r2, human_reference, metadata_yaml, lane_aligned_bam,
+            trim_galore_r1, trim_galore_r2, reference, metadata_yaml, lane_aligned_bam,
             lane_id, flowcell_id, cell_id
         )
 
@@ -306,7 +309,7 @@ def alignment(
     chart_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'chart.pdf')
     tempdir_gc = os.path.join(tempdir, cell_id, 'gc_metrics')
     bam_collect_gc_metrics(
-        bam_output, human_reference, metrics_gc,
+        bam_output, reference, metrics_gc,
         summary_gc, chart_gc, tempdir_gc, mem="4G"
     )
 
@@ -326,7 +329,7 @@ def alignment(
     metrics_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics', 'metrics.txt')
     tempdir_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics')
     bam_collect_wgs_metrics(
-        bam_output, human_reference, metrics_wgs, wgs_metrics_mqual,
+        bam_output, reference, metrics_wgs, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired, tempdir_wgs, mem='4G'
     )
 

@@ -1,6 +1,5 @@
 import json
 import os
-import pathlib
 import subprocess
 
 import argparse
@@ -9,15 +8,15 @@ import mondrianutils.helpers as helpers
 import pysam
 import yaml
 from mondrianutils import __version__
-from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
+# from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
 from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
 from mondrianutils.alignment.collect_metrics import collect_metrics
+from mondrianutils.alignment.complete_alignment import alignment
 from mondrianutils.alignment.coverage_metrics import get_coverage_metrics
 from mondrianutils.alignment.dtypes import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
 from mondrianutils.alignment.trim_galore import trim_galore
-from mondrianutils.alignment.complete_alignment import alignment
 
 
 def get_cell_id_from_bam(infile):
@@ -175,13 +174,15 @@ def _get_col_data(df, organism):
 
 def add_contamination_status(
         infile, outfile,
-        reference='grch37', threshold=0.05
+        reference, threshold=0.05
 ):
     data = csverve.read_csv(infile)
 
     data = data.set_index('cell_id', drop=False)
 
-    organisms = ['grch37', 'mm10', 'salmon']
+    organisms = [v for v in data.columns.values if v.startswith('fastqscreen_')]
+    organisms = sorted(set([v.split('_')[1] for v in organisms]))
+    organisms = [v for v in organisms if v not in ['nohit', 'total']]
 
     if reference not in organisms:
         raise Exception("Could not find the fastq screen counts")
@@ -198,7 +199,7 @@ def add_contamination_status(
 
     data['is_contaminated'] = data['is_contaminated'].astype(col_type)
     csverve.write_dataframe_to_csv_and_yaml(
-        data, outfile, dtypes()['metrics']
+        data, outfile, dtypes(fastqscreen_genomes=organisms)['metrics']
     )
 
 
@@ -215,7 +216,14 @@ def add_metadata(metrics, metadata_yaml, output):
         for colname, val in cell_info.items():
             df.loc[df['cell_id'] == cellid, colname] = val
 
-    csverve.write_dataframe_to_csv_and_yaml(df, output, dtypes=dtypes()['metrics'])
+    organisms = [v for v in df.columns.values if v.startswith('fastqscreen_')]
+    organisms = sorted(set([v.split('_')[1] for v in organisms]))
+    organisms = [v for v in organisms if v not in ['nohit', 'total']]
+
+    csverve.write_dataframe_to_csv_and_yaml(
+        df, output,
+        dtypes=dtypes(fastqscreen_genomes=organisms)['metrics']
+    )
 
 
 def generate_metadata(
@@ -304,15 +312,8 @@ def generate_metadata(
         yaml.dump(data, writer, default_flow_style=False)
 
 
-
-
-
 def _json_file_parser(filepath):
     return json.load(open(filepath, 'rt'))
-
-
-
-
 
 
 def parse_args():
@@ -443,8 +444,7 @@ def parse_args():
         '--outfile',
     )
     contamination_status.add_argument(
-        '--reference',
-        default='grch37'
+        '--reference'
     )
 
     merge_cells = subparsers.add_parser('merge_cells')
@@ -583,7 +583,6 @@ def parse_args():
         '--tempdir',
     )
 
-
     bwa_align = subparsers.add_parser('bwa_align')
     bwa_align.set_defaults(which='bwa_align')
     bwa_align.add_argument(
@@ -620,13 +619,13 @@ def parse_args():
         '--metadata_yaml'
     )
     alignment.add_argument(
-        '--human_reference'
+        '--reference'
     )
     alignment.add_argument(
-        '--mouse_reference'
+        '--reference_name'
     )
     alignment.add_argument(
-        '--salmon_reference'
+        '--supplementary_references_json'
     )
     alignment.add_argument(
         '--tempdir',
@@ -715,10 +714,10 @@ def utils():
             args['control_outfile'], args['contaminated_outfile'],
             args['pass_outfile'], args['tempdir'], args['ncores']
         )
-    elif args['which'] == 'classify_fastqscreen':
-        classify_fastqscreen(
-            args['training_data'], args['metrics'], args['output']
-        )
+    # elif args['which'] == 'classify_fastqscreen':
+    #     classify_fastqscreen(
+    #         args['training_data'], args['metrics'], args['output']
+    #     )
     elif args['which'] == 'coverage_metrics':
         get_coverage_metrics(args['bamfile'], args['output'])
     elif args['which'] == 'add_metadata':
@@ -737,8 +736,8 @@ def utils():
         )
     elif args['which'] == 'alignment':
         alignment(
-            args['fastq_files'], args['metadata_yaml'], args['human_reference'],
-            args['mouse_reference'], args['salmon_reference'], args['tempdir'],
+            args['fastq_files'], args['metadata_yaml'], args['reference'],
+            args['reference_name'], args['supplementary_references_json'], args['tempdir'],
             args['adapter1'], args['adapter2'], args['cell_id'], args['wgs_metrics_mqual'],
             args['wgs_metrics_bqual'], args['wgs_metrics_count_unpaired'],
             args['bam_output'], args['metrics_output'], args['metrics_gc_output'],
