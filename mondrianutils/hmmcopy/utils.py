@@ -140,7 +140,12 @@ def add_quality(hmmcopy_metrics_csv, alignment_metrics, tempdir, output, trainin
         tempout,
         predictions)
 
-    csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_metrics.dtypes)
+    data = pd.read_csv(tempout)
+    organisms = [v for v in data.columns.values if v.startswith('fastqscreen_')]
+    organisms = sorted(set([v.split('_')[1] for v in organisms]))
+    organisms = [v for v in organisms if v not in ['nohit', 'total']]
+
+    csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_metrics.dtypes(fastqscreen_genomes=organisms))
 
 
 def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
