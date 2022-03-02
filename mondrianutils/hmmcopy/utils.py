@@ -99,10 +99,10 @@ def run_hmmcopy(
 
     helpers.run_cmd(cmd)
 
-    csverve.rewrite_csv_file('output/0/reads.csv', reads, dtypes=hmmcopy_reads.dtypes)
-    csverve.rewrite_csv_file('output/0/params.csv', params, dtypes=hmmcopy_params.dtypes)
-    csverve.rewrite_csv_file('output/0/segs.csv', segments, dtypes=hmmcopy_segs.dtypes)
-    csverve.rewrite_csv_file('output/0/metrics.csv', metrics, dtypes=hmmcopy_metrics.dtypes)
+    csverve.rewrite_csv_file('output/0/reads.csv', reads, dtypes=hmmcopy_reads.dtypes())
+    csverve.rewrite_csv_file('output/0/params.csv', params, dtypes=hmmcopy_params.dtypes())
+    csverve.rewrite_csv_file('output/0/segs.csv', segments, dtypes=hmmcopy_segs.dtypes())
+    csverve.rewrite_csv_file('output/0/metrics.csv', metrics, dtypes=hmmcopy_metrics.dtypes())
 
     helpers.make_tarfile(output_tarball, tempdir)
 
@@ -118,7 +118,7 @@ def add_mappability(reads, annotated_reads):
     alldata = pd.concat(alldata)
 
     csverve.write_dataframe_to_csv_and_yaml(
-        alldata, annotated_reads, reads_dtypes.dtypes, write_header=True
+        alldata, annotated_reads, reads_dtypes.dtypes(), write_header=True
     )
 
 

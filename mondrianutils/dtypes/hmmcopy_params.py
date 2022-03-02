@@ -1,7 +1,8 @@
-dtypes = {
+def dtypes():
+    return {
         'iteration': 'float',
-        'state':'float',
+        'state': 'float',
         'parameter': 'str',
-        'cell_id':'str',
-        'value':'float',
+        'cell_id': 'str',
+        'value': 'float',
     }
