@@ -249,6 +249,8 @@ def alignment(
         lane_id = lane['lane_id']
         flowcell_id = lane['flowcell_id']
 
+        print("Processing Lane {} Flowcell {}".format(lane_id, flowcell_id))
+
         helpers.makedirs(os.path.join(tempdir, lane_id, 'fastqscreen'))
         fastqscreen_r1 = os.path.join(tempdir, lane_id, 'fastqscreen', 'r1.fastq.gz')
         fastqscreen_r2 = os.path.join(tempdir, lane_id, 'fastqscreen', 'r2.fastq.gz')
@@ -256,6 +258,7 @@ def alignment(
         summary_metrics = os.path.join(tempdir, lane_id, 'fastqscreen', 'summary.csv.gz')
         fastqscreen_temp = os.path.join(tempdir, lane_id, 'fastqscreen')
 
+        print("Starting FastqScreen")
         organism_filter(
             r1, r2, fastqscreen_r1, fastqscreen_r2,
             detailed_metrics, summary_metrics, fastqscreen_temp,
@@ -264,6 +267,7 @@ def alignment(
         all_detailed_counts.append(detailed_metrics)
         all_summary_counts.append(summary_metrics)
 
+        print("Starting Trim Galore")
         helpers.makedirs(os.path.join(tempdir, lane_id, 'trim_galore'))
         trim_galore_r1 = os.path.join(tempdir, lane_id, 'trim_galore', 'r1.fastq.gz')
         trim_galore_r2 = os.path.join(tempdir, lane_id, 'trim_galore', 'r2.fastq.gz')
@@ -273,6 +277,7 @@ def alignment(
             adapter1, adapter2, trim_galore_temp
         )
 
+        print("Starting Alignment")
         helpers.makedirs(os.path.join(tempdir, lane_id, 'bwa_mem'))
         lane_aligned_bam = os.path.join(tempdir, lane_id, 'bwa_mem', 'aligned.bam')
         bwa_align(
@@ -280,12 +285,14 @@ def alignment(
             lane_id, flowcell_id, cell_id
         )
 
+        print("Tagging Bam with cell id")
         helpers.makedirs(os.path.join(tempdir, lane_id, 'tagging'))
         lane_tagged_bam = os.path.join(tempdir, lane_id, 'tagging', 'tagged.bam')
         tag_bam_with_cellid(
             lane_aligned_bam, lane_tagged_bam, cell_id
         )
 
+        print("Starting Bam Sort")
         helpers.makedirs(os.path.join(tempdir, lane_id, 'sorting'))
         lane_sorted_bam = os.path.join(tempdir, lane_id, 'sorting', 'sorted.bam')
         lane_sorted_temp = os.path.join(tempdir, lane_id, 'sorting')
@@ -293,16 +300,19 @@ def alignment(
 
         final_lane_bams.append(lane_sorted_bam)
 
+    print("Merging all Lanes")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'merge'))
     bam_merged = os.path.join(tempdir, cell_id, 'merge', 'merged.bam')
     merge_bams(final_lane_bams, bam_merged, mem='4G')
 
+    print("Marking Duplicates")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'markdups'))
     metrics_markdups = os.path.join(tempdir, cell_id, 'markdups', 'metrics.txt')
     tempdir_markdups = os.path.join(tempdir, cell_id, 'markdups')
     bam_markdups(bam_merged, bam_output, metrics_markdups, tempdir_markdups, mem='4G')
     bam_index(bam_output)
 
+    print("Collecting GC Metrics")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'gc_metrics'))
     metrics_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'metrics.txt')
     summary_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'summary.txt')
@@ -313,10 +323,12 @@ def alignment(
         summary_gc, chart_gc, tempdir_gc, mem="4G"
     )
 
+    print("Starting Flagstat")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'flagstat'))
     metrics_flagstat = os.path.join(tempdir, cell_id, 'flagstat', 'flagstat.txt')
     bam_flagstat(bam_output, metrics_flagstat)
 
+    print("Starting Insert Metrics")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'insert_metrics'))
     metrics_insert = os.path.join(tempdir, cell_id, 'insert_metrics', 'metrics.txt')
     histogram_insert = os.path.join(tempdir, cell_id, 'insert_metrics', 'histogram.pdf')
@@ -325,6 +337,7 @@ def alignment(
         bam_output, metrics_flagstat, metrics_insert, histogram_insert, tempdir_insert
     )
 
+    print("Starting Picard WGS metrics")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'wgs_metrics'))
     metrics_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics', 'metrics.txt')
     tempdir_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics')
@@ -333,22 +346,27 @@ def alignment(
         wgs_metrics_bqual, wgs_metrics_count_unpaired, tempdir_wgs, mem='4G'
     )
 
+    print("Collecting read attrition metrics")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'read_attrition'))
     read_attrition_metrics = os.path.join(tempdir, cell_id, 'read_attrition', 'metrics.csv.gz')
     get_coverage_metrics(bam_output, read_attrition_metrics)
 
+    print("parsing all bam metrics")
     collect_metrics(
         metrics_wgs, metrics_insert, metrics_flagstat, metrics_markdups,
         read_attrition_metrics, metrics_output, cell_id
     )
 
+    print("parsing GC metrics")
     collect_gc_metrics(metrics_gc, metrics_gc_output, cell_id)
 
+    print("merging fastqscreen counts")
     merge_fastq_screen_counts(
         all_detailed_counts, all_summary_counts, fastqscreen_detailed_output,
         fastqscreen_summary_output
     )
 
+    print("building tar file of supplementary metrics")
     tar_dir = os.path.join(tempdir, '{}_metrics'.format(cell_id))
     helpers.makedirs(tar_dir)
     shutil.copy(metrics_markdups, tar_dir)
