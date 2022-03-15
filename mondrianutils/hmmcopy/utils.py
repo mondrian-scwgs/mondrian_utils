@@ -438,9 +438,6 @@ def parse_args():
         '--html'
     )
     generate_html_report.add_argument(
-        '--reference_gc'
-    )
-    generate_html_report.add_argument(
         '--metrics'
     )
     generate_html_report.add_argument(
@@ -534,7 +531,7 @@ def utils():
         plot_heatmap(args['reads'], args['metrics'], args['chromosomes'], args['output'])
     elif args['which'] == 'generate_html_report':
         generate_html_report(
-            args['tempdir'], args['html'], args['reference_gc'], args['metrics'], args['gc_metrics']
+            args['tempdir'], args['html'], args['metrics'], args['gc_metrics']
         )
     elif args['which'] == 'add_clustering_order':
         add_clustering_order(args['reads'], args['metrics'], args['output'])

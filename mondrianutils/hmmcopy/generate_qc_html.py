@@ -35,15 +35,25 @@ def load_reference(infile):
     return df
 
 
-def load_data(infile, gc=False):
+def load_metrics(infile):
+    return csverve.read_csv(infile)
+
+
+def load_gc(infile):
     df = csverve.read_csv(infile)
 
-    if gc:
-        df.index = df.cell_id
-        del df['cell_id']
-        df.columns = map(int, df.columns.values)
+    df.index = df.cell_id
+    del df['cell_id']
 
-    return df
+    # based on https://github.com/broadinstitute/picard/blob/master/src/main/resources/picard/analysis/gcBias.R#L88
+    reference = df.loc['reference']
+    df = df.drop(['reference'])
+    window_ratio = 0.5 / max(reference)
+    reference_gc = reference * window_ratio
+
+    df.columns = map(int, df.columns.values)
+
+    return df, reference_gc
 
 
 def flag_outliers(df, upper_limit, lower_limit):
@@ -447,17 +457,14 @@ def generate_html(dataframes, pngs, html_file):
             html_out.write('\n')
 
 
-def generate_html_report(tempdir, html, reference_gc, metrics, gc_metrics):
+def generate_html_report(tempdir, html, metrics, gc_metrics):
     helpers.makedirs(tempdir)
 
     gc_plot = os.path.join(tempdir, "gc.png")
     heatmap = os.path.join(tempdir, 'heatmap.png')
 
-    if reference_gc:
-        reference_gc = load_reference(reference_gc)
-
-    data = load_data(metrics)
-    gc_data = load_data(gc_metrics, gc=True)
+    data = load_metrics(metrics)
+    gc_data, reference_gc = load_gc(gc_metrics)
 
     qc_df, fastqscreen_df = generate_qc_table(data)
     plot_gc_curve(gc_data, reference_gc, gc_plot)
