@@ -1,19 +1,84 @@
+import json
 import os
 
 import argparse
 import csverve.api as csverve
+import pandas as pd
 import remixt.analysis
+import remixt.analysis.haplotype
+import remixt.analysis.readcount
+import remixt.analysis.segment
+import remixt.seqdataio
 import remixt.workflow
+import yaml
 from mondrianutils import helpers
+from mondrianutils.dtypes.haplotypes import dtypes
 
 import remixt
 
 
-def annotate_haps(haps_csv, refdir, tempdir, output_csv):
+def add_cell_id_to_seqdata(seqdata, cellid):
+    with pd.HDFStore(seqdata) as store:
+        store.put('cell_id', pd.Series([cellid]))
+
+
+def get_cell_id_from_seqdata(seqdata):
+    with pd.HDFStore(seqdata) as store:
+        if 'cell_id' not in store.keys():
+            return
+        cellid = store.get('cell_id')
+        cellid = list(cellid)
+        assert len(cellid) == 1
+        return cellid[0]
+
+
+def infer_type(files):
+    with open(files, 'rt') as reader:
+        files = json.load(reader)
+
+    filetypes = sorted(set([v['left'] for v in files]))
+
+    # more than one wf
+    if 'haplotype_counts' in filetypes and 'infer_haplotype' in filetypes:
+        return 'haplotype_calling'
+    elif 'haplotype_counts' in filetypes:
+        return 'haplotype_counting'
+    elif 'infer_haplotype' in filetypes:
+        return 'infer_haplotype'
+    else:
+        raise Exception()
+
+
+def generate_metadata(
+        files, metadata_yaml_files, samples, metadata_output
+):
+    wf_type = infer_type(files)
+    data = helpers.metadata_helper(files, metadata_yaml_files, samples, wf_type)
+
+    with open(metadata_output, 'wt') as writer:
+        yaml.dump(data, writer, default_flow_style=False)
+
+
+def convert_csv_to_tsv(csv_infile, tsv_outfile):
+    df = csverve.read_csv(csv_infile)
+    df.to_csv(tsv_outfile, sep='\t', index=False)
+
+
+def finalize_tsv(infile, outfile, seqdata):
+    df = pd.read_csv(infile, sep='\t')
+
+    cellid = get_cell_id_from_seqdata(seqdata)
+    if cellid:
+        df['cell_id'] = cellid
+
+    csverve.write_dataframe_to_csv_and_yaml(
+        df, outfile, write_header=True, dtypes=dtypes()
+    )
+
+
+def annotate_haps(haps_csv, thousand_genomes, tempdir, output_csv):
     helpers.makedirs(tempdir)
     temp_output = os.path.join(tempdir, 'output.csv')
-
-    thousand_genomes = os.path.join(refdir, 'thousand_genomes_snps.tsv')
 
     annotation_data = {}
 
@@ -27,16 +92,16 @@ def annotate_haps(haps_csv, refdir, tempdir, output_csv):
 
     with helpers.getFileHandle(haps_csv, 'rt') as reader, helpers.getFileHandle(temp_output, 'wt') as writer:
 
-        header = reader.readline().strip()
-        header += '\tref\talt\n'
+        header = reader.readline().strip().split('\t')
+        header.extend(['ref', 'alt'])
+        header = ','.join(header) + '\n'
         writer.write(header)
 
         for line in reader:
-            line = line.strip()
-            l_split = line.split('\t')
+            line = line.strip().split('\t')
 
-            chrom = l_split[0]
-            pos = l_split[1]
+            chrom = line[0]
+            pos = line[1]
 
             if (chrom, pos) in annotation_data:
                 ref, alt = annotation_data[(chrom, pos)]
@@ -44,7 +109,8 @@ def annotate_haps(haps_csv, refdir, tempdir, output_csv):
                 ref = 'NA'
                 alt = 'NA'
 
-            line += '\t{}\t{}\n'.format(ref, alt)
+            line.extend([ref, alt])
+            line = ','.join(line) + '\n'
 
             writer.write(line)
 
@@ -55,33 +121,6 @@ def annotate_haps(haps_csv, refdir, tempdir, output_csv):
             'allele': 'str', 'hap_label': 'str', 'allele_id': 'str', }
     )
 
-def infer_snp_genotype(seqdata, output, chromosome, all_chromosomes, ref_data_dir, ref_genome, is_tumour=False):
-    config = {
-        'chromosomes': all_chromosomes,
-        'extract_seqdata': {
-            'genome_fasta_template': ref_genome,
-            'genome_fai_template': ref_genome + '.fai',
-        },
-        'ref_data_dir': ref_data_dir,
-    }
-
-    if is_tumour:
-        remixt.analysis.haplotype.infer_snp_genotype_from_tumour(output, seqdata, chromosome, config)
-    else:
-        remixt.analysis.haplotype.infer_snp_genotype_from_normal(output, seqdata, chromosome, config)
-
-def infer_haps(output, snp_genotype, chromosome, tempdir, ref_data_dir, ref_genome):
-    config = {
-        'genome_fasta_template': ref_genome,
-        'genome_fai_template': ref_genome + '.fai',
-    }
-
-    remixt.analysis.haplotype.infer_haps(
-        output, snp_genotype, chromosome, tempdir, config, ref_data_dir
-    )
-
-def merge_haps(inputs, output):
-    remixt.utils.merge_tables(inputs, output)
 
 def parse_args():
     default_chroms = [str(v) for v in range(1, 23)] + ['X', 'Y']
@@ -103,7 +142,11 @@ def parse_args():
         required=True
     )
     extract_seqdata.add_argument(
-        '--ref_data_dir',
+        '--snp_positions',
+        required=True
+    )
+    extract_seqdata.add_argument(
+        '--tempdir',
         required=True
     )
     extract_seqdata.add_argument(
@@ -111,9 +154,31 @@ def parse_args():
         nargs='*',
         default=default_chroms
     )
+    extract_seqdata.add_argument(
+        '--cell_id'
+    )
 
-    infer_snp_genotype = subparsers.add_parser('infer_snp_genotype')
-    infer_snp_genotype.set_defaults(which='infer_snp_genotype')
+    extract_chromosome_seqdata = subparsers.add_parser('extract_chromosome_seqdata')
+    extract_chromosome_seqdata.set_defaults(which='extract_chromosome_seqdata')
+    extract_chromosome_seqdata.add_argument(
+        '--bam',
+        required=True
+    )
+    extract_chromosome_seqdata.add_argument(
+        '--output',
+        required=True
+    )
+    extract_chromosome_seqdata.add_argument(
+        '--snp_positions',
+        required=True
+    )
+    extract_chromosome_seqdata.add_argument(
+        '--chromosome',
+        required=True
+    )
+
+    infer_snp_genotype = subparsers.add_parser('infer_snp_genotype_from_normal')
+    infer_snp_genotype.set_defaults(which='infer_snp_genotype_from_normal')
     infer_snp_genotype.add_argument(
         '--seqdata',
         required=True
@@ -126,29 +191,27 @@ def parse_args():
         '--chromosome',
         required=True
     )
-    infer_snp_genotype.add_argument(
-        '--chromosomes',
-        nargs='*',
-        default=default_chroms
-    )
-    infer_snp_genotype.add_argument(
-        '--ref_data_dir',
-        required=True
-    )
-    infer_snp_genotype.add_argument(
-        '--ref_genome',
-        required=True
-    )
-    infer_snp_genotype.add_argument(
-        '--is_tumour',
-        action='store_true',
-        default=False
-    )
 
     infer_haps = subparsers.add_parser('infer_haps')
     infer_haps.set_defaults(which='infer_haps')
     infer_haps.add_argument(
         '--snp_genotype',
+        required=True
+    )
+    infer_haps.add_argument(
+        '--genetic_map',
+        required=True
+    )
+    infer_haps.add_argument(
+        '--haplotypes_filename',
+        required=True
+    )
+    infer_haps.add_argument(
+        '--legend_filename',
+        required=True
+    )
+    infer_haps.add_argument(
+        '--sample_filename',
         required=True
     )
     infer_haps.add_argument(
@@ -160,11 +223,7 @@ def parse_args():
         required=True
     )
     infer_haps.add_argument(
-        '--ref_data_dir',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--ref_genome',
+        '--tempdir',
         required=True
     )
 
@@ -180,6 +239,18 @@ def parse_args():
         required=True
     )
 
+    merge_seqdata = subparsers.add_parser('merge_seqdata')
+    merge_seqdata.set_defaults(which='merge_seqdata')
+    merge_seqdata.add_argument(
+        '--inputs',
+        nargs='*',
+        required=True
+    )
+    merge_seqdata.add_argument(
+        '--output',
+        required=True
+    )
+
     annotate_haps = subparsers.add_parser('annotate_haps')
     annotate_haps.set_defaults(which='annotate_haps')
     annotate_haps.add_argument(
@@ -187,11 +258,11 @@ def parse_args():
         required=True
     )
     annotate_haps.add_argument(
-        '--output',
+        '--thousand_genomes',
         required=True
     )
     annotate_haps.add_argument(
-        '--ref_data_dir',
+        '--output',
         required=True
     )
     annotate_haps.add_argument(
@@ -199,34 +270,150 @@ def parse_args():
         required=True
     )
 
+    create_segments = subparsers.add_parser('create_segments')
+    create_segments.set_defaults(which='create_segments')
+    create_segments.add_argument(
+        '--reference_fai',
+        required=True
+    )
+    create_segments.add_argument(
+        '--gap_table',
+        required=True
+    )
+    create_segments.add_argument(
+        '--output',
+        required=True
+    )
+
+    convert_haplotypes_csv_to_tsv = subparsers.add_parser('convert_haplotypes_csv_to_tsv')
+    convert_haplotypes_csv_to_tsv.set_defaults(which='convert_haplotypes_csv_to_tsv')
+    convert_haplotypes_csv_to_tsv.add_argument(
+        '--input',
+        required=True
+    )
+    convert_haplotypes_csv_to_tsv.add_argument(
+        '--output',
+        required=True
+    )
+
+    haplotype_allele_readcount = subparsers.add_parser('haplotype_allele_readcount')
+    haplotype_allele_readcount.set_defaults(which='haplotype_allele_readcount')
+    haplotype_allele_readcount.add_argument(
+        '--segments',
+        required=True
+    )
+    haplotype_allele_readcount.add_argument(
+        '--seqdata',
+        required=True
+    )
+    haplotype_allele_readcount.add_argument(
+        '--haplotypes',
+        required=True
+    )
+    haplotype_allele_readcount.add_argument(
+        '--output',
+        required=True
+    )
+    haplotype_allele_readcount.add_argument(
+        '--tempdir',
+        required=True
+    )
+
+    generate_metadata = subparsers.add_parser('generate_metadata')
+    generate_metadata.set_defaults(which='generate_metadata')
+    generate_metadata.add_argument(
+        '--files'
+    )
+    generate_metadata.add_argument(
+        '--metadata_yaml_files', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--samples', nargs='*'
+    )
+    generate_metadata.add_argument(
+        '--metadata_output'
+    )
+
     args = vars(parser.parse_args())
 
     return args
+
 
 def utils():
     args = parse_args()
 
     if args['which'] == 'extract_seqdata':
-        remixt.workflow.create_extract_seqdata_workflow(
-            args['bam'], args['output'], args['ref_data_dir'], args['chromosomes']
+        bam_max_fragment_length = remixt.config.get_param({}, 'bam_max_fragment_length')
+        bam_max_soft_clipped = remixt.config.get_param({}, 'bam_max_soft_clipped')
+        bam_check_proper_pair = remixt.config.get_param({}, 'bam_check_proper_pair')
+        remixt.seqdataio.create_seqdata(
+            args['output'], args['bam'], args['snp_positions'],
+            bam_max_fragment_length, bam_max_soft_clipped,
+            bam_check_proper_pair, args['tempdir'], args['chromosomes']
         )
-    elif args['which'] == 'infer_snp_genotype':
-        infer_snp_genotype(
-            args['seqdata'], args['output'], args['chromosome'], args['chromosomes'],
-            args['ref_data_dir'], args['ref_genome'], args['is_tumour']
+        if args['cell_id']:
+            add_cell_id_to_seqdata(args['output'], args['cell_id'])
+
+    elif args['which'] == 'extract_chromosome_seqdata':
+        bam_max_fragment_length = remixt.config.get_param({}, 'bam_max_fragment_length')
+        bam_max_soft_clipped = remixt.config.get_param({}, 'bam_max_soft_clipped')
+        bam_check_proper_pair = remixt.config.get_param({}, 'bam_check_proper_pair')
+        remixt.seqdataio.create_chromosome_seqdata(
+            args['output'], args['bam'], args['snp_positions'],
+            args['chromosome'], bam_max_fragment_length,
+            bam_max_soft_clipped, bam_check_proper_pair
+        )
+    elif args['which'] == 'infer_snp_genotype_from_normal':
+        remixt.analysis.haplotype.infer_snp_genotype_from_normal(
+            args['output'], args['seqdata'], args['chromosome'], {}
         )
     elif args['which'] == 'infer_haps':
-        infer_haps(
+        config = {
+            'genetic_map_template': args['genetic_map'],
+            'haplotypes_template': args['haplotypes_filename'],
+            'legend_template': args['legend_filename'],
+            'sample_template': args['sample_filename']
+        }
+        remixt.analysis.haplotype.infer_haps(
             args['output'], args['snp_genotype'], args['chromosome'], args['tempdir'],
-            args['ref_data_dir'], args['ref_genome']
+            config, None
         )
     elif args['which'] == 'merge_haps':
-        merge_haps(
-            args['inputs'], args['output']
+        remixt.utils.merge_tables(
+            args['output'], *args['inputs']
+        )
+    elif args['which'] == 'merge_seqdata':
+        remixt.seqdataio.merge_seqdata(
+            args['output'], args['inputs']
         )
     elif args['which'] == 'annotate_haps':
         annotate_haps(
-            args['inputs'], args['ref_data_dir'], args['tempdir'], args['output']
+            args['input'], args['thousand_genomes'], args['tempdir'], args['output']
+        )
+    elif args['which'] == 'create_segments':
+        config = {
+            'genome_fai_template': args['reference_fai'],
+            'gap_table_template': args['gap_table']
+        }
+        ref_data_dir = os.path.dirname(args['reference_fai'])
+        remixt.analysis.segment.create_segments(
+            args['output'], config, ref_data_dir
+        )
+    elif args['which'] == 'haplotype_allele_readcount':
+        helpers.makedirs(args['tempdir'])
+        tempout = os.path.join(args['tempdir'], 'temp.tsv')
+        remixt.analysis.readcount.haplotype_allele_readcount(
+            tempout, args['segments'], args['seqdata'], args['haplotypes'], {}
+        )
+        finalize_tsv(tempout, args['output'], args['seqdata'])
+    elif args['which'] == "convert_haplotypes_csv_to_tsv":
+        convert_csv_to_tsv(
+            args['input'], args['output']
+        )
+    elif args['which'] == 'generate_metadata':
+        generate_metadata(
+            args['files'], args['metadata_yaml_files'], args['samples'],
+            args['metadata_output']
         )
     else:
         raise Exception()
