@@ -2,6 +2,7 @@ import gzip
 import json
 
 import argparse
+import math
 import numpy as np
 import pandas as pd
 import pysam
@@ -9,6 +10,32 @@ import yaml
 from mondrianutils import helpers
 
 from . import consensus
+
+
+def get_header(infile):
+    with helpers.getFileHandle(infile, 'rt') as reader:
+        header = []
+        for line in reader:
+            if line.startswith('#'):
+                header.append(line)
+            else:
+                break
+        return header
+
+
+def merge_vcf_files(infiles, outfile):
+    assert len(infiles) >= 1
+    with helpers.getFileHandle(outfile, 'wt') as writer:
+        header = get_header(infiles[0])
+        for line in header:
+            writer.write(line)
+
+        for infile in infiles:
+            with helpers.getFileHandle(infile, 'rt') as reader:
+                for line in reader:
+                    if line.startswith('#'):
+                        continue
+                    writer.write(line)
 
 
 def generate_intervals(ref, chromosomes, size=1000000):
@@ -23,6 +50,33 @@ def generate_intervals(ref, chromosomes, size=1000000):
             start = str(int(i * size) + 1)
             end = str(min(int((i + 1) * size), length))
             print(name + ":" + start + "-" + end)
+
+
+def split_interval(interval, num_splits):
+    chrom, coord = interval.split(':')
+    start, end = coord.split('-')
+    start = int(start)
+    end = int(end)
+
+    intervalsize = float(end - start) / num_splits
+    intervalsize = int(math.ceil(intervalsize))
+
+    intervals = []
+
+    currpos = start
+    for i in range(num_splits):
+        interval_start = currpos
+        interval_end = currpos + intervalsize
+        currpos = interval_end + 1
+
+        if interval_end >= end:
+            intervals.append('{}:{}-{}'.format(chrom, interval_start, end))
+            break
+        else:
+            intervals.append('{}:{}-{}'.format(chrom, interval_start, interval_end))
+
+    for interval in intervals:
+        print(interval)
 
 
 def get_genome_size(ref, chromosomes):
@@ -253,7 +307,31 @@ def parse_args():
     genintervals.add_argument(
         "--size",
         default=1000000,
+        type=int,
         help='specify interval size'
+    )
+
+    split_interval = subparsers.add_parser("split_interval")
+    split_interval.set_defaults(which='split_interval')
+    split_interval.add_argument(
+        "--interval",
+        help='specify reference fasta'
+    )
+    split_interval.add_argument(
+        "--num_splits",
+        type=int,
+        help='specify target chromosomes'
+    )
+
+    merge_vcf_files = subparsers.add_parser("merge_vcf_files")
+    merge_vcf_files.set_defaults(which='merge_vcf_files')
+    merge_vcf_files.add_argument(
+        "--inputs", nargs='*',
+        help='vcf files to merge'
+    )
+    merge_vcf_files.add_argument(
+        "--output",
+        help='merged output vcf'
     )
 
     genome_size = subparsers.add_parser("genome_size")
@@ -355,6 +433,8 @@ def utils():
 
     if args['which'] == 'generate_intervals':
         generate_intervals(args['reference'], args['chromosomes'], args['size'])
+    elif args['which'] == 'split_interval':
+        split_interval(args['interval'], args['num_splits'])
     elif args['which'] == 'genome_size':
         get_genome_size(args['reference'], args['chromosomes'])
     elif args['which'] == 'merge_chromosome_depths_strelka':
@@ -383,5 +463,7 @@ def utils():
             args['files'], args['metadata_yaml_files'],
             args['samples'], args['metadata_output']
         )
+    elif args['which'] == 'merge_vcf_files':
+        merge_vcf_files(args['inputs'], args['output'])
     else:
         raise Exception()
