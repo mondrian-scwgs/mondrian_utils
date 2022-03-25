@@ -20,7 +20,8 @@ setup(
             'pdf_utils = mondrianutils.io.pdf:utils',
             'bam_utils = mondrianutils.io.bam:utils',
             'haplotype_utils = mondrianutils.haplotypes.utils:utils',
-            'snv_genotyping_utils = mondrianutils.snv_genotyping.utils:utils'
+            'snv_genotyping_utils = mondrianutils.snv_genotyping.utils:utils',
+            'reference_utils = mondrianutils.reference.utils:utils',
         ]
     },
     package_data={'': ['*.py', '*.R', '*.npz', "*.yaml", "data/*", "*.sh"]}

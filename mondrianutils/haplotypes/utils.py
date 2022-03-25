@@ -199,19 +199,7 @@ def parse_args():
         required=True
     )
     infer_haps.add_argument(
-        '--genetic_map',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--haplotypes_filename',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--legend_filename',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--sample_filename',
+        '--thousand_genomes_impute_tar',
         required=True
     )
     infer_haps.add_argument(
@@ -224,6 +212,22 @@ def parse_args():
     )
     infer_haps.add_argument(
         '--tempdir',
+        required=True
+    )
+    infer_haps.add_argument(
+        '--genetic_map_filename_template',
+        required=True
+    )
+    infer_haps.add_argument(
+        '--haplotypes_filename_template',
+        required=True
+    )
+    infer_haps.add_argument(
+        '--legend_filename_template',
+        required=True
+    )
+    infer_haps.add_argument(
+        '--sample_filename',
         required=True
     )
 
@@ -368,11 +372,30 @@ def utils():
             args['output'], args['seqdata'], args['chromosome'], {}
         )
     elif args['which'] == 'infer_haps':
+        helpers.untar(
+            args['thousand_genomes_impute_tar'],
+            os.path.join(args['tempdir'], 'thousand_genomes_impute_tar')
+        )
+
+        assert '{chromosome}' in args['genetic_map_filename_template']
+        genetic_map = args['genetic_map_filename_template'].replace('{chromosome}', args['chromosome'])
+        genetic_map = os.path.join(args['tempdir'], 'thousand_genomes_impute_tar', genetic_map)
+
+        assert '{chromosome}' in args['haplotypes_filename_template']
+        haplotypes = args['haplotypes_filename_template'].replace('{chromosome}', args['chromosome'])
+        haplotypes = os.path.join(args['tempdir'], 'thousand_genomes_impute_tar', haplotypes)
+
+        assert '{chromosome}' in args['legend_filename_template']
+        legend = args['legend_filename_template'].replace('{chromosome}', args['chromosome'])
+        legend = os.path.join(args['tempdir'], 'thousand_genomes_impute_tar', legend)
+
+        sample = os.path.join(args['tempdir'], 'thousand_genomes_impute_tar', args['sample_filename'])
+
         config = {
-            'genetic_map_template': args['genetic_map'],
-            'haplotypes_template': args['haplotypes_filename'],
-            'legend_template': args['legend_filename'],
-            'sample_template': args['sample_filename']
+            'genetic_map_template': genetic_map,
+            'haplotypes_template': haplotypes,
+            'legend_template': legend,
+            'sample_template': sample
         }
         remixt.analysis.haplotype.infer_haps(
             args['output'], args['snp_genotype'], args['chromosome'], args['tempdir'],

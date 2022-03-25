@@ -17,6 +17,12 @@ import yaml
 from mondrianutils import __version__
 
 
+def untar(input_tar, outdir):
+    makedirs(outdir)
+    with tarfile.open(input_tar) as tar:
+        tar.extractall(path=outdir)
+
+
 def metadata_helper(files_json, metadata_yamls, samples, wf_type):
     with open(files_json, 'rt') as files_json:
         jsondata = json.load(files_json)
