@@ -27,21 +27,21 @@ def get_cell_id_from_bam(infile):
         return read.get_tag('CB')
 
 
-def chunks(bamfiles, numcores):
-    output = []
-    for i in range(0, len(bamfiles), numcores):
-        output.append(bamfiles[i:i + numcores])
-    return output
-
-
-def get_merge_command(bams, output, ncores=1):
-    if len(bams) == 1:
-        command = ['cp', bams[0], output]
-    else:
-        command = ['sambamba', 'merge', '-t', str(ncores), output]
-        command.extend(bams)
-
-    return command
+# def chunks(bamfiles, numcores):
+#     output = []
+#     for i in range(0, len(bamfiles), numcores):
+#         output.append(bamfiles[i:i + numcores])
+#     return output
+#
+#
+# def get_merge_command(bams, output, ncores=1):
+#     if len(bams) == 1:
+#         command = ['cp', bams[0], output]
+#     else:
+#         command = ['sambamba', 'merge', '-t', str(ncores), output]
+#         command.extend(bams)
+#
+#     return command
 
 
 def get_new_header(cells, bamfile, new_header):
@@ -106,23 +106,8 @@ def merge_cells(infiles, tempdir, ncores, outfile):
             writer.write("NO DATA")
         return
 
-    chunked_infiles = chunks(list(infiles.values()), ncores)
-
-    commands = []
-    outputs = []
-    for i, chunk in enumerate(chunked_infiles):
-        chunk_tempdir = os.path.join(tempdir, str(i))
-        helpers.makedirs(chunk_tempdir)
-        output = os.path.join(chunk_tempdir, 'merged.bam')
-        outputs.append(output)
-        commands.append(get_merge_command(chunk, output))
-
-    parallel_temp_dir = os.path.join(tempdir, 'gnu_parallel_temp')
-    helpers.run_in_gnu_parallel(commands, parallel_temp_dir, ncores)
-
     final_merge_output = os.path.join(tempdir, 'merged_all.bam')
-    command = get_merge_command(outputs, final_merge_output, ncores=ncores)
-    helpers.run_cmd(command)
+    helpers.merge_bams(list(infiles.values()), final_merge_output, tempdir, ncores)
 
     new_header = os.path.join(tempdir, 'header.sam')
     get_new_header(infiles.keys(), final_merge_output, new_header)

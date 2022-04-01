@@ -408,6 +408,14 @@ def parse_args():
     fix_museq_vcf.add_argument('--input', required=True)
     fix_museq_vcf.add_argument('--output', required=True)
 
+    merge_bams = subparsers.add_parser('merge_bams')
+    merge_bams.set_defaults(which='merge_bams')
+    merge_bams.add_argument('--inputs', nargs="*", required=True)
+    merge_bams.add_argument('--output', required=True)
+    merge_bams.add_argument('--threads', type=int, required=True)
+    merge_bams.add_argument('--tempdir', required=True)
+
+
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
     generate_metadata.add_argument(
@@ -465,5 +473,7 @@ def utils():
         )
     elif args['which'] == 'merge_vcf_files':
         merge_vcf_files(args['inputs'], args['output'])
+    elif args['which'] == 'merge_bams':
+        helpers.merge_bams(args['inputs'], args['output'], args['tempdir'], args['threads'])
     else:
         raise Exception()

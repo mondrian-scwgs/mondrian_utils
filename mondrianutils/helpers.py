@@ -17,6 +17,48 @@ import yaml
 from mondrianutils import __version__
 
 
+def chunks(bamfiles, numcores):
+    output = []
+    for i in range(0, len(bamfiles), numcores):
+        output.append(bamfiles[i:i + numcores])
+    return output
+
+
+def get_merge_command(bams, output, ncores=1):
+    if len(bams) == 1:
+        command = ['cp', bams[0], output]
+    else:
+        command = ['sambamba', 'merge', '-t', str(ncores), output]
+        command.extend(bams)
+
+    return command
+
+
+def merge_bams(infiles, outfile, tempdir, ncores):
+    assert len(infiles) > 0
+
+    if len(infiles) < ncores*2:
+        run_cmd(get_merge_command(infiles, outfile, ncores=ncores))
+        return
+
+    chunked_infiles = chunks(list(infiles), ncores)
+
+    commands = []
+    outputs = []
+    for i, chunk in enumerate(chunked_infiles):
+        chunk_tempdir = os.path.join(tempdir, str(i))
+        makedirs(chunk_tempdir)
+        output = os.path.join(chunk_tempdir, 'merged.bam')
+        outputs.append(output)
+        commands.append(get_merge_command(chunk, output))
+
+    parallel_temp_dir = os.path.join(tempdir, 'gnu_parallel_temp')
+    run_in_gnu_parallel(commands, parallel_temp_dir, ncores)
+
+    command = get_merge_command(outputs, outfile, ncores=ncores)
+    run_cmd(command)
+
+
 def untar(input_tar, outdir):
     makedirs(outdir)
     with tarfile.open(input_tar) as tar:
