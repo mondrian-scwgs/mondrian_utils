@@ -19,7 +19,7 @@ class RunTrimGalore(object):
 
     def __init__(self, seq1, seq2, fq_r1, fq_r2, trimgalore, cutadapt, tempdir,
                  adapter, adapter2, report_r1, report_r2, qc_report_r1,
-                 qc_report_r2, qc_zip_r1, qc_zip_r2):
+                 qc_report_r2, qc_zip_r1, qc_zip_r2, num_threads):
         self.seq1 = seq1
         self.seq2 = seq2
         self.trimgalore_path = trimgalore
@@ -36,6 +36,7 @@ class RunTrimGalore(object):
         self.report_r1 = report_r1
         self.report_r2 = report_r2
         self.empty = False
+        self.num_threads = num_threads
 
         self.check_inputs()
 
@@ -56,10 +57,12 @@ class RunTrimGalore(object):
             logging.getLogger("single_cell.align.trim").warn(
                 "extremely small file detected: %s" % path)
 
-        if not self.empty and os.path.getsize(path) == 0:
-            self.empty = True
-            logging.getLogger("single_cell.align.trim").warn(
-                "empty file: %s, skipping trimming" % path)
+            with helpers.getFileHandle(path) as reader:
+                num_lines = len(reader.readlines())
+            if not self.empty and num_lines == 0:
+                self.empty = True
+                logging.getLogger("single_cell.align.trim").warn(
+                    "empty file: %s, skipping trimming" % path)
 
         ext = os.path.splitext(path)[1][1:]
         # get the last extension
@@ -110,7 +113,10 @@ class RunTrimGalore(object):
         if self.adapter2:
             cmd.extend(['--adapter2', self.adapter2])
 
-        cmd.extend([self.seq1, self.seq2, ])
+        if not self.num_threads == 1:
+            cmd.extend(['--fastqc_args', '--threads {}'.format(self.num_threads)])
+
+        cmd.extend([self.seq1, self.seq2])
 
         helpers.run_cmd(cmd)
 
@@ -192,7 +198,7 @@ class RunTrimGalore(object):
         self.get_file(self.fastq_r1, self.fastq_r2, ".fq.gz")
 
 
-def trim_galore(fastq1, fastq2, trim_fastq1, trim_fastq2, adapter1, adapter2, tempdir):
+def trim_galore(fastq1, fastq2, trim_fastq1, trim_fastq2, adapter1, adapter2, tempdir, num_threads):
     """
     run fastqc on both fastq files
     run trimgalore if needed, copy if not.
@@ -213,7 +219,7 @@ def trim_galore(fastq1, fastq2, trim_fastq1, trim_fastq2, adapter1, adapter2, te
 
     run_tg = RunTrimGalore(
         fastq1, fastq2, trim_fastq1, trim_fastq2, 'trim_galore', 'cutadapt', tempdir,
-        adapter1, adapter2, rep1, rep2, qcrep1, qcrep2, qczip1, qczip2
+        adapter1, adapter2, rep1, rep2, qcrep1, qcrep2, qczip1, qczip2, num_threads
     )
     run_tg.run_trimgalore()
     run_tg.gather_outputs()

@@ -601,6 +601,10 @@ def parse_args():
         '--fastq_files'
     )
     alignment.add_argument(
+        '--num_threads',
+        default=1
+    )
+    alignment.add_argument(
         '--metadata_yaml'
     )
     alignment.add_argument(
@@ -727,7 +731,7 @@ def utils():
             args['wgs_metrics_bqual'], args['wgs_metrics_count_unpaired'],
             args['bam_output'], args['metrics_output'], args['metrics_gc_output'],
             args['fastqscreen_detailed_output'], args['fastqscreen_summary_output'],
-            args['tar_output']
+            args['tar_output'], args['num_threads']
         )
     else:
         raise Exception()

@@ -81,7 +81,7 @@ def run_cmd(cmd, output=None):
         stdout.close()
 
 
-def run_fastq_screen_paired_end(fastq_r1, fastq_r2, tempdir, params):
+def run_fastq_screen_paired_end(fastq_r1, fastq_r2, tempdir, params, num_threads):
     def get_basename(filepath):
         filepath_base = os.path.basename(filepath)
 
@@ -117,6 +117,10 @@ def run_fastq_screen_paired_end(fastq_r1, fastq_r2, tempdir, params):
             genome_name = genome['name']
             genome_path = genome['path']
             outstr = '\t'.join(['DATABASE', genome_name, genome_path]) + '\n'
+            config_writer.write(outstr)
+
+        if not num_threads == 1:
+            outstr = '\t'.join(['THREADS', num_threads])+'\n'
             config_writer.write(outstr)
 
     cmd = [
@@ -224,7 +228,7 @@ def re_tag_reads(infile, outfile):
 def organism_filter(
         fastq_r1, fastq_r2, filtered_fastq_r1, filtered_fastq_r2,
         detailed_metrics, summary_metrics, tempdir, cell_id,
-        reference, reference_name, supplementary_references
+        reference, reference_name, supplementary_references, num_threads
 ):
     genomes = [{'name': reference_name, 'path': reference}]
 
@@ -247,7 +251,7 @@ def organism_filter(
     helpers.makedirs(tempdir)
 
     tagged_fastq_r1, tagged_fastq_r2 = run_fastq_screen_paired_end(
-        fastq_r1, fastq_r2, tempdir, params,
+        fastq_r1, fastq_r2, tempdir, params, num_threads
     )
 
     reader = fastq_utils.PairedTaggedFastqReader(tagged_fastq_r1, tagged_fastq_r2)

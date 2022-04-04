@@ -31,7 +31,7 @@ def load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id):
 
 def bwa_align(
         fastq1, fastq2, reference, metadata_yaml,
-        output, lane_id, flowcell_id, cell_id
+        output, lane_id, flowcell_id, cell_id, num_threads
 ):
     center, library_id, sample_id = load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id)
 
@@ -41,7 +41,7 @@ def bwa_align(
     cmd = [
         script_path, fastq1, fastq2, reference, output,
         sample_id, library_id, cell_id, lane_id,
-        flowcell_id, center
+        flowcell_id, center, num_threads
     ]
     helpers.run_cmd(cmd)
 
@@ -58,92 +58,104 @@ def tag_bam_with_cellid(infile, outfile, cell_id):
     outfile.close()
 
 
-def bam_sort(bam_filename, sorted_bam_filename, tempdir, mem="2G"):
+def bam_sort(bam_filename, sorted_bam_filename, tempdir, num_threads=1, mem="2G"):
     if not os.path.exists(tempdir):
         helpers.makedirs(tempdir)
 
-    cmd = [
-        'picard', '-Xmx' + mem, '-Xms' + mem,
-        '-XX:ParallelGCThreads=1',
+    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
+    if num_threads == 1:
+        cmd.append('-XX:ParallelGCThreads=1')
+    cmd.extend([
         'SortSam',
-                  'INPUT=' + bam_filename,
-                  'OUTPUT=' + sorted_bam_filename,
+        'INPUT=' + bam_filename,
+        'OUTPUT=' + sorted_bam_filename,
         'SORT_ORDER=coordinate',
         'VALIDATION_STRINGENCY=LENIENT',
-                  'TMP_DIR=' + tempdir,
+        'TMP_DIR=' + tempdir,
         'MAX_RECORDS_IN_RAM=150000',
         'QUIET=true'
-    ]
+    ])
     helpers.run_cmd(cmd)
 
 
-def merge_bams(inputs, output, mem="2G"):
+def merge_bams(inputs, output, num_threads=1, mem="2G"):
     if isinstance(inputs, dict):
         inputs = inputs.values()
 
-    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem,
-           '-XX:ParallelGCThreads=1',
-           'MergeSamFiles',
-           'OUTPUT=' + output,
-           'SORT_ORDER=coordinate',
-           'ASSUME_SORTED=true',
-           'VALIDATION_STRINGENCY=LENIENT',
-           'MAX_RECORDS_IN_RAM=150000',
-           'QUIET=true'
-           ]
+    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
+    if num_threads == 1:
+        cmd.append('-XX:ParallelGCThreads=1')
+    cmd.extend([
+        'MergeSamFiles',
+        'OUTPUT=' + output,
+        'SORT_ORDER=coordinate',
+        'ASSUME_SORTED=true',
+        'VALIDATION_STRINGENCY=LENIENT',
+        'MAX_RECORDS_IN_RAM=150000',
+        'QUIET=true'
+    ])
 
     for bamfile in inputs:
         cmd.append('I=' + os.path.abspath(bamfile))
+
+    if not num_threads == 1:
+        cmd.append('USE_THREADING=true')
 
     helpers.run_cmd(cmd)
 
 
 def bam_markdups(bam_filename, markduped_bam_filename, metrics_filename,
-                 tempdir, mem="2G"):
+                 tempdir, num_threads=1, mem="2G"):
     if not os.path.exists(tempdir):
         helpers.makedirs(tempdir)
 
-    helpers.run_cmd([
-        'picard', '-Xmx' + mem, '-Xms' + mem,
-        '-XX:ParallelGCThreads=1',
+    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
+    if num_threads == 1:
+        cmd.append('-XX:ParallelGCThreads=1')
+    cmd.extend([
         'MarkDuplicates',
-                  'INPUT=' + bam_filename,
-                  'OUTPUT=' + markduped_bam_filename,
-                  'METRICS_FILE=' + metrics_filename,
+        'INPUT=' + bam_filename,
+        'OUTPUT=' + markduped_bam_filename,
+        'METRICS_FILE=' + metrics_filename,
         'REMOVE_DUPLICATES=False',
         'ASSUME_SORTED=True',
         'VALIDATION_STRINGENCY=LENIENT',
-                  'TMP_DIR=' + tempdir,
+        'TMP_DIR=' + tempdir,
         'MAX_RECORDS_IN_RAM=150000',
         'QUIET=true'
     ])
+    helpers.run_cmd(cmd)
 
 
 def bam_collect_gc_metrics(bam_filename, ref_genome, metrics_filename,
                            summary_filename, chart_filename, tempdir,
-                           mem="2G"):
+                           num_threads=1, mem="2G"):
     if not os.path.exists(tempdir):
         helpers.makedirs(tempdir)
 
-    helpers.run_cmd([
-        'picard', '-Xmx' + mem, '-Xms' + mem,
-        '-XX:ParallelGCThreads=1',
+    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
+    if num_threads == 1:
+        cmd.append('-XX:ParallelGCThreads=1')
+    cmd.extend([
         'CollectGcBiasMetrics',
-                  'INPUT=' + bam_filename,
-                  'OUTPUT=' + metrics_filename,
-                  'REFERENCE_SEQUENCE=' + ref_genome,
-                  'S=' + summary_filename,
-                  'CHART_OUTPUT=' + chart_filename,
+        'INPUT=' + bam_filename,
+        'OUTPUT=' + metrics_filename,
+        'REFERENCE_SEQUENCE=' + ref_genome,
+        'S=' + summary_filename,
+        'CHART_OUTPUT=' + chart_filename,
         'VALIDATION_STRINGENCY=LENIENT',
-                  'TMP_DIR=' + tempdir,
+        'TMP_DIR=' + tempdir,
         'MAX_RECORDS_IN_RAM=150000',
         'QUIET=true'
     ])
+    helpers.run_cmd(cmd)
 
 
-def bam_collect_insert_metrics(bam_filename, flagstat_metrics_filename,
-                               metrics_filename, histogram_filename, tempdir,
-                               mem="2G"):
+def bam_collect_insert_metrics(
+        bam_filename, flagstat_metrics_filename,
+        metrics_filename, histogram_filename, tempdir,
+        num_threads=1, mem="2G"
+):
     # Check if any paired reads exist
     has_paired = None
     with open(flagstat_metrics_filename) as f:
@@ -168,45 +180,49 @@ def bam_collect_insert_metrics(bam_filename, flagstat_metrics_filename,
     if not os.path.exists(tempdir):
         helpers.makedirs(tempdir)
 
-    helpers.run_cmd([
-        'picard', '-Xmx' + mem, '-Xms' + mem,
-        '-XX:ParallelGCThreads=1',
+    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
+    if num_threads == 1:
+        cmd.append('-XX:ParallelGCThreads=1')
+    cmd.extend([
         'CollectInsertSizeMetrics',
-                  'INPUT=' + bam_filename,
-                  'OUTPUT=' + metrics_filename,
-                  'HISTOGRAM_FILE=' + histogram_filename,
+        'INPUT=' + bam_filename,
+        'OUTPUT=' + metrics_filename,
+        'HISTOGRAM_FILE=' + histogram_filename,
         'ASSUME_SORTED=True',
         'VALIDATION_STRINGENCY=LENIENT',
-                  'TMP_DIR=' + tempdir,
+        'TMP_DIR=' + tempdir,
         'MAX_RECORDS_IN_RAM=150000',
         'QUIET=true'
     ])
+    helpers.run_cmd(cmd)
 
 
 def bam_collect_wgs_metrics(bam_filename, ref_genome, metrics_filename,
-                            mqual, bqual, count_unpaired, tempdir, mem="2G"):
+                            mqual, bqual, count_unpaired, tempdir, num_threads=1, mem="2G"):
     if not os.path.exists(tempdir):
         helpers.makedirs(tempdir)
 
-    helpers.run_cmd([
-        'picard', '-Xmx' + mem, '-Xms' + mem,
-        '-XX:ParallelGCThreads=1',
+    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
+    if num_threads == 1:
+        cmd.append('-XX:ParallelGCThreads=1')
+    cmd.extend([
         'CollectWgsMetrics',
-                  'INPUT=' + bam_filename,
-                  'OUTPUT=' + metrics_filename,
-                  'REFERENCE_SEQUENCE=' + ref_genome,
-                  'MINIMUM_BASE_QUALITY=' +
-                  bqual,
-                  'MINIMUM_MAPPING_QUALITY=' +
-                  mqual,
+        'INPUT=' + bam_filename,
+        'OUTPUT=' + metrics_filename,
+        'REFERENCE_SEQUENCE=' + ref_genome,
+        'MINIMUM_BASE_QUALITY=' +
+        bqual,
+        'MINIMUM_MAPPING_QUALITY=' +
+        mqual,
         'COVERAGE_CAP=500',
         'VALIDATION_STRINGENCY=LENIENT',
-                  'COUNT_UNPAIRED=' +
-                  ('True' if count_unpaired else 'False'),
-                  'TMP_DIR=' + tempdir,
+        'COUNT_UNPAIRED=' +
+        ('True' if count_unpaired else 'False'),
+        'TMP_DIR=' + tempdir,
         'MAX_RECORDS_IN_RAM=150000',
         'QUIET=true'
     ])
+    helpers.run_cmd(cmd)
 
 
 def bam_flagstat(bam, metrics):
@@ -231,9 +247,8 @@ def alignment(
         fastq_files, metadata_yaml, reference, reference_name, supplementary_references, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output, fastqscreen_detailed_output, fastqscreen_summary_output,
-        tar_output
+        tar_output, num_threads
 ):
-
     with open(supplementary_references, 'rt') as reader:
         supplementary_references = json.load(reader)
 
@@ -262,7 +277,7 @@ def alignment(
         organism_filter(
             r1, r2, fastqscreen_r1, fastqscreen_r2,
             detailed_metrics, summary_metrics, fastqscreen_temp,
-            cell_id, reference, reference_name, supplementary_references
+            cell_id, reference, reference_name, supplementary_references, num_threads
         )
         all_detailed_counts.append(detailed_metrics)
         all_summary_counts.append(summary_metrics)
@@ -274,7 +289,7 @@ def alignment(
         trim_galore_temp = os.path.join(tempdir, lane_id, 'trim_galore')
         trim_galore(
             fastqscreen_r1, fastqscreen_r2, trim_galore_r1, trim_galore_r2,
-            adapter1, adapter2, trim_galore_temp
+            adapter1, adapter2, trim_galore_temp, num_threads
         )
 
         print("Starting Alignment")
@@ -282,7 +297,7 @@ def alignment(
         lane_aligned_bam = os.path.join(tempdir, lane_id, 'bwa_mem', 'aligned.bam')
         bwa_align(
             trim_galore_r1, trim_galore_r2, reference, metadata_yaml, lane_aligned_bam,
-            lane_id, flowcell_id, cell_id
+            lane_id, flowcell_id, cell_id, num_threads
         )
 
         print("Tagging Bam with cell id")
@@ -296,20 +311,20 @@ def alignment(
         helpers.makedirs(os.path.join(tempdir, lane_id, 'sorting'))
         lane_sorted_bam = os.path.join(tempdir, lane_id, 'sorting', 'sorted.bam')
         lane_sorted_temp = os.path.join(tempdir, lane_id, 'sorting')
-        bam_sort(lane_tagged_bam, lane_sorted_bam, lane_sorted_temp, mem='4G')
+        bam_sort(lane_tagged_bam, lane_sorted_bam, lane_sorted_temp, num_threads=num_threads, mem='4G')
 
         final_lane_bams.append(lane_sorted_bam)
 
     print("Merging all Lanes")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'merge'))
     bam_merged = os.path.join(tempdir, cell_id, 'merge', 'merged.bam')
-    merge_bams(final_lane_bams, bam_merged, mem='4G')
+    merge_bams(final_lane_bams, bam_merged, num_threads=num_threads, mem='4G')
 
     print("Marking Duplicates")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'markdups'))
     metrics_markdups = os.path.join(tempdir, cell_id, 'markdups', 'metrics.txt')
     tempdir_markdups = os.path.join(tempdir, cell_id, 'markdups')
-    bam_markdups(bam_merged, bam_output, metrics_markdups, tempdir_markdups, mem='4G')
+    bam_markdups(bam_merged, bam_output, metrics_markdups, tempdir_markdups, num_threads=num_threads, mem='4G')
     bam_index(bam_output)
 
     print("Collecting GC Metrics")
@@ -320,7 +335,7 @@ def alignment(
     tempdir_gc = os.path.join(tempdir, cell_id, 'gc_metrics')
     bam_collect_gc_metrics(
         bam_output, reference, metrics_gc,
-        summary_gc, chart_gc, tempdir_gc, mem="4G"
+        summary_gc, chart_gc, tempdir_gc, num_threads=num_threads, mem="4G"
     )
 
     print("Starting Flagstat")
@@ -334,7 +349,7 @@ def alignment(
     histogram_insert = os.path.join(tempdir, cell_id, 'insert_metrics', 'histogram.pdf')
     tempdir_insert = os.path.join(tempdir, cell_id, 'insert_metrics')
     bam_collect_insert_metrics(
-        bam_output, metrics_flagstat, metrics_insert, histogram_insert, tempdir_insert
+        bam_output, metrics_flagstat, metrics_insert, histogram_insert, tempdir_insert, num_threads=num_threads
     )
 
     print("Starting Picard WGS metrics")
@@ -343,7 +358,7 @@ def alignment(
     tempdir_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics')
     bam_collect_wgs_metrics(
         bam_output, reference, metrics_wgs, wgs_metrics_mqual,
-        wgs_metrics_bqual, wgs_metrics_count_unpaired, tempdir_wgs, mem='4G'
+        wgs_metrics_bqual, wgs_metrics_count_unpaired, tempdir_wgs, num_threads=num_threads, mem='4G'
     )
 
     print("Collecting read attrition metrics")
