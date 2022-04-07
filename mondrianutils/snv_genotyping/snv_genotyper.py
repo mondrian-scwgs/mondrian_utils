@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 import csverve.api as csverve
+import mondrianutils.helpers as helpers
 import pandas as pd
 import pysam
 import vcf
@@ -12,12 +13,15 @@ class SnvGenotyper(object):
             bamfile,
             targets,
             output,
+            cell_barcodes=False,
             interval=None,
             count_duplicates=False,
             min_mqual=20,
             sparse=False
     ):
         self.bam = self._get_bam_reader(bamfile)
+
+        self.cell_barcodes = cell_barcodes
         self.all_cells = self.get_cells()
 
         self.chrom, self.begin, self.end = self._parse_interval(interval)
@@ -46,7 +50,7 @@ class SnvGenotyper(object):
     def __get_bam_header(self):
         return self.bam.header
 
-    def get_cells(self):
+    def _get_cells_from_header(self):
         header = self.__get_bam_header()
         cells = []
         for line in str(header).split('\n'):
@@ -57,6 +61,22 @@ class SnvGenotyper(object):
             cell = cb.split(':')[1]
             cells.append(cell)
         return cells
+
+    def _get_cells_from_barcodes(self):
+        cells = []
+        with helpers.getFileHandle(self.cell_barcodes, 'rt') as reader:
+            for line in reader:
+                cells.append(line.strip())
+            return cells
+
+    def get_cells(self):
+        if self.cell_barcodes:
+            return self._get_cells_from_barcodes()
+        else:
+            cells = self._get_cells_from_header()
+            if len(cells) == 0:
+                raise Exception('No cells ids found in bam header and no cell barcodes file provided')
+            return cells
 
     def __enter__(self):
         return self
