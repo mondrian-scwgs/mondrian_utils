@@ -69,6 +69,7 @@ def parse_args():
     snv_genotyper.add_argument('--interval')
     snv_genotyper.add_argument('--count_duplicates', default=False)
     snv_genotyper.add_argument('--sparse', default=False)
+    snv_genotyper.add_argument('--ignore_untagged_reads', action='store_true', default=False)
     snv_genotyper.add_argument('--min_mqual', default=20)
 
     parse_vartrix = subparsers.add_parser('parse_vartrix')
@@ -125,7 +126,7 @@ def utils():
         with SnvGenotyper(
                 args['bam'], args['targets_vcf'], args['output'], cell_barcodes=args['cell_barcodes'],
                 interval=args['interval'], count_duplicates=args['count_duplicates'],
-                sparse=args['sparse'], min_mqual=args['min_mqual']
+                sparse=args['sparse'], min_mqual=args['min_mqual'], ignore_untagged_reads=args['ignore_untagged_reads']
         ) as genotyper:
             genotyper.genotyping()
     elif args['which'] == 'generate_metadata':

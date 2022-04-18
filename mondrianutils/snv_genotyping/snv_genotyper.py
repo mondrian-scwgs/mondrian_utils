@@ -17,7 +17,8 @@ class SnvGenotyper(object):
             interval=None,
             count_duplicates=False,
             min_mqual=20,
-            sparse=False
+            sparse=False,
+            ignore_untagged_reads=False
     ):
         self.bam = self._get_bam_reader(bamfile)
 
@@ -32,6 +33,7 @@ class SnvGenotyper(object):
         self.count_duplicates = count_duplicates
         self.min_mqual = min_mqual
         self.sparse = sparse
+        self.ignore_untagged_reads = ignore_untagged_reads
 
     @property
     def dtypes(self):
@@ -174,6 +176,12 @@ class SnvGenotyper(object):
 
         elif read.alignment.is_secondary:
             valid = False
+
+        elif self.ignore_untagged_reads:
+            try:
+                read.alignment.get_tag('CB')
+            except KeyError:
+                valid = False
 
         return valid
 
