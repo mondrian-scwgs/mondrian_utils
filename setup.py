@@ -18,6 +18,7 @@ setup(
             'hmmcopy_utils = mondrianutils.hmmcopy.utils:utils',
             'csverve_utils = mondrianutils.io.csverve:utils',
             'pdf_utils = mondrianutils.io.pdf:utils',
+            'vcf_utils = mondrianutils.io.vcf:utils',
             'bam_utils = mondrianutils.io.bam:utils',
             'haplotype_utils = mondrianutils.haplotypes.utils:utils',
             'snv_genotyping_utils = mondrianutils.snv_genotyping.utils:utils',
