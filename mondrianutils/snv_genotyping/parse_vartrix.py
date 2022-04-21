@@ -72,7 +72,7 @@ def create_df(ref, alt, cells, variants):
     return df
 
 
-def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile):
+def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile, write_header=True):
     cells = load_barcodes(cells)
     variants = load_barcodes(variants)
 
@@ -83,6 +83,7 @@ def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile):
 
     csverve.write_dataframe_to_csv_and_yaml(
         df, outfile,
+        write_header=write_header,
         dtypes={
             'cell_id': 'str',
             'chromosome': 'str',
