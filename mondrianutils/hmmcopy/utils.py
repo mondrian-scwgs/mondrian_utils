@@ -455,6 +455,11 @@ def parse_args():
     add_clustering_order.add_argument(
         '--output'
     )
+    add_clustering_order.add_argument(
+        '--chromosomes',
+        default=[str(v) for v in range(1, 23)] + ['X', 'Y'],
+        nargs='*'
+    )
 
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
@@ -534,7 +539,7 @@ def utils():
             args['tempdir'], args['html'], args['metrics'], args['gc_metrics']
         )
     elif args['which'] == 'add_clustering_order':
-        add_clustering_order(args['reads'], args['metrics'], args['output'])
+        add_clustering_order(args['reads'], args['metrics'], args['output'], chromosomes=args['chromosomes'])
 
     elif args['which'] == 'generate_metadata':
         generate_metadata(

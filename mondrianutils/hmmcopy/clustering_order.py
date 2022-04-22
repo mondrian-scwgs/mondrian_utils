@@ -11,6 +11,8 @@ def sort_bins(bins, chromosomes):
 
     if not chromosomes:
         chromosomes = list(map(str, range(1, 23))) + ['X', 'Y']
+        if list(bins['chr'])[0].startswith('chr'):
+            chromosomes = ['chr'+v for v in chromosomes]
 
     bins["chr"] = pd.Categorical(bins["chr"], chromosomes)
 
