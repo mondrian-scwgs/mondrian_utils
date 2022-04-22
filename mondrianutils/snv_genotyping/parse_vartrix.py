@@ -84,7 +84,7 @@ def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile, write_header
     ref = load_matrix(ref_counts, cells, variants)
     alt = load_matrix(alt_counts, cells, variants)
 
-    df = create_df(ref, alt, cells, variants, sparse=sparse_mode)
+    df = create_df(ref, alt, cells, variants, sparse=sparse)
 
     csverve.write_dataframe_to_csv_and_yaml(
         df, outfile,
