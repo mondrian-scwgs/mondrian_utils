@@ -54,7 +54,7 @@ def get_vcf_pos(vcf_file):
     return data
 
 
-def create_df(ref, alt, cells, variants):
+def create_df(ref, alt, cells, variants, sparse=False):
     out = []
 
     for i, cell in cells.items():
@@ -66,20 +66,25 @@ def create_df(ref, alt, cells, variants):
 
             ref_count = ref.get(cell, {}).get(variant, 0)
             alt_count = alt.get(cell, {}).get(variant, 0)
+
+            # only write zeros if sparse is true
+            if ref_count == 0 and alt_count == 0 and not sparse:
+                continue
+
             out.append([cell, chrom, pos, ref_count, alt_count])
 
     df = pd.DataFrame(out, columns=['cell_id', 'chromosome', 'position', 'ref_count', 'alt_count'])
     return df
 
 
-def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile, write_header=True):
+def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile, write_header=True, sparse=False):
     cells = load_barcodes(cells)
     variants = load_barcodes(variants)
 
     ref = load_matrix(ref_counts, cells, variants)
     alt = load_matrix(alt_counts, cells, variants)
 
-    df = create_df(ref, alt, cells, variants)
+    df = create_df(ref, alt, cells, variants, sparse=sparse_mode)
 
     csverve.write_dataframe_to_csv_and_yaml(
         df, outfile,

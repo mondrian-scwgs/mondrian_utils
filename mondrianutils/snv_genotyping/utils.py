@@ -94,6 +94,11 @@ def parse_args():
         action='store_true',
         default=False
     )
+    parse_vartrix.add_argument(
+        '--sparse',
+        action='store_true',
+        default=False
+    )
 
     generate_cell_barcodes = subparsers.add_parser('generate_cell_barcodes')
     generate_cell_barcodes.set_defaults(which='generate_cell_barcodes')
@@ -142,7 +147,8 @@ def utils():
         parse_vartrix(
             args['barcodes'], args['variants'], args['ref_counts'],
             args['alt_counts'], args['outfile'],
-            write_header=(not args['skip_header'])
+            write_header=(not args['skip_header']),
+            sparse=args['sparse']
         )
     elif args['which'] == "generate_cell_barcodes":
         generate_cell_barcodes_file(args['bamfile'], args['output'])
