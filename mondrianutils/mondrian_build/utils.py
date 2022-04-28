@@ -32,6 +32,13 @@ def _compare_csv(data, ref_data, approx_cols, atol=0.01):
     data = pd.read_csv(data)
     ref_data = pd.read_csv(ref_data)
 
+    assert sorted(data.columns.values) == sorted(ref_data.columns.values)
+    cols = sorted(data.columns.values)
+    data = data.sort_values(by=cols)
+    ref_data = ref_data.sort_values(by=cols)
+    data = data.reset_index(drop=True)
+    ref_data = ref_data.reset_index(drop=True)
+
     for colname in data.columns.values:
         if colname in approx_cols:
             assert np.allclose(data[colname], ref_data[colname], atol=atol, equal_nan=True), colname
