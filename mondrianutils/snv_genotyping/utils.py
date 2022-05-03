@@ -148,7 +148,8 @@ def utils():
             args['barcodes'], args['variants'], args['ref_counts'],
             args['alt_counts'], args['outfile'],
             write_header=(not args['skip_header']),
-            sparse=args['sparse']
+            sparse=args[
+                'sparse']
         )
     elif args['which'] == "generate_cell_barcodes":
         generate_cell_barcodes_file(args['bamfile'], args['output'])
