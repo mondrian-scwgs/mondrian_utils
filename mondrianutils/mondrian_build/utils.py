@@ -43,8 +43,7 @@ def _compare_csv(data, ref_data, approx_cols, atol=0.01):
         if colname in approx_cols:
             assert np.allclose(data[colname], ref_data[colname], atol=atol, equal_nan=True), colname
         else:
-            assert data[colname].equals(ref_data[colname]), colname
-
+            assert data[colname].equals(ref_data[colname]), (data, ref_data, colname)
 
 def compare_alignment(metrics, metrics_ref, gc_metrics, gc_metrics_ref):
     metrics = pd.read_csv(metrics)
@@ -99,6 +98,12 @@ def compare_snv_genotyping(
     _compare_csv(vartrix, vartrix_ref, [])
 
 
+def compare_sv_genotyping(
+        genotyper, genotyper_ref
+):
+    _compare_csv(genotyper, genotyper_ref, [])
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -149,6 +154,11 @@ def parse_args():
     compare_snv_genotyping.add_argument('--vartrix', required=True)
     compare_snv_genotyping.add_argument('--vartrix_ref', required=True)
 
+    compare_sv_genotyping = subparsers.add_parser('compare_sv_genotyping')
+    compare_sv_genotyping.set_defaults(which='compare_sv_genotyping')
+    compare_sv_genotyping.add_argument('--genotyper', required=True)
+    compare_sv_genotyping.add_argument('--genotyper_ref', required=True)
+
     args = vars(parser.parse_args())
 
     return args
@@ -173,7 +183,6 @@ def utils():
             args['mutect'], args['mutect_ref'],
             args['strelka_snv'], args['strelka_snv_ref'],
             args['strelka_indel'], args['strelka_indel_ref']
-
         )
     elif args['which'] == 'compare_breakpoint_calling':
         compare_breakpoint_calling(
@@ -186,6 +195,10 @@ def utils():
         compare_snv_genotyping(
             args['genotyper'], args['genotyper_ref'],
             args['vartrix'], args['vartrix_ref']
+        )
+    elif args['which'] == 'compare_sv_genotyping':
+        compare_sv_genotyping(
+            args['genotyper'], args['genotyper_ref']
         )
     else:
         raise Exception()

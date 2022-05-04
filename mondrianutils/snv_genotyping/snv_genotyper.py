@@ -45,7 +45,6 @@ class SnvGenotyper(object):
             'cell_id': 'str',
             'ref_counts': int,
             'alt_counts': int
-
         }
         return dtypes
 

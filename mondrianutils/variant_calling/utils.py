@@ -185,6 +185,27 @@ def update_maf_ids(infile, output, tumour_id, normal_id):
         df.to_csv(outfile, sep='\t', index=False)
 
 
+def merge_mafs(infiles, output):
+    assert len(infiles) > 0
+
+    with helpers.getFileHandle(infiles[0], 'rt') as reader:
+        header1 = reader.readline()
+        header2 = reader.readline()
+        assert header1.startswith('#version')
+        assert header2.startswith('Hugo_Symbol')
+
+    with helpers.getFileHandle(output, 'wt') as writer:
+        writer.write(header1)
+        writer.write(header2)
+
+        for infile in infiles:
+            with helpers.getFileHandle(infile, 'rt') as reader:
+                for line in reader:
+                    if line.startswith('#version') or line.startswith('Hugo_Symbol'):
+                        continue
+                    writer.write(line)
+
+
 def update_maf_counts(input_maf, counts_file, output_maf):
     counts = {}
     with open(counts_file) as infile:
@@ -398,6 +419,11 @@ def parse_args():
     update_maf_id.add_argument('--counts', required=True)
     update_maf_id.add_argument('--output', required=True)
 
+    merge_mafs = subparsers.add_parser('merge_mafs')
+    merge_mafs.set_defaults(which='merge_mafs')
+    merge_mafs.add_argument('--infiles', nargs='*', required=True)
+    merge_mafs.add_argument('--output', required=True)
+
     concat_csv_parser = subparsers.add_parser('concat_csv')
     concat_csv_parser.set_defaults(which='concat_csv')
     concat_csv_parser.add_argument('--inputs', nargs='*', required=True)
@@ -414,7 +440,6 @@ def parse_args():
     merge_bams.add_argument('--output', required=True)
     merge_bams.add_argument('--threads', type=int, required=True)
     merge_bams.add_argument('--tempdir', required=True)
-
 
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
@@ -454,6 +479,8 @@ def utils():
                         args['vcf_tumour_id'])
     elif args['which'] == 'update_maf_ids':
         update_maf_ids(args['input'], args['output'], args['tumour_id'], args['normal_id'])
+    elif args['which'] == 'merge_mafs':
+        merge_mafs(args['infiles'], args['output'])
     elif args['which'] == 'update_maf_counts':
         update_maf_counts(args['input'], args['counts'], args['output'])
     elif args['which'] == 'concat_csv':
