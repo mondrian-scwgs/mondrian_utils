@@ -37,6 +37,8 @@ def get_calls_grouped(filepath, num_calls):
             else:
                 calls.append(line)
 
+    yield calls
+
 
 def split_vcf(infile, outdir, num_splits):
     num_lines = get_num_calls(infile)

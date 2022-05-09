@@ -25,7 +25,11 @@ class SnvGenotyper(object):
         self.cell_barcodes = cell_barcodes
         self.all_cells = self.get_cells()
 
-        self.chrom, self.begin, self.end = self._parse_interval(interval)
+        self.chrom = None
+        self.begin = None
+        self.end = None
+        if interval:
+            self.chrom, self.begin, self.end = self._parse_interval(interval)
 
         self.targets = targets
         self.output = output
