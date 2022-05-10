@@ -255,6 +255,9 @@ def alignment(
     with open(fastq_files, 'rt') as reader:
         fastqdata = json.load(reader)
 
+    if os.path.join(tempdir):
+        shutil.rmtree(tempdir)
+
     final_lane_bams = []
     all_detailed_counts = []
     all_summary_counts = []
@@ -266,12 +269,15 @@ def alignment(
 
         print("Processing Lane {} Flowcell {}".format(lane_id, flowcell_id))
 
-        helpers.makedirs(os.path.join(tempdir, lane_id, 'fastqscreen'))
-        fastqscreen_r1 = os.path.join(tempdir, lane_id, 'fastqscreen', 'r1.fastq.gz')
-        fastqscreen_r2 = os.path.join(tempdir, lane_id, 'fastqscreen', 'r2.fastq.gz')
-        detailed_metrics = os.path.join(tempdir, lane_id, 'fastqscreen', 'detailed.csv.gz')
-        summary_metrics = os.path.join(tempdir, lane_id, 'fastqscreen', 'summary.csv.gz')
-        fastqscreen_temp = os.path.join(tempdir, lane_id, 'fastqscreen')
+        lane_tempdir = os.path.join(tempdir, lane_id, flowcell_id)
+        assert not os.path.exists(lane_tempdir)
+
+        helpers.makedirs(os.path.join(lane_tempdir, 'fastqscreen'))
+        fastqscreen_r1 = os.path.join(lane_tempdir, 'fastqscreen', 'r1.fastq.gz')
+        fastqscreen_r2 = os.path.join(lane_tempdir, 'fastqscreen', 'r2.fastq.gz')
+        detailed_metrics = os.path.join(lane_tempdir, 'fastqscreen', 'detailed.csv.gz')
+        summary_metrics = os.path.join(lane_tempdir, 'fastqscreen', 'summary.csv.gz')
+        fastqscreen_temp = os.path.join(lane_tempdir, 'fastqscreen')
 
         print("Starting FastqScreen")
         organism_filter(
@@ -283,34 +289,34 @@ def alignment(
         all_summary_counts.append(summary_metrics)
 
         print("Starting Trim Galore")
-        helpers.makedirs(os.path.join(tempdir, lane_id, 'trim_galore'))
-        trim_galore_r1 = os.path.join(tempdir, lane_id, 'trim_galore', 'r1.fastq.gz')
-        trim_galore_r2 = os.path.join(tempdir, lane_id, 'trim_galore', 'r2.fastq.gz')
-        trim_galore_temp = os.path.join(tempdir, lane_id, 'trim_galore')
+        helpers.makedirs(os.path.join(lane_tempdir, 'trim_galore'))
+        trim_galore_r1 = os.path.join(lane_tempdir, 'trim_galore', 'r1.fastq.gz')
+        trim_galore_r2 = os.path.join(lane_tempdir, 'trim_galore', 'r2.fastq.gz')
+        trim_galore_temp = os.path.join(lane_tempdir, 'trim_galore')
         trim_galore(
             fastqscreen_r1, fastqscreen_r2, trim_galore_r1, trim_galore_r2,
             adapter1, adapter2, trim_galore_temp, num_threads
         )
 
         print("Starting Alignment")
-        helpers.makedirs(os.path.join(tempdir, lane_id, 'bwa_mem'))
-        lane_aligned_bam = os.path.join(tempdir, lane_id, 'bwa_mem', 'aligned.bam')
+        helpers.makedirs(os.path.join(lane_tempdir, 'bwa_mem'))
+        lane_aligned_bam = os.path.join(lane_tempdir, 'bwa_mem', 'aligned.bam')
         bwa_align(
             trim_galore_r1, trim_galore_r2, reference, metadata_yaml, lane_aligned_bam,
             lane_id, flowcell_id, cell_id, num_threads
         )
 
         print("Tagging Bam with cell id")
-        helpers.makedirs(os.path.join(tempdir, lane_id, 'tagging'))
-        lane_tagged_bam = os.path.join(tempdir, lane_id, 'tagging', 'tagged.bam')
+        helpers.makedirs(os.path.join(lane_tempdir, 'tagging'))
+        lane_tagged_bam = os.path.join(lane_tempdir, 'tagging', 'tagged.bam')
         tag_bam_with_cellid(
             lane_aligned_bam, lane_tagged_bam, cell_id
         )
 
         print("Starting Bam Sort")
-        helpers.makedirs(os.path.join(tempdir, lane_id, 'sorting'))
-        lane_sorted_bam = os.path.join(tempdir, lane_id, 'sorting', 'sorted.bam')
-        lane_sorted_temp = os.path.join(tempdir, lane_id, 'sorting')
+        helpers.makedirs(os.path.join(lane_tempdir, 'sorting'))
+        lane_sorted_bam = os.path.join(lane_tempdir, 'sorting', 'sorted.bam')
+        lane_sorted_temp = os.path.join(lane_tempdir, 'sorting')
         bam_sort(lane_tagged_bam, lane_sorted_bam, lane_sorted_temp, num_threads=num_threads, mem='4G')
 
         final_lane_bams.append(lane_sorted_bam)
