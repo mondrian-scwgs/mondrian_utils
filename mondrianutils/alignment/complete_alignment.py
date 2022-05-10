@@ -255,7 +255,7 @@ def alignment(
     with open(fastq_files, 'rt') as reader:
         fastqdata = json.load(reader)
 
-    if os.path.join(tempdir):
+    if os.path.exists(tempdir):
         shutil.rmtree(tempdir)
 
     final_lane_bams = []
