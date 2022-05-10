@@ -14,5 +14,5 @@ THREADS=${11}
 
 
 bwa mem -C -M -t ${THREADS} \
--R "@RG\tID:${SAMPLE}_${LIBRARY}_${LANE}\tSM:${SAMPLE}\tLB:${LIBRARY}\tPL:ILLUMINA\tCN:${CENTRE}" \
+-R "@RG\tID:${SAMPLE}_${LIBRARY}_${LANE}_${FLOWCELL}\tSM:${SAMPLE}\tLB:${LIBRARY}\tPL:ILLUMINA\tCN:${CENTRE}" \
 ${REFERENCE} ${FASTQ1} ${FASTQ2} | samtools sort -o ${OUTPUT} -
