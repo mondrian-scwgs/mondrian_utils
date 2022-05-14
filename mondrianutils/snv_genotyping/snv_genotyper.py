@@ -18,6 +18,7 @@ class SnvGenotyper(object):
             count_duplicates=False,
             min_mqual=20,
             sparse=False,
+            write_header=True,
             ignore_untagged_reads=False
     ):
         self.bam = self._get_bam_reader(bamfile)
@@ -38,6 +39,7 @@ class SnvGenotyper(object):
         self.min_mqual = min_mqual
         self.sparse = sparse
         self.ignore_untagged_reads = ignore_untagged_reads
+        self.write_header = write_header
 
     @property
     def dtypes(self):
@@ -239,5 +241,5 @@ class SnvGenotyper(object):
         df = self.get_counts(targets)
 
         csverve.write_dataframe_to_csv_and_yaml(
-            df, self.output, self.dtypes
+            df, self.output, self.dtypes, write_header=self.write_header
         )
