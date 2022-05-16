@@ -6,7 +6,6 @@ Created on Sep 8, 2015
 import logging
 
 import csverve.api as csverve
-import numpy as np
 import pandas as pd
 
 from .dtypes import dtypes
@@ -33,7 +32,9 @@ def collect_gc_metrics(bias_file, output, sample_id):
         logging.getLogger("single_cell.align.gcbias").warn(
             'No data in the GCBias output')
         # If the file is empty (only header no data) then return 0s (dummy data)
-        data = np.array([np.arange(100), [0] * 100]).T
-        data = pd.DataFrame(data, columns=['gc', sample_id])
+
+        dummy_data = [[0 for v in range(101)] + [sample_id]]
+        columns = [str(v) for v in range(101)] + ['cell_id']
+        data = pd.DataFrame(dummy_data, columns=columns)
 
     csverve.write_dataframe_to_csv_and_yaml(data, output, dtypes()['gc'], write_header=True)
