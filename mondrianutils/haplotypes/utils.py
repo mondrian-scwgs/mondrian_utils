@@ -371,6 +371,7 @@ def utils():
             args['chromosome'], bam_max_fragment_length,
             bam_max_soft_clipped, bam_check_proper_pair
         )
+
     elif args['which'] == 'infer_snp_genotype_from_normal':
         remixt.analysis.haplotype.infer_snp_genotype_from_normal(
             args['output'], args['seqdata'], args['chromosome'], {}

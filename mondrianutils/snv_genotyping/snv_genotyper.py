@@ -44,13 +44,13 @@ class SnvGenotyper(object):
     @property
     def dtypes(self):
         dtypes = {
-            'chrom': 'str',
-            'pos': int,
+            'chromosome': 'str',
+            'position': int,
             'ref': 'str',
             'alt': 'str',
             'cell_id': 'str',
-            'ref_counts': int,
-            'alt_counts': int
+            'ref_count': int,
+            'alt_count': int
         }
         return dtypes
 
@@ -231,7 +231,7 @@ class SnvGenotyper(object):
 
                     data.append(row)
 
-        data = pd.DataFrame(data, columns=['chrom', 'pos', 'ref', 'alt', 'cell_id', 'ref_counts', 'alt_counts'])
+        data = pd.DataFrame(data, columns=['chromosome', 'position', 'ref', 'alt', 'cell_id', 'ref_count', 'alt_count'])
 
         return data
 
