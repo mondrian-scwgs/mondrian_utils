@@ -170,9 +170,9 @@ def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
         cell_id = cell_id[0].strip()
 
         if cell_id in good_cells:
-            shutil.copyfile(filepath, os.path.join(pass_dir, '{}_segments.png'.format(cell_id)))
+            shutil.copyfile(filepath, os.path.join(pass_dir, '{}_segments.pdf'.format(cell_id)))
         elif cell_id in bad_cells:
-            shutil.copyfile(filepath, os.path.join(fail_dir, '{}_segments.png'.format(cell_id)))
+            shutil.copyfile(filepath, os.path.join(fail_dir, '{}_segments.pdf'.format(cell_id)))
         else:
             raise Exception('cell_id {} for file {} not found in metrics file {}'.format(cell_id, filepath, metrics))
 
@@ -413,7 +413,7 @@ def parse_args():
     create_segs_tar = subparsers.add_parser('create_segs_tar')
     create_segs_tar.set_defaults(which='create_segs_tar')
     create_segs_tar.add_argument(
-        '--segs_png',
+        '--segs_pdf',
         nargs='*'
     )
     create_segs_tar.add_argument(
@@ -528,7 +528,7 @@ def utils():
                     args['training_data'])
     elif args['which'] == 'create_segs_tar':
         create_segs_tar(
-            args['segs_png'], args['metrics'],
+            args['segs_pdf'], args['metrics'],
             args['pass_output'], args['fail_output'],
             args['tempdir']
         )
