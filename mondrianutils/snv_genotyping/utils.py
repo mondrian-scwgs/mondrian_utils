@@ -121,7 +121,7 @@ def parse_args():
         '--outputs', nargs=2
     )
     generate_metadata.add_argument(
-        '--vartrix_outputs', nargs=2
+        '--vartrix_outputs', nargs=6
     )
     generate_metadata.add_argument(
         '--metadata_input'
