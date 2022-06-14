@@ -68,7 +68,7 @@ def parse_args():
     snv_genotyper.add_argument('--cell_barcodes')
     snv_genotyper.add_argument('--interval')
     snv_genotyper.add_argument('--count_duplicates', default=False)
-    snv_genotyper.add_argument('--sparse', default=False)
+    snv_genotyper.add_argument('--sparse', action='store_true', default=False)
     snv_genotyper.add_argument('--ignore_untagged_reads', action='store_true', default=False)
     snv_genotyper.add_argument('--min_mqual', default=20)
     snv_genotyper.add_argument(
