@@ -46,6 +46,8 @@ def write_counts_file(barcodes, variants, data, writer):
 def merge_vartrix(barcodes, variants, refs, alts, vcf_files, merged_barcodes, merged_variants, merged_ref, merged_alt):
     assert len(barcodes) == len(variants) == len(refs) == len(alts)
 
+    raise Exception()
+
     all_barcodes = merge_idx_files(barcodes)
     all_variants = merge_idx_files(variants)
 
