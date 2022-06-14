@@ -4,6 +4,7 @@ import argparse
 import pysam
 import yaml
 from mondrianutils import __version__
+from mondrianutils.snv_genotyping.merge_vartrix import merge_vartrix
 from mondrianutils.snv_genotyping.parse_vartrix import parse_vartrix
 from mondrianutils.snv_genotyping.snv_genotyper import SnvGenotyper
 
@@ -129,6 +130,18 @@ def parse_args():
         '--metadata_output'
     )
 
+    merge_vartrix = subparsers.add_parser('merge_vartrix')
+    merge_vartrix.set_defaults(which='merge_vartrix')
+    merge_vartrix.add_argument('--barcodes', nargs='*', required=True)
+    merge_vartrix.add_argument('--variants', nargs='*', required=True)
+    merge_vartrix.add_argument('--ref_matrices', nargs='*', required=True)
+    merge_vartrix.add_argument('--alt_matrices', nargs='*', required=True)
+    merge_vartrix.add_argument('--vcf_file', nargs='*', required=True)
+    merge_vartrix.add_argument('--merged_barcodes', required=True)
+    merge_vartrix.add_argument('--merged_variants', required=True)
+    merge_vartrix.add_argument('--merged_ref_matrix', required=True)
+    merge_vartrix.add_argument('--merged_alt_matrix', required=True)
+
     args = vars(parser.parse_args())
 
     return args
@@ -156,6 +169,12 @@ def utils():
             write_header=(not args['skip_header']),
             sparse=args[
                 'sparse']
+        )
+    elif args['which'] == "merge_vartrix":
+        merge_vartrix(
+            args['barcodes'], args['variants'], args['ref_matrices'], args['alt_matrices'],
+            args['vcf_file'], args['merged_barcodes'], args['merged_variants'],
+            args['merged_ref_matrix'], args['merged_alt_matrix']
         )
     elif args['which'] == "generate_cell_barcodes":
         generate_cell_barcodes_file(args['bamfile'], args['output'])
