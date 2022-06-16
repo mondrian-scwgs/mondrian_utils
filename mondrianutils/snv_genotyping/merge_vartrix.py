@@ -151,7 +151,7 @@ def merge_vartrix(
     with open(temp_merged_ref, 'wt') as ref_writer, open(temp_merged_alt, 'wt') as alt_writer, open(temp_parsed,
                                                                                                     'wt') as parsed_writer:
 
-        parsed_writer.write('cell_id\tchromosome\tposition\tref\talt\tref_count\talt_count\n')
+        parsed_writer.write('cell_id,chromosome,position,ref,alt,ref_count,alt_count\n')
 
         for barcode, variant, ref, alt, vcf in zip(barcodes, variants, refs, alts, vcf_files):
             assert os.path.dirname(barcode) == os.path.dirname(variant) == os.path.dirname(ref) == os.path.dirname(alt)
