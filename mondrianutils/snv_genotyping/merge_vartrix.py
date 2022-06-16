@@ -179,6 +179,8 @@ def merge_vartrix(
             'cell_id': 'str',
             'chromosome': 'str',
             'position': 'int',
+            'ref': 'str',
+            'alt': 'str',
             'ref_count': 'int',
             'alt_count': 'int'
         }
