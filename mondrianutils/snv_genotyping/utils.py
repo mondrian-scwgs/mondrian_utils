@@ -134,13 +134,15 @@ def parse_args():
     merge_vartrix.set_defaults(which='merge_vartrix')
     merge_vartrix.add_argument('--barcodes', nargs='*', required=True)
     merge_vartrix.add_argument('--variants', nargs='*', required=True)
-    merge_vartrix.add_argument('--ref_matrices', nargs='*', required=True)
-    merge_vartrix.add_argument('--alt_matrices', nargs='*', required=True)
+    merge_vartrix.add_argument('--ref', nargs='*', required=True)
+    merge_vartrix.add_argument('--alt', nargs='*', required=True)
     merge_vartrix.add_argument('--vcf_file', nargs='*', required=True)
     merge_vartrix.add_argument('--merged_barcodes', required=True)
     merge_vartrix.add_argument('--merged_variants', required=True)
-    merge_vartrix.add_argument('--merged_ref_matrix', required=True)
-    merge_vartrix.add_argument('--merged_alt_matrix', required=True)
+    merge_vartrix.add_argument('--merged_ref', required=True)
+    merge_vartrix.add_argument('--merged_alt', required=True)
+    merge_vartrix.add_argument('--parsed_output', required=True)
+    merge_vartrix.add_argument('--tempdir', required=True)
 
     args = vars(parser.parse_args())
 
@@ -172,9 +174,9 @@ def utils():
         )
     elif args['which'] == "merge_vartrix":
         merge_vartrix(
-            args['barcodes'], args['variants'], args['ref_matrices'], args['alt_matrices'],
-            args['vcf_file'], args['merged_barcodes'], args['merged_variants'],
-            args['merged_ref_matrix'], args['merged_alt_matrix']
+            args['barcodes'], args['variants'], args['ref'], args['alt'], args['vcf_file'],
+            args['merged_barcodes'], args['merged_variants'], args['merged_ref'], args['merged_alt'],
+            args['parsed_output'], args['tempdir']
         )
     elif args['which'] == "generate_cell_barcodes":
         generate_cell_barcodes_file(args['bamfile'], args['output'])
