@@ -50,7 +50,7 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
     for genome in fastqscreen_genomes:
         metrics['fastqscreen_{}'.format(genome)] = 'int'
         metrics['fastqscreen_{}_multihit'.format(genome)] = 'int'
-        metrics['fastqscreen_{}_ratio'.format(genome)] = 'int'
+        metrics['fastqscreen_{}_ratio'.format(genome)] = 'float'
 
     gc = {str(i): 'float' for i in range(0, 101)}
     gc['cell_id'] = 'str'

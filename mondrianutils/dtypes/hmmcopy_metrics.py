@@ -76,6 +76,6 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
     for genome in fastqscreen_genomes:
         dtypes['fastqscreen_{}'.format(genome)] = 'int'
         dtypes['fastqscreen_{}_multihit'.format(genome)] = 'int'
-        dtypes['fastqscreen_{}_ratio'.format(genome)] = 'int'
+        dtypes['fastqscreen_{}_ratio'.format(genome)] = 'float'
 
     return dtypes
