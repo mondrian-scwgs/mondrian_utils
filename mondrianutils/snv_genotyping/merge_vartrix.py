@@ -3,6 +3,8 @@ import os
 
 import csverve.api as csverve
 import pandas as pd
+import mondrianutils.helpers as helpers
+
 
 
 def merge_idx_files(idx_files):
@@ -88,7 +90,7 @@ def load_data(barcode_data, variant_data, vcf_data, count_file):
 
 def write_counts_file(barcodes, variants, data, writer):
     for (variant, barcode, _, _, _), count in data.items():
-        outstr = [str(barcodes[barcode]), str(variants[variant]), count]
+        outstr = [str(variants[variant]), str(barcodes[barcode]), count]
         outstr = '\t'.join(outstr) + '\n'
         writer.write(outstr)
 
@@ -101,6 +103,8 @@ def write_parsed_format(ref_counts, alt_counts, parsed_output):
 
         chrom, pos = variant.split('_')
 
+        pos = str(int(pos) + 1)
+
         outstr = [barcode, chrom, pos, ref, alt, ref_count, alt_count]
 
         outstr = ','.join(outstr) + '\n'
@@ -109,19 +113,30 @@ def write_parsed_format(ref_counts, alt_counts, parsed_output):
 
 
 def rewrite_counts_file(inputfile, outputfile, num_barcodes, num_variants):
+    num_calls = 0
     with open(inputfile, 'rt') as reader:
         for num_calls, _ in enumerate(reader):
             pass
 
     with open(inputfile, 'rt') as reader, open(outputfile, 'wt') as writer:
-
         writer.write("%%MatrixMarket matrix coordinate real general\n")
         writer.write("% written by sprs\n")
-        writer.write("{}\t{}\t{}\n".format(num_barcodes, num_variants, num_calls))
-
+        writer.write("{}\t{}\t{}\n".format(num_variants, num_barcodes,  num_calls))
         for line in reader:
             writer.write(line)
 
+def get_dtypes():
+    dtypes = {
+        'cell_id': 'str',
+        'chromosome': 'str',
+        'position': 'int',
+        'ref': 'str',
+        'alt': 'str',
+        'ref_count': 'int',
+        'alt_count': 'int'
+    }
+
+    return dtypes
 
 def merge_vartrix(
         barcodes, variants, refs, alts, vcf_files,
@@ -129,16 +144,12 @@ def merge_vartrix(
         merged_alt, parsed_output, tempdir
 ):
     assert len(barcodes) == len(variants) == len(refs) == len(alts)
-
-    try:
-        os.makedirs(tempdir)
-    except:
-        pass
+    helpers.makedirs(tempdir)
 
     all_barcodes = merge_idx_files(barcodes)
-    all_variants = merge_idx_files(variants)
-
     write_idx_file(all_barcodes, merged_barcodes)
+
+    all_variants = merge_idx_files(variants)
     write_idx_file(all_variants, merged_variants)
 
     barcodes_dict = {v: i + 1 for i, v in enumerate(all_barcodes)}
@@ -150,7 +161,6 @@ def merge_vartrix(
 
     with open(temp_merged_ref, 'wt') as ref_writer, open(temp_merged_alt, 'wt') as alt_writer, open(temp_parsed,
                                                                                                     'wt') as parsed_writer:
-
         parsed_writer.write('cell_id,chromosome,position,ref,alt,ref_count,alt_count\n')
 
         for barcode, variant, ref, alt, vcf in zip(barcodes, variants, refs, alts, vcf_files):
@@ -175,13 +185,5 @@ def merge_vartrix(
     csverve.write_dataframe_to_csv_and_yaml(
         df, parsed_output,
         write_header=True,
-        dtypes={
-            'cell_id': 'str',
-            'chromosome': 'str',
-            'position': 'int',
-            'ref': 'str',
-            'alt': 'str',
-            'ref_count': 'int',
-            'alt_count': 'int'
-        }
+        dtypes=get_dtypes()
     )
