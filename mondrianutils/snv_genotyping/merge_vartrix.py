@@ -2,9 +2,8 @@ import gzip
 import os
 
 import csverve.api as csverve
-import pandas as pd
 import mondrianutils.helpers as helpers
-
+import pandas as pd
 
 
 def merge_idx_files(idx_files):
@@ -65,11 +64,16 @@ def get_ref_alt(chrom, pos, idx, vcf_data):
 
 def load_data(barcode_data, variant_data, vcf_data, count_file):
     counts = {}
+    header = False
 
     with open(count_file, 'rt') as reader:
 
         for line in reader:
             if line.startswith('%'):
+                continue
+            # first line is the total counts
+            if header is False:
+                header = True
                 continue
             var_idx, barcode_idx, count = line.strip().split()
             var_idx = int(var_idx)
@@ -121,9 +125,10 @@ def rewrite_counts_file(inputfile, outputfile, num_barcodes, num_variants):
     with open(inputfile, 'rt') as reader, open(outputfile, 'wt') as writer:
         writer.write("%%MatrixMarket matrix coordinate real general\n")
         writer.write("% written by sprs\n")
-        writer.write("{}\t{}\t{}\n".format(num_variants, num_barcodes,  num_calls))
+        writer.write("{}\t{}\t{}\n".format(num_variants, num_barcodes, num_calls))
         for line in reader:
             writer.write(line)
+
 
 def get_dtypes():
     dtypes = {
@@ -137,6 +142,7 @@ def get_dtypes():
     }
 
     return dtypes
+
 
 def merge_vartrix(
         barcodes, variants, refs, alts, vcf_files,
