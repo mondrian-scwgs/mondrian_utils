@@ -13,6 +13,7 @@ import remixt.workflow
 import yaml
 from mondrianutils import helpers
 from mondrianutils.dtypes.haplotypes import dtypes
+from mondrianutils.haplotypes.infer_haps import infer_haps
 
 import remixt
 
@@ -199,7 +200,7 @@ def parse_args():
         required=True
     )
     infer_haps.add_argument(
-        '--thousand_genomes_impute_tar',
+        '--thousand_genomes_tar',
         required=True
     )
     infer_haps.add_argument(
@@ -215,25 +216,10 @@ def parse_args():
         required=True
     )
     infer_haps.add_argument(
-        '--genetic_map_filename_template',
+        '--snp_positions',
         required=True
     )
-    infer_haps.add_argument(
-        '--haplotypes_filename_template',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--legend_filename_template',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--sample_filename',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--phased_chromosome_x',
-        required=True
-    )
+
 
     merge_haps = subparsers.add_parser('merge_haps')
     merge_haps.set_defaults(which='merge_haps')
@@ -377,36 +363,9 @@ def utils():
             args['output'], args['seqdata'], args['chromosome'], {}
         )
     elif args['which'] == 'infer_haps':
-        helpers.untar(
-            args['thousand_genomes_impute_tar'],
-            os.path.join(args['tempdir'], 'thousand_genomes_impute_tar')
-        )
-
-        chrom = args['phased_chromosome_x'] if args['chromosome'].endswith('X') else args['chromosome']
-
-        assert '{chromosome}' in args['genetic_map_filename_template']
-        genetic_map = args['genetic_map_filename_template'].replace('{chromosome}', chrom)
-        genetic_map = os.path.join(args['tempdir'], 'thousand_genomes_impute_tar', genetic_map)
-
-        assert '{chromosome}' in args['haplotypes_filename_template']
-        haplotypes = args['haplotypes_filename_template'].replace('{chromosome}', chrom)
-        haplotypes = os.path.join(args['tempdir'], 'thousand_genomes_impute_tar', haplotypes)
-
-        assert '{chromosome}' in args['legend_filename_template']
-        legend = args['legend_filename_template'].replace('{chromosome}', chrom)
-        legend = os.path.join(args['tempdir'], 'thousand_genomes_impute_tar', legend)
-
-        sample = os.path.join(args['tempdir'], 'thousand_genomes_impute_tar', args['sample_filename'])
-
-        config = {
-            'genetic_map_template': genetic_map,
-            'haplotypes_template': haplotypes,
-            'legend_template': legend,
-            'sample_template': sample
-        }
-        remixt.analysis.haplotype.infer_haps(
-            args['output'], args['snp_genotype'], args['chromosome'], args['tempdir'],
-            config, None
+        infer_haps(
+            args['snp_genotype'], args['chromosome'], args['output'],
+            args['thousand_genomes_tar'], args['snp_positions'], args['tempdir']
         )
     elif args['which'] == 'merge_haps':
         remixt.utils.merge_tables(
