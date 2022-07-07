@@ -101,7 +101,7 @@ def infer_haps(snp_genotype, chromosome, output, thousand_genomes_tar, snp_posit
             meta['legend_filename_template'], meta['sample_filename'],
             meta['chr_name_prefix'], meta['phased_chromosome_x']
         )
-    elif meta['genome_version'] == 'GRCh38':
+    elif meta['ensembl_genome_version'] == 'GRCh38':
         infer_haps_grch38(
             thousand_genomes_dir, tempdir, output, snp_genotype, chromosome,
             meta['grch38_1kg_bcf_filename_template'], meta['grch38_1kg_X_bcf_filename_template'],
