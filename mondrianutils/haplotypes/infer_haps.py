@@ -94,14 +94,14 @@ def infer_haps(snp_genotype, chromosome, output, thousand_genomes_tar, snp_posit
 
     meta = load_tar_meta(thousand_genomes_dir)
 
-    if meta['ensembl_genome_version'] == 'grch37':
+    if meta['ensembl_genome_version'] == 'GRCh37':
         infer_haps_grch37(
             thousand_genomes_dir, tempdir, output, snp_genotype, chromosome,
             meta['genetic_map_filename_template'], meta['haplotypes_filename_template'],
             meta['legend_filename_template'], meta['sample_filename'],
             meta['chr_name_prefix'], meta['phased_chromosome_x']
         )
-    elif meta['genome_version'] == 'grch38':
+    elif meta['genome_version'] == 'GRCh38':
         infer_haps_grch38(
             thousand_genomes_dir, tempdir, output, snp_genotype, chromosome,
             meta['grch38_1kg_bcf_filename_template'], meta['grch38_1kg_X_bcf_filename_template'],
