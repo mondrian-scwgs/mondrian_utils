@@ -90,6 +90,8 @@ def infer_haps(snp_genotype, chromosome, output, thousand_genomes_tar, snp_posit
 
     helpers.untar(thousand_genomes_tar, thousand_genomes_dir)
 
+    thousand_genomes_dir = os.path.join(thousand_genomes_dir, 'thousand_genomes_dir')
+
     meta = load_tar_meta(thousand_genomes_dir)
 
     if meta['ensembl_genome_version'] == 'grch37':
