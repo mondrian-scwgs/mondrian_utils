@@ -59,7 +59,7 @@ def infer_haps_grch38(
     genetic_map_grch38_filename_template = os.path.join(thousand_genomes_dir, genetic_map_grch38_filename_template)
 
     config = {
-        'snp_positions': snp_positions,
+        'snp_positions_filename': snp_positions,
         'grch38_1kg_chromosomes': grch38_1kg_chromosomes,
         'ensembl_genome_version': 'GRCh38',
         'chr_name_prefix': chr_name_prefix,
