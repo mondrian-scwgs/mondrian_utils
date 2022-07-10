@@ -54,6 +54,10 @@ def infer_haps_grch38(
     grch38_1kg_bcf_filename_template = grch38_1kg_bcf_filename_template.replace('{chromosome}', chromosome)
     grch38_1kg_bcf_filename_template = os.path.join(thousand_genomes_dir, grch38_1kg_bcf_filename_template)
 
+    assert '{chromosome}' in grch38_1kg_X_bcf_filename_template
+    grch38_1kg_X_bcf_filename_template = grch38_1kg_X_bcf_filename_template.replace('{chromosome}', chromosome)
+    grch38_1kg_X_bcf_filename_template = os.path.join(thousand_genomes_dir, grch38_1kg_X_bcf_filename_template)
+
     assert '{chromosome}' in genetic_map_grch38_filename_template
     genetic_map_grch38_filename_template = genetic_map_grch38_filename_template.replace('{chromosome}', chromosome)
     genetic_map_grch38_filename_template = os.path.join(thousand_genomes_dir, genetic_map_grch38_filename_template)
