@@ -275,6 +275,11 @@ def parse_args():
         required=True
     )
     create_segments.add_argument(
+        '--chromosomes',
+        nargs='*',
+        default=default_chroms
+    )
+    create_segments.add_argument(
         '--output',
         required=True
     )
@@ -382,7 +387,8 @@ def utils():
     elif args['which'] == 'create_segments':
         config = {
             'genome_fai_template': args['reference_fai'],
-            'gap_table_template': args['gap_table']
+            'gap_table_template': args['gap_table'],
+            'chromosomes': args['chromosomes']
         }
         ref_data_dir = os.path.dirname(args['reference_fai'])
         remixt.analysis.segment.create_segments(
