@@ -3,6 +3,8 @@ import gzip
 import os
 
 import argparse
+import pandas as pd
+import pysam
 
 
 def build_repeats(rmsk, chr_map, repeats, satellites):
@@ -56,9 +58,9 @@ def get_legend_map(legend_dir):
     return legend_map
 
 
-def create_snp_positions(fai, legend_dir, snp_positions):
+def create_snp_positions_grch37(fai, data_dir, snp_positions):
     chroms = get_chrom_lengths(fai)
-    legend_map = get_legend_map(legend_dir)
+    legend_map = get_legend_map(data_dir)
 
     with open(snp_positions, 'wt') as writer:
         for chromosome in chroms:
@@ -78,6 +80,38 @@ def create_snp_positions(fai, legend_dir, snp_positions):
                     writer.write('\t'.join([chromosome, position, a0, a1]) + '\n')
 
 
+def create_snp_positions_grch38(bcf_file_dir, output, chromosomes=None, chr_name_prefix='chr'):
+    if chromosomes is None:
+        chromosomes = [chr_name_prefix + str(v) for v in range(1, 23)] + ['X']
+
+    snps = []
+    for chromosome in chromosomes:
+        bcf_filename = os.path.join(
+            bcf_file_dir,
+            f'1kGP_high_coverage_Illumina.{chromosome}.filtered.SNV_INDEL_SV_phased_panel.bcf'
+        )
+        for r in pysam.VariantFile(bcf_filename, 'r'):
+            for alt in r.alts:
+                # Translate chromosome names from grch38 1kg (chr prefix) to those in the remixt reference
+                # as specified by the chr_name_prefix config param
+                if chr_name_prefix == 'chr':
+                    chrom = r.chrom
+                elif chr_name_prefix == '':
+                    assert r.chrom.startswith('chr')
+                    chrom = r.chrom[3:]
+                else:
+                    raise ValueError(f'unrecognized chr_name_prefix {chr_name_prefix}')
+                coord = r.pos
+                ref = r.ref
+                if ref not in ['A', 'C', 'T', 'G']:
+                    continue
+                if alt not in ['A', 'C', 'T', 'G']:
+                    continue
+                snps.append([chrom, coord, ref, alt])
+    snps = pd.DataFrame(snps, columns=['chrom', 'coord', 'ref', 'alt'])
+    snps.to_csv(output, index=False, header=False, sep='\t')
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -92,16 +126,28 @@ def parse_args():
     repeats.add_argument('--repeats', required=True)
     repeats.add_argument('--satellites', required=True)
 
-    snp_positions = subparsers.add_parser('snp_positions')
-    snp_positions.set_defaults(which='snp_positions')
-    snp_positions.add_argument(
+    snp_positions_grch37 = subparsers.add_parser('snp_positions_grch37')
+    snp_positions_grch37.set_defaults(which='snp_positions_grch37')
+    snp_positions_grch37.add_argument(
         '--reference_fai'
     )
-    snp_positions.add_argument(
-        '--legend_dir'
+    snp_positions_grch37.add_argument(
+        '--data_dir'
     )
-    snp_positions.add_argument(
+    snp_positions_grch37.add_argument(
         '--snp_positions'
+    )
+
+    snp_positions_grch38 = subparsers.add_parser('snp_positions_grch38')
+    snp_positions_grch38.set_defaults(which='snp_positions_grch38')
+    snp_positions_grch38.add_argument(
+        '--data_dir'
+    )
+    snp_positions_grch38.add_argument(
+        '--snp_positions'
+    )
+    snp_positions_grch38.add_argument(
+        '--chromosomes', nargs='*', default=None
     )
 
     args = vars(parser.parse_args())
@@ -115,9 +161,13 @@ def utils():
     if args['which'] == 'repeats':
         build_repeats(args['rmsk_file'], args['chrom_map'], args['repeats'], args['satellites'])
 
-    elif args['which'] == 'snp_positions':
-        create_snp_positions(
-            args['reference_fai'], args['legend_dir'], args['snp_positions']
+    elif args['which'] == 'snp_positions_grch37':
+        create_snp_positions_grch37(
+            args['reference_fai'], args['data_dir'], args['snp_positions']
+        )
+    elif args['which'] == 'snp_positions_grch38':
+        create_snp_positions_grch38(
+            args['data_dir'], args['snp_positions'], chromosomes=args['chromosomes']
         )
     else:
         raise Exception()
