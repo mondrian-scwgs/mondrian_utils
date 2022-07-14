@@ -28,10 +28,11 @@ class MissingField(Exception):
 
 
 def _check_sample_id_uniqueness(meta_data):
-    non_control_samples = [v['sample_id'] for k, v in meta_data['meta']['cells'].items() if v['is_control'] == False]
+    non_control_samples = [v['sample_id'] for k, v in meta_data['cells'].items() if v['is_control'] == False]
     non_control_samples = sorted(set(non_control_samples))
 
-    if not len(non_control_samples) == 1:
+    # allow 0 sample ids in case all cells are control
+    if not len(non_control_samples) <= 1:
         raise MultipleSamplesPerRun(
             f'only one sample id expected in non control cells, found {non_control_samples}'
         )
@@ -39,7 +40,7 @@ def _check_sample_id_uniqueness(meta_data):
 
 def _check_metadata_required_field(meta_data, field_name):
     try:
-        [v[field_name] for k, v in meta_data['meta']['cells'].items()]
+        [v[field_name] for k, v in meta_data['cells'].items()]
     except KeyError:
         raise MissingField(f'{field_name} is required for each cell in meta section of metadata input yaml')
 
@@ -47,7 +48,7 @@ def _check_metadata_required_field(meta_data, field_name):
 def _check_lanes_and_flowcells(meta_data, input_data):
     lane_data = defaultdict(set)
 
-    for val in input_data['AlignmentWorkflow.fastq_files']:
+    for val in input_data:
         for lane in val['lanes']:
             lane_data[lane['flowcell_id']].add(lane['lane_id'])
 
@@ -66,6 +67,7 @@ def _check_lanes_and_flowcells(meta_data, input_data):
 def input_validation(meta_yaml, input_json):
     with open(meta_yaml, 'rt') as reader:
         meta_data = yaml.safe_load(reader)
+        meta_data = meta_data['meta']
 
     with open(input_json, 'rt') as reader:
         input_data = json.load(reader)
@@ -78,7 +80,7 @@ def input_validation(meta_yaml, input_json):
 
     _check_lanes_and_flowcells(meta_data, input_data)
 
-    for flowcell_id, all_lane_data in meta_data['lanes']:
+    for flowcell_id, all_lane_data in meta_data['lanes'].items():
         for lane_id, lane_data in all_lane_data.items():
             if 'sequencing_centre' not in lane_data:
                 raise MissingField(
