@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from collections import defaultdict
 
 import argparse
 import csverve.api as csverve
@@ -8,7 +9,6 @@ import mondrianutils.helpers as helpers
 import pysam
 import yaml
 from mondrianutils import __version__
-# from mondrianutils.alignment.classify_fastqscreen import classify_fastqscreen
 from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
 from mondrianutils.alignment.collect_metrics import collect_metrics
 from mondrianutils.alignment.complete_alignment import alignment
@@ -19,29 +19,79 @@ from mondrianutils.alignment.fastqscreen import organism_filter
 from mondrianutils.alignment.trim_galore import trim_galore
 
 
+class MultipleSamplesPerRun(Exception):
+    pass
+
+
+class MissingField(Exception):
+    pass
+
+
+def _check_sample_id_uniqueness(meta_data):
+    non_control_samples = [v['sample_id'] for k, v in meta_data['meta']['cells'].items() if v['is_control'] == False]
+    non_control_samples = sorted(set(non_control_samples))
+
+    if not len(non_control_samples) == 1:
+        raise MultipleSamplesPerRun(
+            f'only one sample id expected in non control cells, found {non_control_samples}'
+        )
+
+
+def _check_metadata_required_field(meta_data, field_name):
+    try:
+        [v[field_name] for k, v in meta_data['meta']['cells'].items()]
+    except KeyError:
+        raise MissingField(f'{field_name} is required for each cell in meta section of metadata input yaml')
+
+
+def _check_lanes_and_flowcells(meta_data, input_data):
+    lane_data = defaultdict(set)
+
+    for val in input_data['AlignmentWorkflow.fastq_files']:
+        for lane in val['lanes']:
+            lane_data[lane['flowcell_id']].add(lane['lane_id'])
+
+    for flowcell, lanes in lane_data.items():
+        if flowcell not in meta_data['lanes']:
+            raise MissingField(
+                f'missing flowcell {flowcell} in metadata yaml'
+            )
+        for lane_id in lanes:
+            if lane_id not in meta_data['lanes'][flowcell]:
+                raise MissingField(
+                    f'missing lane {lane_id} for flowcell {flowcell} in metadata yaml'
+                )
+
+
+def input_validation(meta_yaml, input_json):
+    with open(meta_yaml, 'rt') as reader:
+        meta_data = yaml.safe_load(reader)
+
+    with open(input_json, 'rt') as reader:
+        input_data = json.load(reader)
+
+    _check_metadata_required_field(meta_data, 'is_control')
+    _check_metadata_required_field(meta_data, 'library_id')
+    _check_metadata_required_field(meta_data, 'sample_id')
+
+    _check_sample_id_uniqueness(meta_data)
+
+    _check_lanes_and_flowcells(meta_data, input_data)
+
+    for flowcell_id, all_lane_data in meta_data['lanes']:
+        for lane_id, lane_data in all_lane_data.items():
+            if 'sequencing_centre' not in lane_data:
+                raise MissingField(
+                    f'sequencing centre missing for flowcell {flowcell_id} lane {lane_id}'
+                )
+
+
 def get_cell_id_from_bam(infile):
     infile = pysam.AlignmentFile(infile, "rb")
 
     iter = infile.fetch(until_eof=True)
     for read in iter:
         return read.get_tag('CB')
-
-
-# def chunks(bamfiles, numcores):
-#     output = []
-#     for i in range(0, len(bamfiles), numcores):
-#         output.append(bamfiles[i:i + numcores])
-#     return output
-#
-#
-# def get_merge_command(bams, output, ncores=1):
-#     if len(bams) == 1:
-#         command = ['cp', bams[0], output]
-#     else:
-#         command = ['sambamba', 'merge', '-t', str(ncores), output]
-#         command.extend(bams)
-#
-#     return command
 
 
 def get_new_header(cells, bamfile, new_header):
@@ -191,7 +241,7 @@ def add_contamination_status(
 def add_metadata(metrics, metadata_yaml, output):
     df = csverve.read_csv(metrics)
 
-    metadata = yaml.load(open(metadata_yaml, 'rt'))
+    metadata = yaml.safe_load(open(metadata_yaml, 'rt'))
 
     cells = metadata['meta']['cells'].keys()
 
@@ -656,6 +706,14 @@ def parse_args():
         '--tar_output',
     )
 
+    input_validation = subparsers.add_parser('input_validation')
+    input_validation.set_defaults(which='input_validation')
+    input_validation.add_argument(
+        '--meta_yaml', required=True
+    )
+    input_validation.add_argument(
+        '--input_data_json', required=True
+    )
     args = vars(parser.parse_args())
 
     return args
@@ -733,5 +791,7 @@ def utils():
             args['fastqscreen_detailed_output'], args['fastqscreen_summary_output'],
             args['tar_output'], args['num_threads']
         )
+    elif args['which'] == 'input_validation':
+        input_validation(args['meta_yaml'], args['input_data_json'])
     else:
         raise Exception()
