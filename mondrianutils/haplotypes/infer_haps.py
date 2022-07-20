@@ -12,7 +12,7 @@ def infer_haps_grch37(
         thousand_genomes_dir, tempdir, output, snp_genotype, chromosome,
         genetic_map_filename_template, haplotypes_filename_template,
         legend_filename_template, sample_filename,
-        chr_name_prefix, phased_chromosome_x
+        chr_name_prefix, phased_chromosome_x, sex='female'
 ):
     chrom = phased_chromosome_x if chromosome.endswith('X') else chromosome
 
@@ -36,7 +36,8 @@ def infer_haps_grch37(
         'legend_template': legend,
         'sample_template': sample,
         'ensembl_genome_version': 'GRCh37',
-        'chr_name_prefix': chr_name_prefix
+        'chr_name_prefix': chr_name_prefix,
+        'is_female': True if sex == 'female' else False
     }
     remixt.analysis.haplotype.infer_haps(
         output, snp_genotype, chromosome, tempdir,
@@ -48,7 +49,7 @@ def infer_haps_grch38(
         thousand_genomes_dir, tempdir, output, snp_genotype, chromosome,
         grch38_1kg_bcf_filename_template, grch38_1kg_X_bcf_filename_template,
         genetic_map_grch38_filename_template, chr_name_prefix, grch38_1kg_phased_chromosome_x,
-        grch38_1kg_chromosomes, snp_positions
+        grch38_1kg_chromosomes, snp_positions, sex='female'
 ):
     assert '{chromosome}' in grch38_1kg_bcf_filename_template
     grch38_1kg_bcf_filename_template = grch38_1kg_bcf_filename_template.replace('{chromosome}', chromosome)
@@ -68,7 +69,8 @@ def infer_haps_grch38(
         'grch38_1kg_bcf_filename_template': grch38_1kg_bcf_filename_template,
         'grch38_1kg_X_bcf_filename_template': grch38_1kg_X_bcf_filename_template,
         'grch38_1kg_phased_chromosome_x': grch38_1kg_phased_chromosome_x,
-        'genetic_map_grch38_filename_template': genetic_map_grch38_filename_template
+        'genetic_map_grch38_filename_template': genetic_map_grch38_filename_template,
+        'is_female': True if sex == 'female' else False
     }
 
     remixt.analysis.haplotype.infer_haps(
@@ -87,7 +89,7 @@ def load_tar_meta(thousand_genomes_dir):
     return data
 
 
-def infer_haps(snp_genotype, chromosome, output, thousand_genomes_tar, snp_positions, tempdir):
+def infer_haps(snp_genotype, chromosome, output, thousand_genomes_tar, snp_positions, tempdir, sex='female'):
     thousand_genomes_dir = os.path.join(tempdir, 'thousand_genomes_impute_tar')
 
     helpers.untar(thousand_genomes_tar, thousand_genomes_dir)
@@ -99,7 +101,7 @@ def infer_haps(snp_genotype, chromosome, output, thousand_genomes_tar, snp_posit
             thousand_genomes_dir, tempdir, output, snp_genotype, chromosome,
             meta['genetic_map_filename_template'], meta['haplotypes_filename_template'],
             meta['legend_filename_template'], meta['sample_filename'],
-            meta['chr_name_prefix'], meta['phased_chromosome_x']
+            meta['chr_name_prefix'], meta['phased_chromosome_x'], sex=sex
         )
     elif meta['ensembl_genome_version'] == 'GRCh38':
         infer_haps_grch38(
@@ -107,7 +109,7 @@ def infer_haps(snp_genotype, chromosome, output, thousand_genomes_tar, snp_posit
             meta['grch38_1kg_bcf_filename_template'], meta['grch38_1kg_X_bcf_filename_template'],
             meta['genetic_map_grch38_filename_template'], meta['chr_name_prefix'],
             meta['grch38_1kg_phased_chromosome_x'],
-            meta['grch38_1kg_chromosomes'], snp_positions
+            meta['grch38_1kg_chromosomes'], snp_positions, sex=sex
         )
     else:
         raise Exception()

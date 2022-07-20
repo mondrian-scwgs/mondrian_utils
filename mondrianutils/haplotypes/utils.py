@@ -219,7 +219,10 @@ def parse_args():
         '--snp_positions',
         required=True
     )
-
+    infer_haps.add_argument(
+        '--sex',
+        default='female'
+    )
 
     merge_haps = subparsers.add_parser('merge_haps')
     merge_haps.set_defaults(which='merge_haps')
@@ -370,7 +373,8 @@ def utils():
     elif args['which'] == 'infer_haps':
         infer_haps(
             args['snp_genotype'], args['chromosome'], args['output'],
-            args['thousand_genomes_tar'], args['snp_positions'], args['tempdir']
+            args['thousand_genomes_tar'], args['snp_positions'], args['tempdir'],
+            sex=args['sex'].lower()
         )
     elif args['which'] == 'merge_haps':
         remixt.utils.merge_tables(
