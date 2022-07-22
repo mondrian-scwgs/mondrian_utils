@@ -28,9 +28,9 @@ def _compare_vcf(vcf_file, ref_vcf_file, info_field_name):
         assert vcfdata[(chrom, pos, ref, alt)] == ref_vcfdata[(chrom, pos, ref, alt)]
 
 
-def _compare_csv(data, ref_data, approx_cols, atol=0.01):
-    data = pd.read_csv(data)
-    ref_data = pd.read_csv(ref_data)
+def _compare_csv(data, ref_data, approx_cols, atol=0.01, sep=','):
+    data = pd.read_csv(data, sep=sep)
+    ref_data = pd.read_csv(ref_data, sep=sep)
 
     assert sorted(data.columns.values) == sorted(ref_data.columns.values)
     cols = sorted(data.columns.values)
@@ -43,7 +43,8 @@ def _compare_csv(data, ref_data, approx_cols, atol=0.01):
         if colname in approx_cols:
             assert np.allclose(data[colname], ref_data[colname], atol=atol, equal_nan=True), colname
         else:
-            assert data[colname].equals(ref_data[colname]), (data, ref_data, colname)
+            assert data[colname].equals(ref_data[colname]), (data[colname], ref_data[colname])
+
 
 def compare_alignment(metrics, metrics_ref, gc_metrics, gc_metrics_ref):
     metrics = pd.read_csv(metrics)
@@ -85,7 +86,7 @@ def compare_breakpoint_calling(
         destruct, destruct_ref, lumpy, lumpy_ref,
         gridss, gridss_ref, svaba, svaba_ref
 ):
-    _compare_csv(destruct, destruct_ref, [])
+    _compare_csv(destruct, destruct_ref, ['mate_score', 'log_likelihood', 'log_cdf'], sep='\t', atol=0.001)
     _compare_vcf(lumpy, lumpy_ref, 'SVTYPE')
     _compare_vcf(gridss, gridss_ref, 'SVTYPE')
     _compare_vcf(svaba, svaba_ref, 'SVTYPE')
