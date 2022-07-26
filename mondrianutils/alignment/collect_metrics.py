@@ -89,7 +89,10 @@ class CollectMetrics(object):
 
         tot_reads = df[df['type'] == 'in total (QC-passed reads + QC-failed reads)']['value']
         tot_mpd_reads = df[
-            (df['type'].str.contains('mapped') == True) & (df['type'].str.contains('mate mapped') == False)]
+            (df['type'].str.contains('mapped') == True) &
+            (df['type'].str.contains('primary mapped') == False) &
+            (df['type'].str.contains('mate mapped') == False)
+        ]
         tot_dup_reads = df[df['type'] == 'duplicates']['value']
         tot_prop_paired = df[df['type'].str.contains('properly paired')]
 
