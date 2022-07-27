@@ -392,7 +392,8 @@ def utils():
         config = {
             'genome_fai_template': args['reference_fai'],
             'gap_table_template': args['gap_table'],
-            'chromosomes': args['chromosomes']
+            'chromosomes': args['chromosomes'],
+            'chr_name_prefix': 'chr' if args['chromosomes'][0].startswith('chr') else ''
         }
         ref_data_dir = os.path.dirname(args['reference_fai'])
         remixt.analysis.segment.create_segments(
