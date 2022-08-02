@@ -25,7 +25,7 @@ def add_cell_id_to_seqdata(seqdata, cellid):
 
 def get_cell_id_from_seqdata(seqdata):
     with pd.HDFStore(seqdata) as store:
-        if 'cell_id' not in store.keys():
+        if '/cell_id' not in store.keys():
             return
         cellid = store.get('cell_id')
         cellid = list(cellid)
