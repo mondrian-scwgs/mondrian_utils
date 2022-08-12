@@ -65,7 +65,7 @@ def convert_csv_to_tsv(csv_infile, tsv_outfile):
     df.to_csv(tsv_outfile, sep='\t', index=False)
 
 
-def finalize_tsv(infile, outfile, seqdata):
+def finalize_tsv(infile, outfile, seqdata, skip_header=False):
     df = pd.read_csv(infile, sep='\t')
 
     cellid = get_cell_id_from_seqdata(seqdata)
@@ -73,7 +73,7 @@ def finalize_tsv(infile, outfile, seqdata):
         df['cell_id'] = cellid
 
     csverve.write_dataframe_to_csv_and_yaml(
-        df, outfile, write_header=True, dtypes=dtypes()
+        df, outfile, write_header=(not skip_header), dtypes=dtypes()
     )
 
 
@@ -320,6 +320,10 @@ def parse_args():
         '--tempdir',
         required=True
     )
+    haplotype_allele_readcount.add_argument(
+        '--skip_header',
+        default=False
+    )
 
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
@@ -405,7 +409,7 @@ def utils():
         remixt.analysis.readcount.haplotype_allele_readcount(
             tempout, args['segments'], args['seqdata'], args['haplotypes'], {}
         )
-        finalize_tsv(tempout, args['output'], args['seqdata'])
+        finalize_tsv(tempout, args['output'], args['seqdata'], skip_header=args['skip_header'])
     elif args['which'] == "convert_haplotypes_csv_to_tsv":
         convert_csv_to_tsv(
             args['input'], args['output']
