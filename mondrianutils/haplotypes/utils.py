@@ -322,6 +322,7 @@ def parse_args():
     )
     haplotype_allele_readcount.add_argument(
         '--skip_header',
+        action='store_true',
         default=False
     )
 
