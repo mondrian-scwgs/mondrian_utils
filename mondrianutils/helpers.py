@@ -37,7 +37,7 @@ def get_merge_command(bams, output, ncores=1):
 def merge_bams(infiles, outfile, tempdir, ncores):
     assert len(infiles) > 0
 
-    if len(infiles) < ncores*2:
+    if len(infiles) < ncores * 2:
         run_cmd(get_merge_command(infiles, outfile, ncores=ncores))
         return
 
@@ -117,17 +117,20 @@ def run_cmd(cmd, output=None):
     cmdout, cmderr = p.communicate()
     retc = p.returncode
 
-    if retc:
-        raise Exception(
-            "command failed. stderr:{}, stdout:{}".format(
-                cmdout,
-                cmderr))
-
     if output:
         stdout.close()
 
-    print(cmdout)
-    print(cmderr)
+    console_out = '-' * 30 + ' cmdout ' + '-' * 30 + '\n'
+    console_out += '\n'.join(cmdout.split('\n')) + '\n'
+
+    console_err = '-' * 30 + ' cmderr ' + '-' * 30 + '\n'
+    console_err += '\n'.join(cmderr.split('\n')) + '\n'
+
+    if retc:
+        raise Exception("command failed.\n {}\n {}".format(console_out, console_err))
+
+    print(console_out)
+    print(console_err)
 
 
 class getFileHandle(object):
