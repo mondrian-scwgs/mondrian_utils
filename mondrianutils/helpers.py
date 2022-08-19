@@ -117,8 +117,8 @@ def run_cmd(cmd, output=None):
     cmdout, cmderr = p.communicate()
     retc = p.returncode
 
-    cmdout = cmdout.decode('ascii')
-    cmderr = cmderr.decode('ascii')
+    cmdout = cmdout.decode('utf-8')
+    cmderr = cmderr.decode('utf-8')
 
     if output:
         stdout.close()
