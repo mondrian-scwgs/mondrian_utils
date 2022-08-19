@@ -117,14 +117,19 @@ def run_cmd(cmd, output=None):
     cmdout, cmderr = p.communicate()
     retc = p.returncode
 
+    cmdout = cmdout.decode('ascii')
+    cmderr = cmderr.decode('ascii')
+
     if output:
         stdout.close()
 
     console_out = '-' * 30 + ' cmdout ' + '-' * 30 + '\n'
     console_out += '\n'.join(cmdout.split('\n')) + '\n'
+    console_out += '-' * 70
 
     console_err = '-' * 30 + ' cmderr ' + '-' * 30 + '\n'
     console_err += '\n'.join(cmderr.split('\n')) + '\n'
+    console_err += '-' * 70
 
     if retc:
         raise Exception("command failed.\n {}\n {}".format(console_out, console_err))
