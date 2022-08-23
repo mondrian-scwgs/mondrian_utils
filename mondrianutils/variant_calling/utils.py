@@ -413,8 +413,8 @@ def parse_args():
     update_maf_id.set_defaults(which='update_maf_ids')
     update_maf_id.add_argument('--input', required=True)
     update_maf_id.add_argument('--output', required=True)
-    update_maf_id.add_argument('--tumour_id')
-    update_maf_id.add_argument('--normal_id')
+    update_maf_id.add_argument('--tumour_bam')
+    update_maf_id.add_argument('--normal_bam')
 
     update_maf_id = subparsers.add_parser('update_maf_counts')
     update_maf_id.set_defaults(which='update_maf_counts')
@@ -481,7 +481,7 @@ def utils():
         vcf_reheader_id(args['input'], args['output'], args['tumour'], args['normal'], args['vcf_normal_id'],
                         args['vcf_tumour_id'])
     elif args['which'] == 'update_maf_ids':
-        update_maf_ids(args['input'], args['output'], args['tumour_id'], args['normal_id'])
+        update_maf_ids(args['input'], args['output'], args['tumour_bam'], args['normal_bam'])
     elif args['which'] == 'merge_mafs':
         merge_mafs(args['infiles'], args['output'])
     elif args['which'] == 'update_maf_counts':
