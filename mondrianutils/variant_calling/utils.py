@@ -159,7 +159,10 @@ def vcf_reheader_id(infile, outfile, tumour_bam, normal_bam, vcf_normal_id, vcf_
                     outdata.write(line)
 
 
-def update_maf_ids(infile, output, tumour_id, normal_id):
+def update_maf_ids(infile, output, tumour_bam, normal_bam):
+    normal_id = helpers.get_sample_from_bam(normal_bam)
+    tumour_id = helpers.get_sample_from_bam(tumour_bam)
+
     with open(infile) as infile_read:
         maf_header = infile_read.readline()
     assert maf_header.startswith('#version 2.4')

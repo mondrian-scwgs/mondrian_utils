@@ -13,8 +13,22 @@ import tarfile
 from subprocess import Popen, PIPE
 
 import pandas as pd
+import pysam
 import yaml
 from mondrianutils import __version__
+
+
+def get_sample_from_bam(infile):
+    bam = pysam.AlignmentFile(infile, "rb")
+    header = bam.header
+
+    samples = set()
+    for rg in header['RG']:
+        samples.add(rg['SM'])
+
+    assert len(samples) == 1
+
+    return samples[0]
 
 
 def chunks(bamfiles, numcores):
