@@ -28,7 +28,7 @@ def get_sample_from_bam(infile):
 
     assert len(samples) == 1
 
-    return samples[0]
+    return sorted(samples)[0]
 
 
 def chunks(bamfiles, numcores):
