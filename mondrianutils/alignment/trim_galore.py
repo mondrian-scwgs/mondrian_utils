@@ -202,7 +202,7 @@ class RunTrimGalore(object):
         self.get_file(self.fastq_r1, self.fastq_r2, ".fq.gz")
 
 
-def trim_galore(fastq1, fastq2, trim_fastq1, trim_fastq2, adapter1, adapter2, tempdir, num_threads):
+def trim_galore(fastq1, fastq2, trim_fastq1, trim_fastq2, adapter1, adapter2, tempdir, num_threads, run_fastqc=False):
     """
     run fastqc on both fastq files
     run trimgalore if needed, copy if not.
@@ -223,7 +223,7 @@ def trim_galore(fastq1, fastq2, trim_fastq1, trim_fastq2, adapter1, adapter2, te
 
     run_tg = RunTrimGalore(
         fastq1, fastq2, trim_fastq1, trim_fastq2, 'trim_galore', 'cutadapt', tempdir,
-        adapter1, adapter2, rep1, rep2, qcrep1, qcrep2, qczip1, qczip2, num_threads
+        adapter1, adapter2, rep1, rep2, qcrep1, qcrep2, qczip1, qczip2, num_threads, run_fastqc=run_fastqc
     )
     run_tg.run_trimgalore()
     run_tg.gather_outputs()
