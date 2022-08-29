@@ -247,7 +247,7 @@ def alignment(
         fastq_files, metadata_yaml, reference, reference_name, supplementary_references, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output, fastqscreen_detailed_output, fastqscreen_summary_output,
-        tar_output, num_threads
+        tar_output, num_threads, run_fastqc=False
 ):
     with open(supplementary_references, 'rt') as reader:
         supplementary_references = json.load(reader)
@@ -295,7 +295,7 @@ def alignment(
         trim_galore_temp = os.path.join(lane_tempdir, 'trim_galore')
         trim_galore(
             fastqscreen_r1, fastqscreen_r2, trim_galore_r1, trim_galore_r2,
-            adapter1, adapter2, trim_galore_temp, num_threads
+            adapter1, adapter2, trim_galore_temp, num_threads, run_fastqc=run_fastqc
         )
 
         print("Starting Alignment")

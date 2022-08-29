@@ -19,7 +19,7 @@ class RunTrimGalore(object):
 
     def __init__(self, seq1, seq2, fq_r1, fq_r2, trimgalore, cutadapt, tempdir,
                  adapter, adapter2, report_r1, report_r2, qc_report_r1,
-                 qc_report_r2, qc_zip_r1, qc_zip_r2, num_threads):
+                 qc_report_r2, qc_zip_r1, qc_zip_r2, num_threads, run_fastqc=False):
         self.seq1 = seq1
         self.seq2 = seq2
         self.trimgalore_path = trimgalore
@@ -37,6 +37,7 @@ class RunTrimGalore(object):
         self.report_r2 = report_r2
         self.empty = False
         self.num_threads = num_threads
+        self.run_fastqc = run_fastqc
 
         self.check_inputs()
 
@@ -100,9 +101,12 @@ class RunTrimGalore(object):
             self.fake_run()
             return
 
-        cmd = [self.trimgalore_path,
-               '--fastqc',
-               '--paired',
+        cmd = [self.trimgalore_path]
+
+        if self.run_fastqc:
+            cmd.append('--fastqc')
+
+        cmd = ['--paired',
                '--path_to_cutadapt', self.cutadapt_path,
                '--output_dir', self.tempdir + '/',
                ]

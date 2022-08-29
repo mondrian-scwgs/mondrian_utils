@@ -707,6 +707,11 @@ def parse_args():
     alignment.add_argument(
         '--tar_output',
     )
+    alignment.add_argument(
+        '--run_fastqc',
+        default=False,
+        action='store_true'
+    )
 
     input_validation = subparsers.add_parser('input_validation')
     input_validation.set_defaults(which='input_validation')
@@ -791,7 +796,7 @@ def utils():
             args['wgs_metrics_bqual'], args['wgs_metrics_count_unpaired'],
             args['bam_output'], args['metrics_output'], args['metrics_gc_output'],
             args['fastqscreen_detailed_output'], args['fastqscreen_summary_output'],
-            args['tar_output'], args['num_threads']
+            args['tar_output'], args['num_threads'], run_fastqc=args['run_fastqc']
         )
     elif args['which'] == 'input_validation':
         input_validation(args['meta_yaml'], args['input_data_json'])
