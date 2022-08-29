@@ -106,10 +106,13 @@ class RunTrimGalore(object):
         if self.run_fastqc:
             cmd.append('--fastqc')
 
-        cmd = ['--paired',
-               '--path_to_cutadapt', self.cutadapt_path,
-               '--output_dir', self.tempdir + '/',
-               ]
+        cmd.extend(
+            [
+                '--paired',
+                '--path_to_cutadapt', self.cutadapt_path,
+                '--output_dir', self.tempdir + '/',
+            ]
+        )
 
         if self.adapter:
             cmd.extend(['--adapter', self.adapter])
@@ -129,7 +132,6 @@ class RunTrimGalore(object):
         move files from from temp dir to the expected path
         """
         dir = os.path.dirname(outpath)
-
 
         if dir and not os.path.exists(dir):
             os.makedirs(dir)
