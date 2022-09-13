@@ -6,6 +6,8 @@ import pandas as pd
 from .breakpoint_db import BreakpointDatabase
 from .vcf_sv_parser import SvVcfData
 
+from mondrianutils.dtypes.breakpoint import dtypes
+
 
 def read_destruct(destruct_calls):
     df = pd.read_csv(destruct_calls, sep='\t', dtype={'chromosome_1': str, 'chromosome_2': str})
@@ -90,5 +92,4 @@ def consensus(destruct_calls, lumpy_calls, svaba_calls, gridss_calls, consensus_
 
     outdata.to_csv(temp_consensus_output, index=False)
 
-    dtypes = {col: 'str' for col in list(outdata.columns)}
-    csverve.rewrite_csv_file(temp_consensus_output, consensus_calls, dtypes=dtypes)
+    csverve.rewrite_csv_file(temp_consensus_output, consensus_calls, dtypes=dtypes()['consensus'])

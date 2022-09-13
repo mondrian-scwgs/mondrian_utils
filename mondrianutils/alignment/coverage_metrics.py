@@ -2,7 +2,7 @@ from collections import defaultdict
 
 import pysam
 import csverve.api as csverve
-from .dtypes import dtypes
+from mondrianutils.dtypes.alignment import dtypes
 import pandas as pd
 
 

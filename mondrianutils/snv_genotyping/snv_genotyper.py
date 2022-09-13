@@ -5,6 +5,7 @@ import mondrianutils.helpers as helpers
 import pandas as pd
 import pysam
 import vcf
+from mondrianutils.dtypes.variant import dtypes as variant_dtypes
 
 
 class SnvGenotyper(object):
@@ -18,7 +19,7 @@ class SnvGenotyper(object):
             count_duplicates=False,
             min_mqual=20,
             sparse=False,
-            write_header=True,
+            skip_header=False,
             ignore_untagged_reads=False
     ):
         self.bam = self._get_bam_reader(bamfile)
@@ -39,20 +40,11 @@ class SnvGenotyper(object):
         self.min_mqual = min_mqual
         self.sparse = sparse
         self.ignore_untagged_reads = ignore_untagged_reads
-        self.write_header = write_header
+        self.skip_header = skip_header
 
     @property
     def dtypes(self):
-        dtypes = {
-            'chromosome': 'str',
-            'position': int,
-            'ref': 'str',
-            'alt': 'str',
-            'cell_id': 'str',
-            'ref_count': int,
-            'alt_count': int
-        }
-        return dtypes
+        return variant_dtypes()['genotyping']
 
     def __get_bam_header(self):
         return self.bam.header
@@ -160,7 +152,14 @@ class SnvGenotyper(object):
     def load_targets(self, vcf_file):
         reader = self._fetch_vcf_reader(vcf_file)
 
-        targets = [(record.CHROM, record.POS, record.REF, record.ALT) for record in reader]
+        targets = []
+        for record in reader:
+            chrom = str(record.CHROM)
+            pos = int(record.POS)
+            ref = str(record.REF)
+            alt = [str(v) for v in record.ALT]
+
+            targets.append((chrom, pos, ref, alt))
 
         return targets
 
@@ -241,5 +240,5 @@ class SnvGenotyper(object):
         df = self.get_counts(targets)
 
         csverve.write_dataframe_to_csv_and_yaml(
-            df, self.output, self.dtypes, write_header=self.write_header
+            df, self.output, self.dtypes, skip_header=self.skip_header
         )

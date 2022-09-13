@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as hc
 import scipy.spatial as sp
-from mondrianutils.dtypes import hmmcopy_metrics
+from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 
 
 def sort_bins(bins, chromosomes):
@@ -95,4 +95,4 @@ def add_clustering_order(
         annotation_df.append({'cell_id': cellid, 'clustering_order': rank})
     annotation_df = pd.DataFrame(annotation_df)
 
-    csverve.annotate_csv(metrics, annotation_df, output, hmmcopy_metrics.dtypes())
+    csverve.annotate_csv(metrics, annotation_df, output, hmmcopy_dtypes()['metrics'])

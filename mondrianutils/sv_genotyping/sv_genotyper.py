@@ -1,4 +1,5 @@
 import csverve.api as csverve
+from mondrianutils.dtypes.breakpoint import dtypes as breakpoint_dtypes
 import mondrianutils.helpers as helpers
 import pandas as pd
 import pysam
@@ -21,17 +22,7 @@ class SvGenotyper(object):
 
     @property
     def dtypes(self):
-        dtypes = {
-            'prediction_id': int,
-            'chromosome_1': str,
-            'strand_1': str,
-            'position_1': int,
-            'chromosome_2': str,
-            'strand_2': str,
-            'position_2': int,
-            'cell_id': str,
-            'read_count': int
-        }
+        dtypes = breakpoint_dtypes()['genotyping']
         return dtypes
 
     def __get_bam_header(self):
@@ -81,9 +72,11 @@ class SvGenotyper(object):
         return read_ids
 
     def load_table(self):
-        df = pd.read_csv(self.destruct_table, sep='\t', dtype=str,
-                         usecols=['prediction_id', 'chromosome_1', 'strand_1', 'position_1', 'chromosome_2', 'strand_2',
-                                  'position_2'])
+        df = pd.read_csv(
+            self.destruct_table, sep='\t', dtype=str,
+            usecols=['prediction_id', 'chromosome_1', 'strand_1', 'position_1', 'chromosome_2', 'strand_2',
+                     'position_2']
+        )
 
         df = df.set_index('prediction_id')
         df = df.to_dict('index')

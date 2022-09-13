@@ -3,13 +3,12 @@ import shutil
 
 import argparse
 import csverve.api as csverve
-import mondrianutils.dtypes.hmmcopy_reads as reads_dtypes
+from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 import mondrianutils.helpers as helpers
 import mondrianutils.hmmcopy.classify as classify
 import pandas as pd
 import yaml
 from mondrianutils import __version__
-from mondrianutils.dtypes import hmmcopy_metrics
 from mondrianutils.hmmcopy.clustering_order import add_clustering_order
 from mondrianutils.hmmcopy.complete_hmmcopy import complete_hmmcopy
 from mondrianutils.hmmcopy.generate_qc_html import generate_html_report
@@ -41,7 +40,7 @@ def add_mappability(reads, annotated_reads):
     alldata = pd.concat(alldata)
 
     csverve.write_dataframe_to_csv_and_yaml(
-        alldata, annotated_reads, reads_dtypes.dtypes(), write_header=True
+        alldata, annotated_reads, hmmcopy_dtypes()['reads'], skip_header=False
     )
 
 
@@ -68,7 +67,7 @@ def add_quality(hmmcopy_metrics_csv, alignment_metrics, tempdir, output, trainin
     organisms = sorted(set([v.split('_')[1] for v in organisms]))
     organisms = [v for v in organisms if v not in ['nohit', 'total']]
 
-    csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_metrics.dtypes(fastqscreen_genomes=organisms))
+    csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_dtypes(fastqscreen_genomes=organisms)['metrics'])
 
 
 def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):

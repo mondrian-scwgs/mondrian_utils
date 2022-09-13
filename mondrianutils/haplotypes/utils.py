@@ -73,7 +73,7 @@ def finalize_tsv(infile, outfile, seqdata, skip_header=False):
         df['cell_id'] = cellid
 
     csverve.write_dataframe_to_csv_and_yaml(
-        df, outfile, write_header=(not skip_header), dtypes=dtypes()
+        df, outfile, skip_header=skip_header, dtypes=dtypes()
     )
 
 
@@ -117,9 +117,7 @@ def annotate_haps(haps_csv, thousand_genomes, tempdir, output_csv):
 
     csverve.rewrite_csv_file(
         temp_output, output_csv,
-        dtypes={
-            'chromosome': 'str', 'position': 'int', 'alt': 'str', 'ref': 'str',
-            'allele': 'str', 'hap_label': 'str', 'allele_id': 'str', }
+        dtypes=dtypes()
     )
 
 

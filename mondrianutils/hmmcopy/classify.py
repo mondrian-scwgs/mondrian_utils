@@ -103,6 +103,8 @@ def write_to_csv(output, data, gzipped=False):
 def write_to_output(hmmcopy_filename, output, predictions):
     data = csverve.read_csv(hmmcopy_filename)
 
+    data['cell_id'] = data['cell_id'].astype('str')
+
     data['quality'] = data['cell_id'].map(predictions)
     data.quality = data.quality.astype(float)
 

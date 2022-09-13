@@ -9,7 +9,7 @@ import os
 import csverve.api as csverve
 import pandas as pd
 
-from .dtypes import dtypes
+from mondrianutils.dtypes.alignment import dtypes
 
 
 class CollectMetrics(object):
@@ -203,7 +203,7 @@ class CollectMetrics(object):
         df = pd.DataFrame(columns=header)
         df.loc[0] = data
 
-        csverve.write_dataframe_to_csv_and_yaml(df, self.output, self.dtypes, write_header=True)
+        csverve.write_dataframe_to_csv_and_yaml(df, self.output, self.dtypes, skip_header=False)
 
     # =========================================================================
     # Run script

@@ -2,6 +2,7 @@ import gzip
 
 import csverve.api as csverve
 import pandas as pd
+from mondrianutils.dtypes.variant import dtypes
 
 
 def load_barcodes(barcode_file):
@@ -77,7 +78,7 @@ def create_df(ref, alt, cells, variants, sparse=False):
     return df
 
 
-def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile, write_header=True, sparse=False):
+def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile, skip_header=False, sparse=False):
     cells = load_barcodes(cells)
     variants = load_barcodes(variants)
 
@@ -88,12 +89,6 @@ def parse_vartrix(cells, variants, ref_counts, alt_counts, outfile, write_header
 
     csverve.write_dataframe_to_csv_and_yaml(
         df, outfile,
-        write_header=write_header,
-        dtypes={
-            'cell_id': 'str',
-            'chromosome': 'str',
-            'position': 'int',
-            'ref_count': 'int',
-            'alt_count': 'int'
-        }
+        skip_header=skip_header,
+        dtypes=dtypes()['genotyping']
     )

@@ -6,7 +6,7 @@ import csverve.api as csverve
 import pandas as pd
 from mondrianutils import helpers
 from mondrianutils.alignment import fastq_utils
-from mondrianutils.alignment.dtypes import dtypes
+from mondrianutils.dtypes.alignment import dtypes
 
 
 def merge_fastq_screen_counts(
@@ -34,7 +34,7 @@ def merge_fastq_screen_counts(
     csverve.write_dataframe_to_csv_and_yaml(
         df, merged_detailed_counts,
         dtypes(fastqscreen_genomes=fastqscreen_genomes)['fastqscreen_detailed'],
-        write_header=True
+        skip_header=False
     )
 
     if isinstance(all_summary_counts, dict):
@@ -57,7 +57,7 @@ def merge_fastq_screen_counts(
 
     csverve.write_dataframe_to_csv_and_yaml(
         df, merged_summary_counts,
-        dtypes(fastqscreen_genomes=fastqscreen_genomes)['metrics'], write_header=True
+        dtypes(fastqscreen_genomes=fastqscreen_genomes)['metrics'], skip_header=False
     )
 
 

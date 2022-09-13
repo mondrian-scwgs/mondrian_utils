@@ -157,7 +157,7 @@ def utils():
                 args['bam'], args['targets_vcf'], args['output'], cell_barcodes=args['cell_barcodes'],
                 interval=args['interval'], count_duplicates=args['count_duplicates'],
                 sparse=args['sparse'], min_mqual=args['min_mqual'], ignore_untagged_reads=args['ignore_untagged_reads'],
-                write_header=(not args['skip_header'])
+                skip_header=args['skip_header']
         ) as genotyper:
             genotyper.genotyping()
     elif args['which'] == 'generate_metadata':
@@ -168,7 +168,7 @@ def utils():
         parse_vartrix(
             args['barcodes'], args['variants'], args['ref_counts'],
             args['alt_counts'], args['outfile'],
-            write_header=(not args['skip_header']),
+            skip_header=args['skip_header'],
             sparse=args[
                 'sparse']
         )

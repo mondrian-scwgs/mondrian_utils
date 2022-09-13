@@ -8,7 +8,7 @@ import logging
 import csverve.api as csverve
 import pandas as pd
 
-from .dtypes import dtypes
+from mondrianutils.dtypes.alignment import dtypes
 
 
 def collect_gc_metrics(bias_file, output, sample_id):
@@ -37,4 +37,4 @@ def collect_gc_metrics(bias_file, output, sample_id):
         columns = [str(v) for v in range(101)] + ['cell_id']
         data = pd.DataFrame(dummy_data, columns=columns)
 
-    csverve.write_dataframe_to_csv_and_yaml(data, output, dtypes()['gc'], write_header=True)
+    csverve.write_dataframe_to_csv_and_yaml(data, output, dtypes()['gc'], skip_header=False)

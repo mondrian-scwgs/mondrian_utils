@@ -5,6 +5,7 @@ import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pandas as pd
 
+from mondrianutils.dtypes.variant import dtypes
 
 def merge_idx_files(idx_files):
     idxs = set()
@@ -130,20 +131,6 @@ def rewrite_counts_file(inputfile, outputfile, num_barcodes, num_variants):
             writer.write(line)
 
 
-def get_dtypes():
-    dtypes = {
-        'cell_id': 'str',
-        'chromosome': 'str',
-        'position': 'int',
-        'ref': 'str',
-        'alt': 'str',
-        'ref_count': 'int',
-        'alt_count': 'int'
-    }
-
-    return dtypes
-
-
 def merge_vartrix(
         barcodes, variants, refs, alts, vcf_files,
         merged_barcodes, merged_variants, merged_ref,
@@ -190,6 +177,6 @@ def merge_vartrix(
     df = pd.read_csv(temp_parsed)
     csverve.write_dataframe_to_csv_and_yaml(
         df, parsed_output,
-        write_header=True,
-        dtypes=get_dtypes()
+        skip_header=False,
+        dtypes=dtypes()['genotyping']
     )

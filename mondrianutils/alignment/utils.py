@@ -13,7 +13,7 @@ from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
 from mondrianutils.alignment.collect_metrics import collect_metrics
 from mondrianutils.alignment.complete_alignment import alignment
 from mondrianutils.alignment.coverage_metrics import get_coverage_metrics
-from mondrianutils.alignment.dtypes import dtypes
+from mondrianutils.dtypes.alignment import dtypes
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
 from mondrianutils.alignment.trim_galore import trim_galore

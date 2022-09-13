@@ -1,6 +1,6 @@
 def dtypes():
     haplotypes = {
-        'chromosome': 'str',
+        'chromosome': 'category',
         'position': 'int',
         'allele': 'str',
         'hap_label': 'str',
@@ -10,6 +10,6 @@ def dtypes():
         'start': 'int',
         'end': 'int',
         'readcount': 'int',
-        'cell_id': 'str'
+        'cell_id': 'category'
     }
     return haplotypes

@@ -3,10 +3,7 @@ import os
 import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pandas as pd
-from mondrianutils.dtypes import hmmcopy_metrics
-from mondrianutils.dtypes import hmmcopy_params
-from mondrianutils.dtypes import hmmcopy_reads
-from mondrianutils.dtypes import hmmcopy_segs
+from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
 from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 
@@ -76,10 +73,10 @@ def run_hmmcopy(
 
     helpers.run_cmd(cmd)
 
-    csverve.rewrite_csv_file(f'{tempdir}/0/reads.csv', reads, dtypes=hmmcopy_reads.dtypes())
-    csverve.rewrite_csv_file(f'{tempdir}/0/params.csv', params, dtypes=hmmcopy_params.dtypes())
-    csverve.rewrite_csv_file(f'{tempdir}/0/segs.csv', segments, dtypes=hmmcopy_segs.dtypes())
-    csverve.rewrite_csv_file(f'{tempdir}/0/metrics.csv', metrics, dtypes=hmmcopy_metrics.dtypes())
+    csverve.rewrite_csv_file(f'{tempdir}/0/reads.csv', reads, dtypes=hmmcopy_dtypes()['reads'])
+    csverve.rewrite_csv_file(f'{tempdir}/0/params.csv', params, dtypes=hmmcopy_dtypes()['params'])
+    csverve.rewrite_csv_file(f'{tempdir}/0/segs.csv', segments, dtypes=hmmcopy_dtypes()['segs'])
+    csverve.rewrite_csv_file(f'{tempdir}/0/metrics.csv', metrics, dtypes=hmmcopy_dtypes()['metrics'])
 
     helpers.make_tarfile(output_tarball, tempdir)
 

@@ -1,9 +1,9 @@
 def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
-    dtypes = {
+    metrics = {
         'multiplier': 'int',
-        'cell_id': 'str',
-        'sample_id': 'str',
-        'library_id': 'str',
+        'cell_id': 'category',
+        'sample_id': 'category',
+        'library_id': 'category',
         'MSRSI_non_integerness': 'float',
         'MBRSI_dispersion_non_integerness': 'float',
         'MBRSM_dispersion': 'float',
@@ -74,8 +74,49 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
     }
 
     for genome in fastqscreen_genomes:
-        dtypes['fastqscreen_{}'.format(genome)] = 'int'
-        dtypes['fastqscreen_{}_multihit'.format(genome)] = 'int'
-        dtypes['fastqscreen_{}_ratio'.format(genome)] = 'float'
+        metrics['fastqscreen_{}'.format(genome)] = 'int'
+        metrics['fastqscreen_{}_multihit'.format(genome)] = 'int'
+        metrics['fastqscreen_{}_ratio'.format(genome)] = 'float'
 
-    return dtypes
+    params = {
+        'iteration': 'float',
+        'state': 'float',
+        'parameter': 'str',
+        'cell_id': 'category',
+        'value': 'float',
+    }
+
+    reads = {
+        'chr': 'category',
+        'start': 'int',
+        'end': 'int',
+        'width': 'int',
+        'reads': 'int',
+        'gc': 'float',
+        'cor_gc': 'float',
+        'cor_map': 'float',
+        'copy': 'float',
+        'map': 'float',
+        'state': 'int',
+        'cell_id': 'category',
+        'sample_id': 'category',
+        'library_id': 'category',
+        'valid': 'bool',
+        'ideal': 'bool',
+        'modal_curve': 'float',
+        'modal_quantile': 'float',
+        'multiplier': 'int',
+        'is_low_mappability': 'bool'
+    }
+
+    segs = {
+        'chr': 'category',
+        'start': 'int',
+        'end': 'int',
+        'state': 'int',
+        'median': 'float',
+        'multiplier': 'int',
+        'cell_id': 'category',
+    }
+
+    return locals()

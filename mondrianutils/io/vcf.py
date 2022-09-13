@@ -69,8 +69,8 @@ def remove_duplicates(input_vcf, output_vcf, include_ref_alt=False):
             line_split = line.strip().split()
             chrom = line_split[0]
             pos = line_split[1]
-            ref = line_split[2]
-            alt = line_split[3]
+            ref = line_split[3]
+            alt = line_split[4]
 
             if include_ref_alt:
                 key = (chrom, pos, ref, alt)

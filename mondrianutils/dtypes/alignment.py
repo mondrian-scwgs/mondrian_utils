@@ -1,8 +1,8 @@
 def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
     metrics = {
-        'cell_id': 'str',
+        'cell_id': 'category',
         'total_mapped_reads': 'int',
-        'library_id': 'str',
+        'library_id': 'category',
         'unpaired_mapped_reads': 'int',
         'paired_mapped_reads': 'int',
         'unpaired_duplicate_reads': 'int',
@@ -30,7 +30,7 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
         'sample_type': 'str',
         'is_contaminated': 'bool',
         'trim': 'bool',
-        'sample_id': 'str',
+        'sample_id': 'category',
         'species': 'str',
         'condition': 'str',
         'index_sequence': 'str',
@@ -53,10 +53,10 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
         metrics['fastqscreen_{}_ratio'.format(genome)] = 'float'
 
     gc = {str(i): 'float' for i in range(0, 101)}
-    gc['cell_id'] = 'str'
+    gc['cell_id'] = 'category'
 
     fastqscreen_detailed = {
-        'cell_id': 'str',
+        'cell_id': 'category',
         'readend': 'str',
         'count': 'int'
     }
