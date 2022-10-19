@@ -52,10 +52,15 @@ def compare_alignment(metrics, metrics_ref, gc_metrics, gc_metrics_ref):
     ref_metrics = pd.read_csv(metrics_ref)
     ref_gc_metrics = pd.read_csv(gc_metrics_ref)
     for colname in metrics.columns.values:
-        assert metrics[colname].equals(ref_metrics[colname])
+        if metrics[colname].dtype == float:
+            assert np.allclose(metrics[colname], ref_metrics[colname], atol=0.001)
+        else:
+            assert metrics[colname].equals(ref_metrics[colname])
     for colname in gc_metrics.columns.values:
-        assert gc_metrics[colname].equals(ref_gc_metrics[colname])
-
+        if gc_metrics[colname].dtype == float:
+            assert np.allclose(gc_metrics[colname], ref_gc_metrics[colname], atol=0.001)
+        else:
+            assert gc_metrics[colname].equals(ref_gc_metrics[colname])
 
 def compare_hmmcopy(reads, reads_ref, metrics, metrics_ref):
     approx_cols = [

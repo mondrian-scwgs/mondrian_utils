@@ -12,10 +12,92 @@ import subprocess
 import tarfile
 from subprocess import Popen, PIPE
 
+import csverve.api as csverve
+import numpy as np
 import pandas as pd
 import pysam
 import yaml
 from mondrianutils import __version__
+
+
+def _sum_two_dataframes(df):
+    def sum_nan(y):
+        if np.isnan(y).all():
+            return float("nan")
+        return np.nansum(y)
+
+    if len(df) == 1:
+        return df.iloc[0]
+    else:
+        return df.apply(sum_nan)
+
+
+def _sort_bins(bins):
+    bins = bins.drop_duplicates()
+
+    # just the sort order in here, dont need to change for mouse.
+    # might need to extend if reference has more genomes than human
+    chromosomes = [str(v) for v in range(1, 23)] + ['X', 'Y']
+    if bins.iloc[0][0].startswith('chr'):
+        chromosomes = ['chr' + v for v in chromosomes]
+
+    bins["chr"] = pd.Categorical(bins["chr"], chromosomes)
+
+    bins = bins.sort_values(['chr', 'start', ])
+
+    bins = [tuple(v) for v in bins.values.tolist()]
+
+    return bins
+
+
+def _fix_all_chunks(chunks):
+    colnames = list(chunks[0].columns.values)
+
+    new_chunks = [chunks[0]]
+
+    for chunk in chunks[1:]:
+        current_colnames = list(chunk.columns.values)
+
+        if not current_colnames == colnames:
+            missing_cols = [v for v in colnames if v not in current_colnames]
+            temp_df = pd.DataFrame(columns=missing_cols)
+            chunk = chunk.join(temp_df)
+
+            chunk.columns = colnames
+
+        new_chunks.append(chunk)
+
+    return new_chunks
+
+
+def load_and_pivot_reads_data(filepath, column_name):
+    df = []
+    for chunk in csverve.read_csv(filepath, chunksize=1e6):
+        chunk["bin"] = list(zip(chunk.chr, chunk.start, chunk.end))
+
+        chunk = chunk.pivot(
+            index='cell_id',
+            columns='bin',
+            values=column_name)
+
+        df.append(chunk)
+
+    df = _fix_all_chunks(df)
+    df = pd.concat(df)
+    df = df.groupby(df.index).apply(_sum_two_dataframes)
+
+    bins = pd.DataFrame(
+        df.columns.values.tolist(),
+        columns=[
+            'chr',
+            'start',
+            'end'])
+
+    bins = _sort_bins(bins)
+
+    df = df[bins]
+
+    return df
 
 
 def get_sample_from_bam(infile):
