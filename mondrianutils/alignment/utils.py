@@ -150,11 +150,18 @@ def samtools_index(infile):
     helpers.run_cmd(cmd)
 
 
-def merge_cells(infiles, tempdir, ncores, outfile):
+def igvtools_count(infile, reference):
+    cmd = ['igvtools', 'count', infile, infile+'.tdf', reference]
+    helpers.run_cmd(cmd)
+
+
+def merge_cells(infiles, tempdir, ncores, outfile, reference):
     if len(infiles.values()) == 0:
         with open(outfile, 'wt') as writer:
             writer.write("NO DATA")
         with open(outfile + '.bai', 'wt') as writer:
+            writer.write("NO DATA")
+        with open(outfile + '.tdf', 'wt') as writer:
             writer.write("NO DATA")
         return
 
@@ -167,10 +174,11 @@ def merge_cells(infiles, tempdir, ncores, outfile):
     reheader(final_merge_output, new_header, outfile)
 
     samtools_index(outfile)
+    igvtools_count(outfile, reference)
 
 
 def generate_bams(
-        infiles, cell_ids, metrics,
+        infiles, reference, cell_ids, metrics,
         control_outfile, contaminated_outfile, pass_outfile,
         tempdir, ncores
 ):
@@ -178,19 +186,19 @@ def generate_bams(
     control_bams = get_control_files(infiles, cell_ids, metrics)
     control_tempdir = os.path.join(tempdir, 'control')
     helpers.makedirs(control_tempdir)
-    merge_cells(control_bams, control_tempdir, ncores, control_outfile)
+    merge_cells(control_bams, control_tempdir, ncores, control_outfile, reference)
 
     # contaminated
     contaminated_bams = get_contaminated_files(infiles, cell_ids, metrics)
     contaminated_tempdir = os.path.join(tempdir, 'contaminated')
     helpers.makedirs(contaminated_tempdir)
-    merge_cells(contaminated_bams, contaminated_tempdir, ncores, contaminated_outfile)
+    merge_cells(contaminated_bams, contaminated_tempdir, ncores, contaminated_outfile, reference)
 
     # pass
     pass_bams = get_pass_files(infiles, cell_ids, metrics)
     pass_tempdir = os.path.join(tempdir, 'pass')
     helpers.makedirs(pass_tempdir)
-    merge_cells(pass_bams, pass_tempdir, ncores, pass_outfile)
+    merge_cells(pass_bams, pass_tempdir, ncores, pass_outfile, reference)
 
 
 def tag_bam_with_cellid(infile, outfile, cell_id):
@@ -493,6 +501,9 @@ def parse_args():
         '--cell_ids', nargs='*'
     )
     merge_cells.add_argument(
+        '--reference',
+    )
+    merge_cells.add_argument(
         '--control_outfile',
     )
     merge_cells.add_argument(
@@ -764,7 +775,7 @@ def utils():
         )
     elif args['which'] == 'merge_cells':
         generate_bams(
-            args['infiles'], args['cell_ids'], args['metrics'],
+            args['infiles'], args['reference'], args['cell_ids'], args['metrics'],
             args['control_outfile'], args['contaminated_outfile'],
             args['pass_outfile'], args['tempdir'], args['ncores']
         )
