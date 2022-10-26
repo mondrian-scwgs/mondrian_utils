@@ -2,6 +2,7 @@ import os
 
 import argparse
 from mondrianutils import helpers
+from mondrianutils.io import vcf_merge
 
 
 def get_num_calls(filepath):
@@ -103,6 +104,11 @@ def parse_args():
     remove_duplicates.add_argument('--outfile', required=True)
     remove_duplicates.add_argument('--include_ref_alt', action='store_true', default=False)
 
+    merge_vcfs = subparsers.add_parser('merge_vcfs')
+    merge_vcfs.set_defaults(which='merge_vcfs')
+    merge_vcfs.add_argument('--infiles', nargs='*', required=True)
+    merge_vcfs.add_argument('--outfile', required=True)
+
     args = vars(parser.parse_args())
 
     return args
@@ -118,6 +124,10 @@ def utils():
     elif args['which'] == 'remove_duplicates':
         remove_duplicates(
             args['infile'], args['outfile'], include_ref_alt=args['include_ref_alt']
+        )
+    elif args['which'] == 'merge_vcfs':
+        vcf_merge.merge_vcfs(
+            args['infiles'], args['outfile']
         )
     else:
         raise Exception()
