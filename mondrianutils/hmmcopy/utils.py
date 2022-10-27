@@ -19,7 +19,6 @@ from mondrianutils.hmmcopy.readcounter import ReadCounter
 def plot_heatmap(reads, metrics, chromosomes, output):
     plot = PlotPcolor(
         reads, metrics, output,
-        plot_title='heatmap',
         column_name='state',
         max_cn=12,
         scale_by_cells=False,
