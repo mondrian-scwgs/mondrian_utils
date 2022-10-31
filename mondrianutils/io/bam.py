@@ -107,6 +107,7 @@ def parse_args():
     identify_normal_cells.add_argument('--reads_data', required=True)
     identify_normal_cells.add_argument('--metrics_data', required=True)
     identify_normal_cells.add_argument('--output_yaml', required=True)
+    identify_normal_cells.add_argument('--reference_name', required=True)
     identify_normal_cells.add_argument('--min_reads', default=500000)
     identify_normal_cells.add_argument('--min_quality', default=0.85)
     identify_normal_cells.add_argument('--allowed_aneuploidy_score', default=0)
@@ -135,6 +136,7 @@ def utils():
             args['reads_data'],
             args['metrics_data'],
             args['output_yaml'],
+            args['reference_name'],
             min_reads=args['min_reads'],
             min_quality=args['min_quality'],
             allowed_aneuploidy_score=args['allowed_aneuploidy_score'],

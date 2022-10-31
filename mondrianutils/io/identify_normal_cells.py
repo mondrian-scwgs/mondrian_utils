@@ -39,9 +39,12 @@ def get_supernormal_reads_data(reads, observations):
     return reads[reads.index.isin(supernormal.index)]
 
 
-def remove_blacklist_bins(bins):
-    return [v for v in bins if not (v[0] == '9' and v[1] >= 38500001 and v[1] <= 69500001)]
+def remove_blacklist_bins(bins, reference_name):
 
+    if reference_name.lower() == 'grch37':
+        return [v for v in bins if not (v[0] == '9' and v[1] >= 38500001 and v[1] <= 69500001)]
+    else:
+        raise NotImplementedError('Only GRCh37 is supported at this time')
 
 def get_mean_copy_by_chromosome(reads_data, chromosome):
     copies = reads_data[[v for v in reads_data if v[0] in (chromosome, 'chr'+chromosome)]]
@@ -60,6 +63,7 @@ def identify_normal_cells(
         hmmcopy_reads_path: str,
         metrics_data_path: str,
         output_yaml: str,
+        reference_name: str,
         min_reads: int = 500000,
         min_quality: float = 0.85,
         allowed_aneuploidy_score: float = 0,
@@ -81,7 +85,7 @@ def identify_normal_cells(
            (xcopies == 1 and ycopies == 1), \
         f"Found abnormal sex chromosome copies: chrX={xcopies}, chrY={ycopies}"
 
-    non_blacklist_bins = remove_blacklist_bins(cn_data.columns)
+    non_blacklist_bins = remove_blacklist_bins(cn_data.columns, reference_name)
 
     observed = cn_data[non_blacklist_bins]
     observed = observed.to_numpy()
