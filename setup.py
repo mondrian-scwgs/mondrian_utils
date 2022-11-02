@@ -26,6 +26,7 @@ setup(
             'reference_utils = mondrianutils.reference.utils:utils',
             'dlp_utils = mondrianutils.dlp_utils.utils:utils',
             'mondrian_build_utils = mondrianutils.mondrian_build.utils:utils',
+            'metadata_utils = mondrianutils.metadata.utils:utils',
         ]
     },
     package_data={'': ['*.py', '*.R', '*.npz', "*.yaml", "data/*", "*.sh"]}
