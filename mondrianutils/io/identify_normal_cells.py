@@ -5,7 +5,7 @@ import yaml
 from mondrianutils import helpers
 from scipy.spatial.distance import cdist
 from scipy.stats import mode
-
+import warnings
 
 def get_relative_aneuploidy(cn_data):
     ampdel = np.zeros(cn_data.shape, np.int8)
@@ -34,20 +34,28 @@ def load_metrics(
     return metrics
 
 
-def get_supernormal_reads_data(reads, observations):
-    supernormal = observations.query('rel_aneuploidy < 0.05').query('ploidy < 2.5')
+def get_supernormal_reads_data(
+        reads, observations,
+        relative_aneuploidy_threshold=0.05,
+        ploidy_threshold=2.5
+):
+    supernormal = observations.query(
+        f'rel_aneuploidy < {relative_aneuploidy_threshold}'
+    ).query(
+        f'ploidy < {ploidy_threshold}'
+    )
     return reads[reads.index.isin(supernormal.index)]
 
 
 def remove_blacklist_bins(bins, reference_name):
-
     if reference_name.lower() == 'grch37':
         return [v for v in bins if not (v[0] == '9' and v[1] >= 38500001 and v[1] <= 69500001)]
     else:
         raise NotImplementedError('Only GRCh37 is supported at this time')
 
+
 def get_mean_copy_by_chromosome(reads_data, chromosome):
-    copies = reads_data[[v for v in reads_data if v[0] in (chromosome, 'chr'+chromosome)]]
+    copies = reads_data[[v for v in reads_data if v[0] in (chromosome, 'chr' + chromosome)]]
     copies = np.mean(copies.to_numpy()).round()
 
     return copies
@@ -67,6 +75,8 @@ def identify_normal_cells(
         min_reads: int = 500000,
         min_quality: float = 0.85,
         allowed_aneuploidy_score: float = 0,
+        relative_aneuploidy_threshold: float = 0.05,
+        ploidy_threshold: float = 2.5
 ):
     metrics = load_metrics(metrics_data_path, min_reads, min_quality)
 
@@ -76,14 +86,17 @@ def identify_normal_cells(
     observations['ploidy'] = cn_data.apply(lambda x: np.nanmean(x), axis=1)
     observations['rel_aneuploidy'] = get_relative_aneuploidy(cn_data)
 
-    normal_reads = get_supernormal_reads_data(cn_data, observations)
+    normal_reads = get_supernormal_reads_data(
+        cn_data, observations,
+        relative_aneuploidy_threshold=relative_aneuploidy_threshold,
+        ploidy_threshold=ploidy_threshold
+    )
 
     xcopies = get_mean_copy_by_chromosome(normal_reads, 'X')
     ycopies = get_mean_copy_by_chromosome(normal_reads, 'Y')
 
-    assert (xcopies == 2 and ycopies == 0) or \
-           (xcopies == 1 and ycopies == 1), \
-        f"Found abnormal sex chromosome copies: chrX={xcopies}, chrY={ycopies}"
+    if (xcopies == 2 and ycopies == 0) or (xcopies == 1 and ycopies == 1):
+        warnings.warn(f"Found abnormal sex chromosome copies: chrX={xcopies}, chrY={ycopies}")
 
     non_blacklist_bins = remove_blacklist_bins(cn_data.columns, reference_name)
 

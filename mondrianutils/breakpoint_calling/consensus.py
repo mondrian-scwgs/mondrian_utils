@@ -2,14 +2,13 @@ import os
 
 import csverve.api as csverve
 import pandas as pd
+from mondrianutils.dtypes.breakpoint import dtypes
 
 from .breakpoint_db import BreakpointDatabase
 from .vcf_sv_parser import SvVcfData
 
-from mondrianutils.dtypes.breakpoint import dtypes
 
-
-def read_destruct(destruct_calls):
+def read_destruct(destruct_calls, chromosome=None):
     df = pd.read_csv(destruct_calls, sep='\t', dtype={'chromosome_1': str, 'chromosome_2': str})
 
     df = df[
@@ -19,6 +18,10 @@ def read_destruct(destruct_calls):
     df['caller'] = 'destruct'
 
     df['breakpoint_id'] = df['breakpoint_id'].astype(str) + '_' + df['caller']
+
+    if chromosome is not None:
+        df = df[(df['chromosome_1'] == chromosome) | (df['chromosome_2'] == chromosome)]
+
     return df
 
 
@@ -52,13 +55,14 @@ def get_common_calls(df, df_db):
     return new_groups
 
 
-def consensus(destruct_calls, lumpy_calls, svaba_calls, gridss_calls, consensus_calls, sample_id, tempdir):
+def consensus(destruct_calls, lumpy_calls, svaba_calls, gridss_calls, consensus_calls, sample_id, tempdir,
+              chromosome=None):
     temp_consensus_output = os.path.join(tempdir, 'consensus.csv')
     allcalls = [
-        read_destruct(destruct_calls),
-        SvVcfData(lumpy_calls).as_data_frame(),
-        SvVcfData(svaba_calls).as_data_frame(),
-        SvVcfData(gridss_calls).as_data_frame()
+        read_destruct(destruct_calls, chromosome=chromosome),
+        SvVcfData(lumpy_calls, chromosome=chromosome).as_data_frame(),
+        SvVcfData(svaba_calls, chromosome=chromosome).as_data_frame(),
+        SvVcfData(gridss_calls, chromosome=chromosome).as_data_frame()
     ]
 
     allcalls = pd.concat(allcalls)

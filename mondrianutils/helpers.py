@@ -73,6 +73,11 @@ def _fix_all_chunks(chunks):
 def load_and_pivot_reads_data(filepath, column_name):
     df = []
     for chunk in csverve.read_csv(filepath, chunksize=1e6):
+
+        for col in chunk.columns:
+            if chunk[col].dtype.name == 'category':
+                chunk[col] = chunk[col].astype('str')
+
         chunk["bin"] = list(zip(chunk.chr, chunk.start, chunk.end))
 
         chunk = chunk.pivot(

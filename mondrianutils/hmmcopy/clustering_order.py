@@ -30,6 +30,11 @@ def get_hierarchical_clustering_order(
     columns = None
     for chunk in csverve.read_csv(
             reads_filename, chunksize=chunksize):
+
+        for col in  chunk.columns:
+            if chunk[col].dtype.name == 'category':
+                chunk[col] = chunk[col].astype('str')
+
         chunk["bin"] = list(zip(chunk.chr, chunk.start, chunk.end))
 
         # for some reason pivot doesnt like an Int64 state col

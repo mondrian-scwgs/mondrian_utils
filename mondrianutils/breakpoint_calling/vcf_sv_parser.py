@@ -3,10 +3,11 @@ import vcf
 
 
 class SvVcfData(object):
-    def __init__(self, filepath):
+    def __init__(self, filepath, chromosome=None):
         self.filepath = filepath
         self.reader = self._get_reader(filepath)
         self.caller = self._get_caller()
+        self.chromosome = chromosome
 
     def _get_caller(self):
         header_infos = self.reader.infos.values()
@@ -167,7 +168,7 @@ class SvVcfData(object):
 
         return outdata
 
-    def _filter_low_qual_calls(self, calls):
+    def _filter_calls(self, calls, chromosome=None):
 
         for call in calls:
 
@@ -175,18 +176,23 @@ class SvVcfData(object):
 
                 if call[0]['filter'] and 'LOW_QUAL' in call[0]['filter']:
                     continue
+                if not call[0]['chrom'] == chromosome:
+                    continue
             else:
                 assert len(call) == 2
 
                 if call[0]['filter'] and 'LOW_QUAL' in call[0]['filter'] and 'LOW_QUAL' in call[1]['filter']:
                     continue
 
+                if not call[0]['chrom'] == chromosome and not call[0]['chrom'] == chromosome:
+                    continue
+
             yield call
 
-    def fetch(self):
+    def fetch(self, chromosome=None):
         records = self._parse_vcf()
         records = self._group_bnds(records)
-        records = self._filter_low_qual_calls(records)
+        records = self._filter_calls(records, chromosome=chromosome)
 
         for record in records:
             if len(record) == 1 and self.caller == 'lumpy':
@@ -195,7 +201,7 @@ class SvVcfData(object):
                 yield self._process_bnd_call(record)
 
     def as_data_frame(self):
-        data = [record for record in self.fetch()]
+        data = [record for record in self.fetch(chromosome=self.chromosome)]
 
         data = pd.DataFrame(data)
         data['caller'] = self.caller

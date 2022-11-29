@@ -111,6 +111,8 @@ def parse_args():
     identify_normal_cells.add_argument('--min_reads', default=500000)
     identify_normal_cells.add_argument('--min_quality', default=0.85)
     identify_normal_cells.add_argument('--allowed_aneuploidy_score', default=0)
+    identify_normal_cells.add_argument('--relative_aneuploidy_threshold', default=0.05)
+    identify_normal_cells.add_argument('--ploidy_threshold', default=2.5)
 
     separate_normal_and_tumour_cells = subparsers.add_parser('separate_normal_and_tumour_cells')
     separate_normal_and_tumour_cells.set_defaults(which='separate_normal_and_tumour_cells')
@@ -140,6 +142,8 @@ def utils():
             min_reads=args['min_reads'],
             min_quality=args['min_quality'],
             allowed_aneuploidy_score=args['allowed_aneuploidy_score'],
+            relative_aneuploidy_threshold=args['relative_aneuploidy_threshold'],
+            ploidy_threshold=args['ploidy_threshold']
         )
     elif args['which'] == 'separate_normal_and_tumour_cells':
         separate_normal_and_tumour_cells(

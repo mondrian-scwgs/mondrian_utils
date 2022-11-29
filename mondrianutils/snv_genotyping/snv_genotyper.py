@@ -194,8 +194,8 @@ class SnvGenotyper(object):
         alt_count = defaultdict(int)
 
         for pileupcol in self.bam.pileup(
-                str(chrom), int(pos) - 200, int(pos) + 200,
-                ignore_overlaps=False, max_depth=1e6
+                str(chrom), int(pos) - 2, int(pos) + 2,
+                ignore_overlaps=False, max_depth=1e5
         ):
             for pileupread in pileupcol.pileups:
 

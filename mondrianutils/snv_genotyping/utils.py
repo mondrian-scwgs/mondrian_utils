@@ -5,6 +5,7 @@ import pysam
 import yaml
 from mondrianutils import __version__
 from mondrianutils.snv_genotyping.merge_vartrix import merge_vartrix
+from mondrianutils.snv_genotyping.merge_vartrix import regenerate_vartrix_format
 from mondrianutils.snv_genotyping.parse_vartrix import parse_vartrix
 from mondrianutils.snv_genotyping.snv_genotyper import SnvGenotyper
 
@@ -42,7 +43,7 @@ def generate_cell_barcodes_file(bamfile, output):
 
     cells = []
     for line in str(header).split('\n'):
-        if not line.startswith("@CO"):
+        if not line.startswith("@CO\tCB:"):
             continue
         line = line.strip().split()
         cb = line[1]
@@ -137,12 +138,17 @@ def parse_args():
     merge_vartrix.add_argument('--ref_matrices', nargs='*', required=True)
     merge_vartrix.add_argument('--alt_matrices', nargs='*', required=True)
     merge_vartrix.add_argument('--vcf_files', nargs='*', required=True)
-    merge_vartrix.add_argument('--merged_barcodes', required=True)
-    merge_vartrix.add_argument('--merged_variants', required=True)
-    merge_vartrix.add_argument('--merged_ref_matrix', required=True)
-    merge_vartrix.add_argument('--merged_alt_matrix', required=True)
     merge_vartrix.add_argument('--parsed_output', required=True)
     merge_vartrix.add_argument('--tempdir', required=True)
+
+    regenerate_vartrix_format = subparsers.add_parser('regenerate_vartrix_format')
+    regenerate_vartrix_format.set_defaults(which='regenerate_vartrix_format')
+    regenerate_vartrix_format.add_argument('--barcodes', required=True)
+    regenerate_vartrix_format.add_argument('--variants', required=True)
+    regenerate_vartrix_format.add_argument('--ref_matrix', required=True)
+    regenerate_vartrix_format.add_argument('--alt_matrix', required=True)
+    regenerate_vartrix_format.add_argument('--parsed_data', required=True)
+    regenerate_vartrix_format.add_argument('--tempdir', required=True)
 
     args = vars(parser.parse_args())
 
@@ -169,14 +175,17 @@ def utils():
             args['barcodes'], args['variants'], args['ref_counts'],
             args['alt_counts'], args['outfile'],
             skip_header=args['skip_header'],
-            sparse=args[
-                'sparse']
+            sparse=args['sparse']
         )
     elif args['which'] == "merge_vartrix":
         merge_vartrix(
             args['barcodes'], args['variants'], args['ref_matrices'], args['alt_matrices'], args['vcf_files'],
-            args['merged_barcodes'], args['merged_variants'], args['merged_ref_matrix'], args['merged_alt_matrix'],
             args['parsed_output'], args['tempdir']
+        )
+    elif args['which'] == "regenerate_vartrix_format":
+        regenerate_vartrix_format(
+            args['barcodes'], args['variants'], args['ref_matrix'], args['alt_matrix'],
+            args['parsed_data'], args['tempdir']
         )
     elif args['which'] == "generate_cell_barcodes":
         generate_cell_barcodes_file(args['bamfile'], args['output'])

@@ -4,8 +4,8 @@ import os
 import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pandas as pd
-
 from mondrianutils.dtypes.variant import dtypes
+
 
 def merge_idx_files(idx_files):
     idxs = set()
@@ -133,27 +133,14 @@ def rewrite_counts_file(inputfile, outputfile, num_barcodes, num_variants):
 
 def merge_vartrix(
         barcodes, variants, refs, alts, vcf_files,
-        merged_barcodes, merged_variants, merged_ref,
-        merged_alt, parsed_output, tempdir
+        parsed_output, tempdir
 ):
     assert len(barcodes) == len(variants) == len(refs) == len(alts)
     helpers.makedirs(tempdir)
 
-    all_barcodes = merge_idx_files(barcodes)
-    write_idx_file(all_barcodes, merged_barcodes)
-
-    all_variants = merge_idx_files(variants)
-    write_idx_file(all_variants, merged_variants)
-
-    barcodes_dict = {v: i + 1 for i, v in enumerate(all_barcodes)}
-    variants_dict = {v: i + 1 for i, v in enumerate(all_variants)}
-
-    temp_merged_ref = os.path.join(tempdir, 'merged_ref.mtx')
-    temp_merged_alt = os.path.join(tempdir, 'merged_alt.mtx')
     temp_parsed = os.path.join(tempdir, 'parsed.csv')
 
-    with open(temp_merged_ref, 'wt') as ref_writer, open(temp_merged_alt, 'wt') as alt_writer, open(temp_parsed,
-                                                                                                    'wt') as parsed_writer:
+    with open(temp_parsed, 'wt') as parsed_writer:
         parsed_writer.write('cell_id,chromosome,position,ref,alt,ref_count,alt_count\n')
 
         for barcode, variant, ref, alt, vcf in zip(barcodes, variants, refs, alts, vcf_files):
@@ -164,15 +151,10 @@ def merge_vartrix(
             variant_data = load_idx_file(variant)
 
             ref_data = load_data(barcode_data, variant_data, vcf_data, ref)
-            write_counts_file(barcodes_dict, variants_dict, ref_data, ref_writer)
 
             alt_data = load_data(barcode_data, variant_data, vcf_data, alt)
-            write_counts_file(barcodes_dict, variants_dict, alt_data, alt_writer)
 
             write_parsed_format(ref_data, alt_data, parsed_writer)
-
-    rewrite_counts_file(temp_merged_ref, merged_ref, len(all_barcodes), len(all_variants))
-    rewrite_counts_file(temp_merged_alt, merged_alt, len(all_barcodes), len(all_variants))
 
     df = pd.read_csv(temp_parsed)
     csverve.write_dataframe_to_csv_and_yaml(
@@ -180,3 +162,57 @@ def merge_vartrix(
         skip_header=False,
         dtypes=dtypes()['genotyping']
     )
+
+
+def regenerate_vartrix_format(barcodes_file, variants_file, ref_matrix, alt_matrix, parsed_data, tempdir):
+    helpers.makedirs(tempdir)
+
+    barcodes = set()
+    variants = set()
+    refdata = {}
+    altdata = {}
+
+    with helpers.getFileHandle(parsed_data, 'rt') as reader:
+        header = reader.readline().strip().split(',')
+        header = {v: i for i, v in enumerate(header)}
+
+        for line in reader:
+            line = line.strip().split(',')
+            cell_id = line[header['cell_id']]
+            chrom = line[header['chromosome']]
+            pos = line[header['position']]
+            ref = line[header['ref_count']]
+            alt = line[header['alt_count']]
+
+            barcodes.add(cell_id)
+            variants.add(f'{chrom}_{pos}')
+
+            refdata[(cell_id, chrom, pos)] = ref
+            altdata[(cell_id, chrom, pos)] = alt
+
+    barcodes = sorted(barcodes)
+    variants = sorted(variants)
+
+    write_idx_file(barcodes, barcodes_file)
+    write_idx_file(variants, variants_file)
+
+    barcodes_idx = {barcode: i + 1 for i, barcode in enumerate(barcodes)}
+    variants_idx = {variant: i + 1 for i, variant in enumerate(variants)}
+
+    temp_merged_ref = os.path.join(tempdir, 'merged_ref.mtx')
+    temp_merged_alt = os.path.join(tempdir, 'merged_alt.mtx')
+
+    with open(temp_merged_ref, 'wt') as ref_writer, open(temp_merged_alt, 'wt') as alt_writer:
+
+        for (cell_id, chrom, pos), count in refdata.items():
+            outstr = [str(variants_idx[f'{chrom}_{pos}']), str(barcodes_idx[cell_id]), str(count)]
+            outstr = '\t'.join(outstr) + '\n'
+            ref_writer.write(outstr)
+
+        for (cell_id, chrom, pos), count in altdata.items():
+            outstr = [str(variants_idx[f'{chrom}_{pos}']), str(barcodes_idx[cell_id]), str(count)]
+            outstr = '\t'.join(outstr) + '\n'
+            alt_writer.write(outstr)
+
+    rewrite_counts_file(temp_merged_ref, ref_matrix, len(barcodes), len(variants))
+    rewrite_counts_file(temp_merged_alt, alt_matrix, len(barcodes), len(variants))
