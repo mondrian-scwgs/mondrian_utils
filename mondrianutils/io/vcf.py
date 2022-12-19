@@ -146,7 +146,7 @@ def exclude_blacklist(input_vcf, output_vcf, exclusion_blacklist):
             if chrom_excluded is None or not chrom_excluded[0] == chrom:
                 chrom_excluded = (chrom, _get_chrom_excluded(excluded, chrom))
 
-            if chrom_excluded[1][pos]:
+            if pos < len(chrom_excluded[1]) and chrom_excluded[1][pos]:
                 continue
 
             writer.write(line)
