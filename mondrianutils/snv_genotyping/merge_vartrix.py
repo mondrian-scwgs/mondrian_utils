@@ -164,6 +164,32 @@ def merge_vartrix(
     )
 
 
+def parse_vartrix(barcode, variant, ref_counts, alt_counts, vcf_file, parsed_output, tempdir, skip_header=False):
+    helpers.makedirs(tempdir)
+
+    temp_parsed = os.path.join(tempdir, 'parsed.csv')
+
+    with open(temp_parsed, 'wt') as parsed_writer:
+        parsed_writer.write('cell_id,chromosome,position,ref,alt,ref_count,alt_count\n')
+
+        vcf_data = load_vcf(vcf_file)
+        barcode_data = load_idx_file(barcode)
+        variant_data = load_idx_file(variant)
+
+        ref_data = load_data(barcode_data, variant_data, vcf_data, ref_counts)
+
+        alt_data = load_data(barcode_data, variant_data, vcf_data, alt_counts)
+
+        write_parsed_format(ref_data, alt_data, parsed_writer)
+
+    df = pd.read_csv(temp_parsed)
+    csverve.write_dataframe_to_csv_and_yaml(
+        df, parsed_output,
+        skip_header=skip_header,
+        dtypes=dtypes()['genotyping']
+    )
+
+
 def regenerate_vartrix_format(barcodes_file, variants_file, ref_matrix, alt_matrix, parsed_data, tempdir):
     helpers.makedirs(tempdir)
 

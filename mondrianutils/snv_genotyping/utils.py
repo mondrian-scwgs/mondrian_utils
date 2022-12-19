@@ -6,7 +6,7 @@ import yaml
 from mondrianutils import __version__
 from mondrianutils.snv_genotyping.merge_vartrix import merge_vartrix
 from mondrianutils.snv_genotyping.merge_vartrix import regenerate_vartrix_format
-from mondrianutils.snv_genotyping.parse_vartrix import parse_vartrix
+from mondrianutils.snv_genotyping.merge_vartrix import parse_vartrix
 from mondrianutils.snv_genotyping.snv_genotyper import SnvGenotyper
 
 
@@ -79,34 +79,6 @@ def parse_args():
         default=False
     )
 
-    parse_vartrix = subparsers.add_parser('parse_vartrix')
-    parse_vartrix.set_defaults(which='parse_vartrix')
-    parse_vartrix.add_argument(
-        '--barcodes'
-    )
-    parse_vartrix.add_argument(
-        '--variants'
-    )
-    parse_vartrix.add_argument(
-        '--ref_counts'
-    )
-    parse_vartrix.add_argument(
-        '--alt_counts'
-    )
-    parse_vartrix.add_argument(
-        '--outfile'
-    )
-    parse_vartrix.add_argument(
-        '--skip_header',
-        action='store_true',
-        default=False
-    )
-    parse_vartrix.add_argument(
-        '--sparse',
-        action='store_true',
-        default=False
-    )
-
     generate_cell_barcodes = subparsers.add_parser('generate_cell_barcodes')
     generate_cell_barcodes.set_defaults(which='generate_cell_barcodes')
     generate_cell_barcodes.add_argument(
@@ -141,6 +113,21 @@ def parse_args():
     merge_vartrix.add_argument('--parsed_output', required=True)
     merge_vartrix.add_argument('--tempdir', required=True)
 
+    parse_vartrix = subparsers.add_parser('parse_vartrix')
+    parse_vartrix.set_defaults(which='parse_vartrix')
+    parse_vartrix.add_argument('--barcode', required=True)
+    parse_vartrix.add_argument('--variant', required=True)
+    parse_vartrix.add_argument('--ref_matrix', required=True)
+    parse_vartrix.add_argument('--alt_matrix', required=True)
+    parse_vartrix.add_argument('--vcf_file', required=True)
+    parse_vartrix.add_argument('--parsed_output', required=True)
+    parse_vartrix.add_argument('--tempdir', required=True)
+    parse_vartrix.add_argument(
+        '--skip_header',
+        action='store_true',
+        default=False
+    )
+
     regenerate_vartrix_format = subparsers.add_parser('regenerate_vartrix_format')
     regenerate_vartrix_format.set_defaults(which='regenerate_vartrix_format')
     regenerate_vartrix_format.add_argument('--barcodes', required=True)
@@ -170,17 +157,15 @@ def utils():
         generate_metadata(
             args['outputs'], args['vartrix_outputs'], args['metadata_input'], args['metadata_output']
         )
-    elif args['which'] == "parse_vartrix":
-        parse_vartrix(
-            args['barcodes'], args['variants'], args['ref_counts'],
-            args['alt_counts'], args['outfile'],
-            skip_header=args['skip_header'],
-            sparse=args['sparse']
-        )
     elif args['which'] == "merge_vartrix":
         merge_vartrix(
             args['barcodes'], args['variants'], args['ref_matrices'], args['alt_matrices'], args['vcf_files'],
             args['parsed_output'], args['tempdir']
+        )
+    elif args['which'] == "parse_vartrix":
+        parse_vartrix(
+            args['barcode'], args['variant'], args['ref_matrix'], args['alt_matrix'], args['vcf_file'],
+            args['parsed_output'], args['tempdir'], skip_header=args['skip_header']
         )
     elif args['which'] == "regenerate_vartrix_format":
         regenerate_vartrix_format(
