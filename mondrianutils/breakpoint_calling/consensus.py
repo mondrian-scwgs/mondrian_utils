@@ -90,7 +90,14 @@ def consensus(destruct_calls, lumpy_calls, svaba_calls, gridss_calls, consensus_
 
         outdata.append(brkgrp)
 
-    outdata = pd.concat(outdata)
+    if outdata:
+        outdata = pd.concat(outdata)
+    else:
+        columns = [
+            'breakpoint_id', 'caller', 'chromosome_1', 'chromosome_2', 'position_1',
+            'position_2', 'strand_1', 'strand_2', 'type', 'grouped_breakpoint_id'
+        ]
+        outdata = pd.DataFrame(columns=columns)
 
     outdata['sample_id'] = sample_id
 
