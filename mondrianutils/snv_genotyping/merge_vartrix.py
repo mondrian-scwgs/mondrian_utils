@@ -195,8 +195,6 @@ def regenerate_vartrix_format(barcodes_file, variants_file, ref_matrix, alt_matr
 
     barcodes = set()
     variants = set()
-    refdata = {}
-    altdata = {}
 
     with helpers.getFileHandle(parsed_data, 'rt') as reader:
         header = reader.readline().strip().split(',')
@@ -206,39 +204,44 @@ def regenerate_vartrix_format(barcodes_file, variants_file, ref_matrix, alt_matr
             line = line.strip().split(',')
             cell_id = line[header['cell_id']]
             chrom = line[header['chromosome']]
-            pos = line[header['position']]
-            ref = line[header['ref_count']]
-            alt = line[header['alt_count']]
+            pos = int(line[header['position']])
 
             barcodes.add(cell_id)
             variants.add(f'{chrom}_{pos}')
 
-            refdata[(cell_id, chrom, pos)] = ref
-            altdata[(cell_id, chrom, pos)] = alt
-
     barcodes = sorted(barcodes)
     variants = sorted(variants)
+
+    len_barcodes = len(barcodes)
+    len_variants = len(variants)
 
     write_idx_file(barcodes, barcodes_file)
     write_idx_file(variants, variants_file)
 
-    barcodes_idx = {barcode: i + 1 for i, barcode in enumerate(barcodes)}
-    variants_idx = {variant: i + 1 for i, variant in enumerate(variants)}
+    barcodes = {barcode: i + 1 for i, barcode in enumerate(barcodes)}
+    variants = {variant: i + 1 for i, variant in enumerate(variants)}
 
     temp_merged_ref = os.path.join(tempdir, 'merged_ref.mtx')
     temp_merged_alt = os.path.join(tempdir, 'merged_alt.mtx')
 
-    with open(temp_merged_ref, 'wt') as ref_writer, open(temp_merged_alt, 'wt') as alt_writer:
+    with open(temp_merged_ref, 'wt') as ref_writer, open(temp_merged_alt, 'wt') as alt_writer, helpers.getFileHandle(parsed_data, 'rt') as reader:
+        header = reader.readline().strip().split(',')
+        header = {v: i for i, v in enumerate(header)}
+        for line in reader:
+            line = line.strip().split(',')
+            cell_id = line[header['cell_id']]
+            chrom = line[header['chromosome']]
+            pos = int(line[header['position']])
+            ref_count = int(line[header['ref_count']])
+            alt_count = int(line[header['alt_count']])
 
-        for (cell_id, chrom, pos), count in refdata.items():
-            outstr = [str(variants_idx[f'{chrom}_{pos}']), str(barcodes_idx[cell_id]), str(count)]
+            outstr = [str(variants[f'{chrom}_{pos}']), str(barcodes[cell_id]), str(ref_count)]
             outstr = '\t'.join(outstr) + '\n'
             ref_writer.write(outstr)
 
-        for (cell_id, chrom, pos), count in altdata.items():
-            outstr = [str(variants_idx[f'{chrom}_{pos}']), str(barcodes_idx[cell_id]), str(count)]
+            outstr = [str(variants[f'{chrom}_{pos}']), str(barcodes[cell_id]), str(alt_count)]
             outstr = '\t'.join(outstr) + '\n'
             alt_writer.write(outstr)
 
-    rewrite_counts_file(temp_merged_ref, ref_matrix, len(barcodes), len(variants))
-    rewrite_counts_file(temp_merged_alt, alt_matrix, len(barcodes), len(variants))
+    rewrite_counts_file(temp_merged_ref, ref_matrix, len_barcodes, len_variants)
+    rewrite_counts_file(temp_merged_alt, alt_matrix, len_barcodes, len_variants)

@@ -3,11 +3,27 @@ import vcf
 
 
 class SvVcfData(object):
-    def __init__(self, filepath, chromosome=None):
+    def __init__(self, filepath, region=None):
         self.filepath = filepath
         self.reader = self._get_reader(filepath)
         self.caller = self._get_caller()
-        self.chromosome = chromosome
+        self.chromosome, self.start, self.end = self.__parse_region(region)
+
+    @staticmethod
+    def __parse_region(region):
+        if region is None:
+            return None, None, None
+
+        if ':' not in region:
+            return region, None, None
+
+        chrom, coords = region.split(':')
+
+        assert '-' in coords
+
+        beg, end = coords.split('-')
+
+        return chrom, int(beg), int(end)
 
     def _get_caller(self):
         header_infos = self.reader.infos.values()
@@ -38,12 +54,6 @@ class SvVcfData(object):
                 'id': record.ID,
                 'filter': record.FILTER,
             }
-
-            # if data['filter'] == []:
-            #     data['filter'] = None
-            #
-            # if data['filter'] is not None:
-            #     continue
 
             info = record.INFO
 
@@ -168,7 +178,7 @@ class SvVcfData(object):
 
         return outdata
 
-    def _filter_calls(self, calls, chromosome=None):
+    def _filter_calls(self, calls, chromosome=None, start=None, end=None):
 
         for call in calls:
 
@@ -176,23 +186,34 @@ class SvVcfData(object):
 
                 if call[0]['filter'] and 'LOW_QUAL' in call[0]['filter']:
                     continue
-                if not call[0]['chrom'] == chromosome:
+
+                if chromosome and not call[0]['chrom'] == chromosome:
                     continue
+
+                if start:
+                    if call[0]['pos'] < start:
+                        continue
+                    if call[0]['pos'] > end:
+                        continue
             else:
                 assert len(call) == 2
 
                 if call[0]['filter'] and 'LOW_QUAL' in call[0]['filter'] and 'LOW_QUAL' in call[1]['filter']:
                     continue
 
-                if not call[0]['chrom'] == chromosome and not call[0]['chrom'] == chromosome:
+                if chromosome and not call[0]['chrom'] == chromosome and not call[1]['chrom'] == chromosome:
                     continue
+
+                if start:
+                    if (call[0]['pos'] < start or call[0]['pos'] > end) and (call[1]['pos'] < start or call[1]['pos'] > end):
+                        continue
 
             yield call
 
-    def fetch(self, chromosome=None):
+    def fetch(self, chromosome=None, start=None, end=None):
         records = self._parse_vcf()
         records = self._group_bnds(records)
-        records = self._filter_calls(records, chromosome=chromosome)
+        records = self._filter_calls(records, chromosome=chromosome, start=start, end=end)
 
         for record in records:
             if len(record) == 1 and self.caller == 'lumpy':
@@ -201,7 +222,7 @@ class SvVcfData(object):
                 yield self._process_bnd_call(record)
 
     def as_data_frame(self):
-        data = [record for record in self.fetch(chromosome=self.chromosome)]
+        data = [record for record in self.fetch(chromosome=self.chromosome, start = self.start, end = self.end)]
 
         data = pd.DataFrame(data)
         data['caller'] = self.caller

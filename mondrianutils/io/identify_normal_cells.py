@@ -1,3 +1,5 @@
+import warnings
+
 import csverve.api as csverve
 import numpy as np
 import pandas as pd
@@ -5,9 +7,14 @@ import yaml
 from mondrianutils import helpers
 from scipy.spatial.distance import cdist
 from scipy.stats import mode
-import warnings
+
 
 def get_relative_aneuploidy(cn_data):
+    # ignore sex chromosomes for this calculation
+    my_columns = np.where([a[0] not in ['X', 'Y']
+                           for a in cn_data.columns])[0]
+    cn_data = cn_data.iloc[:, my_columns]
+
     ampdel = np.zeros(cn_data.shape, np.int8)
     modes = mode(cn_data, axis=1, keepdims=True)[0]
     ampdel[cn_data > modes] = 1
@@ -82,6 +89,11 @@ def identify_normal_cells(
 
     cn_data = load_reads_data(hmmcopy_reads_path, metrics['cell_id'])
 
+    # drop Y-chromosome immediately
+    my_columns = np.where([a[0] not in ['Y']
+                           for a in cn_data.columns])[0]
+    cn_data = cn_data.iloc[:, my_columns]
+
     observations = pd.DataFrame(index=cn_data.index)
     observations['ploidy'] = cn_data.apply(lambda x: np.nanmean(x), axis=1)
     observations['rel_aneuploidy'] = get_relative_aneuploidy(cn_data)
@@ -93,10 +105,9 @@ def identify_normal_cells(
     )
 
     xcopies = get_mean_copy_by_chromosome(normal_reads, 'X')
-    ycopies = get_mean_copy_by_chromosome(normal_reads, 'Y')
 
-    if (xcopies == 2 and ycopies == 0) or (xcopies == 1 and ycopies == 1):
-        warnings.warn(f"Found abnormal sex chromosome copies: chrX={xcopies}, chrY={ycopies}")
+    if not (xcopies == 1 or xcopies == 2):
+        warnings.warn(f"Found abnormal sex chromosome copies: chrX={xcopies}")
 
     non_blacklist_bins = remove_blacklist_bins(cn_data.columns, reference_name)
 
@@ -106,7 +117,6 @@ def identify_normal_cells(
     expected = pd.DataFrame(columns=non_blacklist_bins)
     expected.loc[0] = 2
     expected[[v for v in expected if v[0] == 'X']] = xcopies
-    expected[[v for v in expected if v[0] == 'Y']] = ycopies
     expected = expected.to_numpy()
 
     aneu = cdist(observed, expected, metric='hamming')

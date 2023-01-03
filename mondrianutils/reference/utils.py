@@ -5,6 +5,7 @@ import os
 import argparse
 import pandas as pd
 import pysam
+from mondrianutils import helpers
 
 
 def build_repeats(rmsk, chr_map, repeats, satellites):
@@ -112,6 +113,26 @@ def create_snp_positions_grch38(bcf_file_dir, output, chromosomes=None, chr_name
     snps.to_csv(output, index=False, header=False, sep='\t')
 
 
+def get_intervals(reference, output, chromosomes, interval_size):
+    fasta = pysam.FastaFile(reference)
+    lengths = fasta.lengths
+    names = fasta.references
+
+    intervals = []
+
+    for name, length in zip(names, lengths):
+        if name not in chromosomes:
+            continue
+        for i in range(int((length / interval_size) + 1)):
+            start = str(int(i * interval_size) + 1)
+            end = str(int((i + 1) * interval_size))
+            intervals.append(name + ":" + start + "-" + end)
+
+    with helpers.getFileHandle(output, 'wt') as writer:
+        for interval in intervals:
+            writer.write(interval + '\n')
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -150,6 +171,13 @@ def parse_args():
         '--chromosomes', nargs='*', default=None
     )
 
+    get_intervals = subparsers.add_parser('get_intervals')
+    get_intervals.set_defaults(which='get_intervals')
+    get_intervals.add_argument('--reference', required=True)
+    get_intervals.add_argument('--output', required=True)
+    get_intervals.add_argument('--chromosomes', nargs='*', required=True)
+    get_intervals.add_argument('--interval_size', type=int, default=1e6)
+
     args = vars(parser.parse_args())
 
     return args
@@ -168,6 +196,10 @@ def utils():
     elif args['which'] == 'snp_positions_grch38':
         create_snp_positions_grch38(
             args['data_dir'], args['snp_positions'], chromosomes=args['chromosomes']
+        )
+    elif args['which'] == 'get_intervals':
+        get_intervals(
+            args['reference'], args['output'], args['chromosomes'], args['interval_size']
         )
     else:
         raise Exception()

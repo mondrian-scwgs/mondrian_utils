@@ -8,7 +8,23 @@ from .breakpoint_db import BreakpointDatabase
 from .vcf_sv_parser import SvVcfData
 
 
-def read_destruct(destruct_calls, chromosome=None):
+def parse_region(region):
+    if region is None:
+        return None, None, None
+
+    if ':' not in region:
+        return region, None, None
+
+    chrom, coords = region.split(':')
+
+    assert '-' in coords
+
+    beg, end = coords.split('-')
+
+    return chrom, int(beg), int(end)
+
+
+def read_destruct(destruct_calls, region=None):
     df = pd.read_csv(destruct_calls, sep='\t', dtype={'chromosome_1': str, 'chromosome_2': str})
 
     df = df[
@@ -19,8 +35,16 @@ def read_destruct(destruct_calls, chromosome=None):
 
     df['breakpoint_id'] = df['breakpoint_id'].astype(str) + '_' + df['caller']
 
-    if chromosome is not None:
-        df = df[(df['chromosome_1'] == chromosome) | (df['chromosome_2'] == chromosome)]
+    if region is not None:
+        chromosome, start, end = parse_region(region)
+
+        if chromosome:
+            query_str = f'(chromosome_1 == "{chromosome}") | (chromosome_2 == "{chromosome}")'
+            df = df.query(query_str)
+
+        if start:
+            query_str = f'({start} <= position_1 <= {end}) | ({start} <= position_2 <= {end})'
+            df = df.query(query_str)
 
     return df
 
@@ -56,13 +80,13 @@ def get_common_calls(df, df_db):
 
 
 def consensus(destruct_calls, lumpy_calls, svaba_calls, gridss_calls, consensus_calls, sample_id, tempdir,
-              chromosome=None):
+              region=None):
     temp_consensus_output = os.path.join(tempdir, 'consensus.csv')
     allcalls = [
-        read_destruct(destruct_calls, chromosome=chromosome),
-        SvVcfData(lumpy_calls, chromosome=chromosome).as_data_frame(),
-        SvVcfData(svaba_calls, chromosome=chromosome).as_data_frame(),
-        SvVcfData(gridss_calls, chromosome=chromosome).as_data_frame()
+        read_destruct(destruct_calls, region=region),
+        SvVcfData(lumpy_calls, region=region).as_data_frame(),
+        SvVcfData(svaba_calls, region=region).as_data_frame(),
+        SvVcfData(gridss_calls, region=region).as_data_frame()
     ]
 
     allcalls = pd.concat(allcalls)

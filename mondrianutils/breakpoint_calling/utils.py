@@ -56,7 +56,7 @@ def parse_args():
     consensus.add_argument('--sample_id', required=True)
     consensus.add_argument('--consensus', required=True)
     consensus.add_argument('--tempdir', required=True)
-    consensus.add_argument('--chromosome')
+    consensus.add_argument('--region')
 
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
@@ -84,7 +84,7 @@ def utils():
     if args['which'] == 'consensus':
         consensus.consensus(
             args['destruct'], args['lumpy'], args['svaba'], args['gridss'],
-            args['consensus'], args['sample_id'], args['tempdir'], chromosome=args['chromosome']
+            args['consensus'], args['sample_id'], args['tempdir'], region=args['region']
         )
     elif args['which'] == 'generate_metadata':
         generate_metadata(
