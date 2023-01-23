@@ -244,6 +244,8 @@ class ClusterMap(object):
             ticklabels = [
                 str(v).replace(str(self.max_cn), str(self.max_cn - 1) + "+") for v in bounds]
 
+        ticklabels = [str(v) for v in ticklabels]
+
         if ticklabels:
             cbar.set_ticklabels(ticklabels)
         else:

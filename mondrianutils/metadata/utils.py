@@ -7,7 +7,7 @@ from mondrianutils import __version__
 
 
 def separate_tumour_and_normal_metadata(
-        tumour_bam, normal_bam,
+        tumour_bam, normal_bam, heatmap,
         metadata_input, metadata_output
 ):
     with open(metadata_input, 'rt') as reader:
@@ -39,6 +39,10 @@ def separate_tumour_and_normal_metadata(
         os.path.basename(normal_bam[1]): {
             'result_type': 'merged_cells_bam', 'filtering': 'passed',
             'auxiliary': helpers.get_auxiliary_files(normal_bam[1])
+        },
+        os.path.basename(heatmap): {
+            'result_type': 'hmmcopy_heatmap_plots',
+            'auxiliary': helpers.get_auxiliary_files(heatmap)
         }
     }
 
@@ -64,6 +68,9 @@ def parse_args():
         '--tumour_bam', nargs=2
     )
     separate_tumour_and_normal.add_argument(
+        '--heatmap'
+    )
+    separate_tumour_and_normal.add_argument(
         '--metadata_input'
     )
     separate_tumour_and_normal.add_argument(
@@ -80,7 +87,7 @@ def utils():
 
     if args['which'] == 'separate_tumour_and_normal':
         separate_tumour_and_normal_metadata(
-            args['normal_bam'], args['tumour_bam'],
+            args['normal_bam'], args['tumour_bam'], args['heatmap'],
             args['metadata_input'], args['metadata_output']
         )
     else:

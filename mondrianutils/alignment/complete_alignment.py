@@ -30,18 +30,21 @@ def load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id):
 
 
 def bwa_align(
-        fastq1, fastq2, reference, metadata_yaml,
-        output, lane_id, flowcell_id, cell_id, num_threads
+        fastq1, fastq2, reference, reference_name, metadata_yaml,
+        output, lane_id, flowcell_id, cell_id, num_threads, tempdir
 ):
     center, library_id, sample_id = load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id)
 
     script_path = pathlib.Path(__file__).parent.resolve()
     script_path = os.path.join(script_path, 'bwa_align.sh')
 
+    if reference_name.lower() == 'grch38':
+        script_path = os.path.join(script_path, 'bwa_align.sh')
+
     cmd = [
         script_path, fastq1, fastq2, reference, output,
         sample_id, library_id, cell_id, lane_id,
-        flowcell_id, center, num_threads
+        flowcell_id, center, num_threads, tempdir
     ]
     helpers.run_cmd(cmd)
 
@@ -300,10 +303,11 @@ def alignment(
 
         print("Starting Alignment")
         helpers.makedirs(os.path.join(lane_tempdir, 'bwa_mem'))
+        helpers.makedirs(os.path.join(lane_tempdir, 'bwa_mem', 'alignment_temp_files'))
         lane_aligned_bam = os.path.join(lane_tempdir, 'bwa_mem', 'aligned.bam')
         bwa_align(
-            trim_galore_r1, trim_galore_r2, reference, metadata_yaml, lane_aligned_bam,
-            lane_id, flowcell_id, cell_id, num_threads
+            trim_galore_r1, trim_galore_r2, reference, reference_name, metadata_yaml, lane_aligned_bam,
+            lane_id, flowcell_id, cell_id, num_threads, os.path.join(lane_tempdir, 'bwa_mem', 'alignment_temp_files')
         )
 
         print("Tagging Bam with cell id")

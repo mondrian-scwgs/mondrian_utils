@@ -1,3 +1,4 @@
+import copy
 import os
 
 import argparse
@@ -5,7 +6,6 @@ import pysam
 import yaml
 from mondrianutils import helpers
 from mondrianutils.io import identify_normal_cells
-import copy
 
 
 def get_cells(bam_reader):
@@ -67,6 +67,32 @@ def update_header_comments(header, cells):
     return newheader
 
 
+def update_normal_readgroup(header):
+    rg_map = {}
+
+    for readgroup in header['RG']:
+        old_sample_id = readgroup['SM']
+        new_sample_id = old_sample_id + '-N'
+
+        readgroup['SM'] = new_sample_id
+
+        old_readgroup = readgroup['ID']
+        new_readgroup = readgroup['ID'].replace(old_sample_id, new_sample_id)
+
+        readgroup['ID'] = new_readgroup
+
+        rg_map[old_readgroup] = new_readgroup
+
+    return header, rg_map
+
+
+def update_readgroup_in_read(read, readgroup_mapping):
+    assert read.get_tag('RG') in readgroup_mapping
+
+    read.set_tag('RG', readgroup_mapping[read.get_tag('RG')])
+    return read
+
+
 def separate_normal_and_tumour_cells(infile, normal_output, tumour_output, normal_cells_yaml):
     with open(normal_cells_yaml, 'rt') as reader:
         normal_cells = set(yaml.safe_load(reader))
@@ -76,6 +102,7 @@ def separate_normal_and_tumour_cells(infile, normal_output, tumour_output, norma
     tumour_cells = [v for v in get_cells(reader) if v not in normal_cells]
 
     normal_header = update_header_comments(reader.header, normal_cells)
+    normal_header, readgroup_mapping = update_normal_readgroup(normal_header)
     tumour_header = update_header_comments(reader.header, tumour_cells)
 
     normal_writer = pysam.AlignmentFile(normal_output, "wb", header=normal_header)
@@ -85,7 +112,8 @@ def separate_normal_and_tumour_cells(infile, normal_output, tumour_output, norma
         cell_id = pileupobj.get_tag('CB')
 
         if cell_id in normal_cells:
-            normal_writer.write(pileupobj)
+            updated_read = update_readgroup_in_read(pileupobj, readgroup_mapping)
+            normal_writer.write(updated_read)
         else:
             tumour_writer.write(pileupobj)
 
@@ -107,6 +135,7 @@ def parse_args():
     identify_normal_cells.add_argument('--reads_data', required=True)
     identify_normal_cells.add_argument('--metrics_data', required=True)
     identify_normal_cells.add_argument('--output_yaml', required=True)
+    identify_normal_cells.add_argument('--output_csv', required=True)
     identify_normal_cells.add_argument('--reference_name', required=True)
     identify_normal_cells.add_argument('--min_reads', default=500000)
     identify_normal_cells.add_argument('--min_quality', default=0.85)
@@ -138,6 +167,7 @@ def utils():
             args['reads_data'],
             args['metrics_data'],
             args['output_yaml'],
+            args['output_csv'],
             args['reference_name'],
             min_reads=args['min_reads'],
             min_quality=args['min_quality'],

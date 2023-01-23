@@ -5,7 +5,6 @@ Created on Sep 8, 2015
 '''
 import sys
 
-import math
 import matplotlib
 
 matplotlib.use("Agg")
@@ -37,6 +36,7 @@ class PlotPcolor(object):
             max_cn=20,
             chromosomes=[str(v) for v in range(1, 23)] + ['X', 'Y'],
             mappability_threshold=0.9,
+            sidebar_column='pick_met',
             scale_by_cells=False
     ):
         self.input = infile
@@ -50,6 +50,7 @@ class PlotPcolor(object):
         self.mappability_threshold = mappability_threshold
 
         self.scale_by_cells = scale_by_cells
+        self.sidebar_column = sidebar_column
 
     def read_segs(self):
         return helpers.load_and_pivot_reads_data(self.input, self.column_name)
@@ -58,7 +59,6 @@ class PlotPcolor(object):
         metrics = csverve.read_csv(self.metrics)
         metrics = metrics.set_index('cell_id')
         return metrics
-
 
     def plot_heatmap(self, data, ccdata, title, lims, pdfout, distance_matrix=None):
         """
@@ -152,6 +152,6 @@ class PlotPcolor(object):
         metrics = self.read_metrics()
 
         sepdata = {'all': list(metrics.index)}
-        colordata = metrics['pick_met'].to_dict()
+        colordata = metrics[self.sidebar_column].to_dict()
 
         self.plot_heatmap_by_sep(data, sepdata, colordata)

@@ -3,12 +3,12 @@ import shutil
 
 import argparse
 import csverve.api as csverve
-from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 import mondrianutils.helpers as helpers
 import mondrianutils.hmmcopy.classify as classify
 import pandas as pd
 import yaml
 from mondrianutils import __version__
+from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from mondrianutils.hmmcopy.clustering_order import add_clustering_order
 from mondrianutils.hmmcopy.complete_hmmcopy import complete_hmmcopy
 from mondrianutils.hmmcopy.generate_qc_html import generate_html_report
@@ -16,14 +16,15 @@ from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
 from mondrianutils.hmmcopy.readcounter import ReadCounter
 
 
-def plot_heatmap(reads, metrics, chromosomes, output):
+def plot_heatmap(reads, metrics, chromosomes, output, sidebar_column='pick_met'):
     plot = PlotPcolor(
         reads, metrics, output,
         column_name='state',
         max_cn=12,
         scale_by_cells=False,
         mappability_threshold=0.9,
-        chromosomes=chromosomes
+        chromosomes=chromosomes,
+        sidebar_column=sidebar_column
     )
     plot.main()
 
@@ -259,6 +260,10 @@ def parse_args():
     heatmap.add_argument(
         '--output'
     )
+    heatmap.add_argument(
+        '--sidebar_column',
+        default='pick_met'
+    )
 
     add_quality = subparsers.add_parser('add_quality')
     add_quality.set_defaults(which='add_quality')
@@ -393,7 +398,10 @@ def utils():
             args['tempdir']
         )
     elif args['which'] == 'heatmap':
-        plot_heatmap(args['reads'], args['metrics'], args['chromosomes'], args['output'])
+        plot_heatmap(
+            args['reads'], args['metrics'], args['chromosomes'], args['output'],
+            sidebar_column=args['sidebar_column']
+        )
     elif args['which'] == 'generate_html_report':
         generate_html_report(
             args['tempdir'], args['html'], args['metrics'], args['gc_metrics']

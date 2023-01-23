@@ -1,4 +1,4 @@
-def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
+def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon', 'human', 'mouse']):
     metrics = {
         'multiplier': 'int',
         'cell_id': 'category',
@@ -71,6 +71,7 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
         'fastqscreen_nohit': 'int',
         'fastqscreen_total_reads': 'int',
         'fastqscreen_nohit_ratio': 'float',
+        'is_normal': 'category'
     }
 
     for genome in fastqscreen_genomes:

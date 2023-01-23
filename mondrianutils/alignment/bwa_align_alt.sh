@@ -18,4 +18,6 @@ bwa mem -C -M -t ${THREADS} \
 -R "@RG\tID:${SAMPLE}_${LIBRARY}_${FLOWCELL}_${LANE}\tSM:${SAMPLE}\tLB:${LIBRARY}\tPU:${LANE}_${FLOWCELL}\tPL:ILLUMINA\tCN:${CENTRE}" \
 ${REFERENCE} ${FASTQ1} ${FASTQ2} > ${TEMPDIR}/aligned.sam
 
-samtools sort -o ${OUTPUT} ${TEMPDIR}/aligned.sam
+bwa-postalt.js ${REFERENCE} ${TEMPDIR}/aligned.sam > ${TEMPDIR}/aligned_postalt.sam
+
+samtools sort -o ${OUTPUT} ${TEMPDIR}/aligned_postalt.sam

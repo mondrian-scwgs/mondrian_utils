@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from mondrianutils import helpers
+from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from scipy.spatial.distance import cdist
 from scipy.stats import mode
 
@@ -74,10 +75,27 @@ def load_reads_data(reads_data, cells):
     return df
 
 
+def annotate_metrics(input_metrics, output_metrics, normal_cells):
+    normal_cells = set(normal_cells)
+    df = csverve.read_csv(input_metrics)
+
+    df['is_normal'] = df['cell_id'].apply(lambda x: 'Normal' if x in normal_cells else 'Tumor')
+
+    organisms = [v for v in df.columns.values if v.startswith('fastqscreen_')]
+    organisms = sorted(set([v.split('_')[1] for v in organisms]))
+    organisms = [v for v in organisms if v not in ['nohit', 'total']]
+
+    csverve.write_dataframe_to_csv_and_yaml(
+        df, output_metrics,
+        hmmcopy_dtypes(fastqscreen_genomes=organisms)['metrics']
+    )
+
+
 def identify_normal_cells(
         hmmcopy_reads_path: str,
         metrics_data_path: str,
         output_yaml: str,
+        output_csv: str,
         reference_name: str,
         min_reads: int = 500000,
         min_quality: float = 0.85,
@@ -128,3 +146,5 @@ def identify_normal_cells(
 
     with open(output_yaml, 'wt') as writer:
         yaml.dump(list(normal_cells), writer, default_flow_style=False)
+
+    annotate_metrics(metrics_data_path, output_csv, normal_cells)
