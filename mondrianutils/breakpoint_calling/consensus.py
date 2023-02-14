@@ -2,6 +2,7 @@ import os
 
 import csverve.api as csverve
 import pandas as pd
+from mondrianutils import helpers
 from mondrianutils.dtypes.breakpoint import dtypes
 
 from .breakpoint_db import BreakpointDatabase
@@ -24,7 +25,19 @@ def parse_region(region):
     return chrom, int(beg), int(end)
 
 
-def read_destruct(destruct_calls, region=None):
+def is_good_quality(row, mappability_blacklist):
+    if row['chromosome_1'] in mappability_blacklist:
+        if mappability_blacklist[row['chromosome_1']].contains(row['position_1']).any():
+            return False
+
+    if row['chromosome_2'] in mappability_blacklist:
+        if mappability_blacklist[row['chromosome_2']].contains(row['position_2']).any():
+            return False
+
+    return True
+
+
+def read_destruct(destruct_calls, region=None, blacklist_regions=None):
     df = pd.read_csv(destruct_calls, sep='\t', dtype={'chromosome_1': str, 'chromosome_2': str})
 
     df = df[
@@ -45,6 +58,9 @@ def read_destruct(destruct_calls, region=None):
         if start:
             query_str = f'({start} <= position_1 <= {end}) | ({start} <= position_2 <= {end})'
             df = df.query(query_str)
+
+    if blacklist_regions:
+        df = df[df.apply(lambda x: is_good_quality(x, blacklist_regions), axis=1)]
 
     return df
 
@@ -79,14 +95,44 @@ def get_common_calls(df, df_db):
     return new_groups
 
 
-def consensus(destruct_calls, lumpy_calls, svaba_calls, gridss_calls, consensus_calls, sample_id, tempdir,
-              region=None):
+def parse_blacklist_regions(blacklist):
+    if blacklist is None:
+        return
+
+    mapping = {}
+
+    with helpers.getFileHandle(blacklist) as reader:
+        for line in reader:
+            line = line.strip().split('\t')
+            chrom = line[0]
+            start = int(line[1])
+            stop = int(line[2])
+
+            if chrom not in mapping:
+                mapping[chrom] = [(start, stop)]
+            else:
+                mapping[chrom].append((start, stop))
+
+    interval_array_map = {}
+    for chrom, intervals in mapping.items():
+        interval_array_map[chrom] = pd.arrays.IntervalArray.from_tuples(intervals)
+
+    return interval_array_map
+
+
+def consensus(
+        destruct_calls, lumpy_calls, svaba_calls, gridss_calls,
+        consensus_calls, sample_id, tempdir,
+        region=None, blacklist_bed=None
+):
+    blacklist_regions = parse_blacklist_regions(blacklist_bed)
+
     temp_consensus_output = os.path.join(tempdir, 'consensus.csv')
     allcalls = [
-        read_destruct(destruct_calls, region=region),
-        SvVcfData(lumpy_calls, region=region).as_data_frame(),
-        SvVcfData(svaba_calls, region=region).as_data_frame(),
-        SvVcfData(gridss_calls, region=region).as_data_frame()
+        read_destruct(destruct_calls, region=region, blacklist_regions=blacklist_regions),
+        SvVcfData(lumpy_calls, region=region, blacklist_regions=blacklist_regions).as_data_frame(),
+        SvVcfData(svaba_calls, region=region, blacklist_regions=blacklist_regions).as_data_frame(),
+        SvVcfData(gridss_calls, region=region, blacklist_regions=blacklist_regions).as_data_frame()
     ]
 
     allcalls = pd.concat(allcalls)

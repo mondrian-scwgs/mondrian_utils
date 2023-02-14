@@ -3,11 +3,12 @@ import vcf
 
 
 class SvVcfData(object):
-    def __init__(self, filepath, region=None):
+    def __init__(self, filepath, region=None, blacklist_regions=None):
         self.filepath = filepath
         self.reader = self._get_reader(filepath)
         self.caller = self._get_caller()
         self.chromosome, self.start, self.end = self.__parse_region(region)
+        self.blacklist_regions = blacklist_regions
 
     @staticmethod
     def __parse_region(region):
@@ -195,6 +196,11 @@ class SvVcfData(object):
                         continue
                     if call[0]['pos'] > end:
                         continue
+
+                if self.blacklist_regions and call[0]['chrom'] in self.blacklist_regions:
+                    if self.blacklist_regions[call[0]['chrom']].contains(call[0]['pos']).any():
+                        continue
+
             else:
                 assert len(call) == 2
 
@@ -205,8 +211,17 @@ class SvVcfData(object):
                     continue
 
                 if start:
-                    if (call[0]['pos'] < start or call[0]['pos'] > end) and (call[1]['pos'] < start or call[1]['pos'] > end):
+                    if (call[0]['pos'] < start or call[0]['pos'] > end) and (
+                            call[1]['pos'] < start or call[1]['pos'] > end):
                         continue
+
+                if self.blacklist_regions:
+                    if call[0]['chrom'] in self.blacklist_regions:
+                        if self.blacklist_regions[call[0]['chrom']].contains(call[0]['pos']).any():
+                            continue
+                    if call[1]['chrom'] in self.blacklist_regions:
+                        if self.blacklist_regions[call[1]['chrom']].contains(call[1]['pos']).any():
+                            continue
 
             yield call
 
@@ -222,7 +237,7 @@ class SvVcfData(object):
                 yield self._process_bnd_call(record)
 
     def as_data_frame(self):
-        data = [record for record in self.fetch(chromosome=self.chromosome, start = self.start, end = self.end)]
+        data = [record for record in self.fetch(chromosome=self.chromosome, start=self.start, end=self.end)]
 
         data = pd.DataFrame(data)
         data['caller'] = self.caller
