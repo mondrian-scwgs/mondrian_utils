@@ -95,7 +95,7 @@ def update_readgroup_in_read(read, readgroup_mapping):
 
 def separate_normal_and_tumour_cells(infile, normal_output, tumour_output, normal_cells_yaml):
     with open(normal_cells_yaml, 'rt') as reader:
-        normal_cells = set(yaml.safe_load(reader))
+        normal_cells = set(yaml.safe_load(reader)['cells'])
 
     reader = pysam.AlignmentFile(infile, "rb")
 
@@ -137,6 +137,7 @@ def parse_args():
     identify_normal_cells.add_argument('--output_yaml', required=True)
     identify_normal_cells.add_argument('--output_csv', required=True)
     identify_normal_cells.add_argument('--reference_name', required=True)
+    identify_normal_cells.add_argument('--blacklist_file', required=True)
     identify_normal_cells.add_argument('--min_reads', default=500000)
     identify_normal_cells.add_argument('--min_quality', default=0.85)
     identify_normal_cells.add_argument('--allowed_aneuploidy_score', default=0)
@@ -169,6 +170,7 @@ def utils():
             args['output_yaml'],
             args['output_csv'],
             args['reference_name'],
+            args['blacklist_file'],
             min_reads=args['min_reads'],
             min_quality=args['min_quality'],
             allowed_aneuploidy_score=args['allowed_aneuploidy_score'],

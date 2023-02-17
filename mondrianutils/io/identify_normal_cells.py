@@ -55,11 +55,13 @@ def get_supernormal_reads_data(
     return reads[reads.index.isin(supernormal.index)]
 
 
-def remove_blacklist_bins(bins, reference_name):
-    if reference_name.lower() == 'grch37':
-        return [v for v in bins if not (v[0] == '9' and v[1] >= 38500001 and v[1] <= 69500001)]
-    else:
+def remove_blacklist_bins(bins, reference_name, blacklist_file):
+    if not reference_name.lower() == 'grch37':
         raise NotImplementedError('Only GRCh37 is supported at this time')
+
+    blacklist = pd.read_csv(blacklist_file, dtype='str')
+    blacklist_bins = blacklist['chr'] + '-' + blacklist['start'] + ':' + blacklist['end']
+    return [v for v in bins if v not in blacklist_bins]
 
 
 def get_mean_copy_by_chromosome(reads_data, chromosome):
@@ -97,6 +99,7 @@ def identify_normal_cells(
         output_yaml: str,
         output_csv: str,
         reference_name: str,
+        blacklist_file: str,
         min_reads: int = 500000,
         min_quality: float = 0.85,
         allowed_aneuploidy_score: float = 0,
@@ -127,7 +130,7 @@ def identify_normal_cells(
     if not (xcopies == 1 or xcopies == 2):
         warnings.warn(f"Found abnormal sex chromosome copies: chrX={xcopies}")
 
-    non_blacklist_bins = remove_blacklist_bins(cn_data.columns, reference_name)
+    non_blacklist_bins = remove_blacklist_bins(cn_data.columns, reference_name, blacklist_file)
 
     observed = cn_data[non_blacklist_bins]
     observed = observed.to_numpy()
@@ -138,13 +141,22 @@ def identify_normal_cells(
     expected = expected.to_numpy()
 
     aneu = cdist(observed, expected, metric='hamming')
-    aneu_norm = aneu / np.nanmax(aneu)
 
-    observations['aneuploidy_score'] = aneu_norm
+    observations['aneuploidy_score'] = aneu
 
     normal_cells = observations.query(f'aneuploidy_score <= {allowed_aneuploidy_score}').index
 
     with open(output_yaml, 'wt') as writer:
-        yaml.dump(list(normal_cells), writer, default_flow_style=False)
+        yamldata = {
+            'cells': list(normal_cells),
+            'params': {
+                'min_reads': min_reads,
+                'min_quality': min_quality,
+                'allowed_aneuploidy_score': allowed_aneuploidy_score,
+                'relative_aneuploidy_threshold': relative_aneuploidy_threshold,
+                'ploidy_threshold': ploidy_threshold
+            }
+        }
+        yaml.dump(yamldata, writer, default_flow_style=False)
 
     annotate_metrics(metrics_data_path, output_csv, normal_cells)
