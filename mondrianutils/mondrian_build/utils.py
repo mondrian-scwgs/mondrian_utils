@@ -2,7 +2,7 @@ import argparse
 import mondrianutils.helpers as helpers
 import numpy as np
 import pandas as pd
-
+import yaml
 
 def _read_vcf(vcf_file, info_field_name):
     data = {}
@@ -109,6 +109,14 @@ def compare_sv_genotyping(
 ):
     _compare_csv(genotyper, genotyper_ref, [])
 
+def compare_normalizer(cells_yaml):
+
+    with open(cells_yaml, 'rt') as reader:
+        data = yaml.safe_load(reader)
+
+        assert data['cells'] == ['SA1090-A96213A-R22-C43']
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -165,6 +173,10 @@ def parse_args():
     compare_sv_genotyping.add_argument('--genotyper', required=True)
     compare_sv_genotyping.add_argument('--genotyper_ref', required=True)
 
+    compare_normalizer = subparsers.add_parser('compare_normalizer')
+    compare_normalizer.set_defaults(which='compare_normalizer')
+    compare_normalizer.add_argument('--cells_yaml', required=True)
+
     args = vars(parser.parse_args())
 
     return args
@@ -205,6 +217,10 @@ def utils():
     elif args['which'] == 'compare_sv_genotyping':
         compare_sv_genotyping(
             args['genotyper'], args['genotyper_ref']
+        )
+    elif args['which'] == 'compare_normalizer':
+        compare_normalizer(
+            args['cells_yaml']
         )
     else:
         raise Exception()
