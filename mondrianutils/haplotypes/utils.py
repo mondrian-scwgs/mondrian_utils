@@ -176,8 +176,8 @@ def parse_args():
         required=True
     )
 
-    infer_snp_genotype = subparsers.add_parser('infer_snp_genotype_from_normal')
-    infer_snp_genotype.set_defaults(which='infer_snp_genotype_from_normal')
+    infer_snp_genotype = subparsers.add_parser('infer_snp_genotype')
+    infer_snp_genotype.set_defaults(which='infer_snp_genotype')
     infer_snp_genotype.add_argument(
         '--seqdata',
         required=True
@@ -190,6 +190,12 @@ def parse_args():
         '--chromosome',
         required=True
     )
+    infer_snp_genotype.add_argument(
+        '--data_type',
+        choices=['normal', 'tumour'],
+        default='normal'
+    )
+
 
     infer_haps = subparsers.add_parser('infer_haps')
     infer_haps.set_defaults(which='infer_haps')
@@ -369,10 +375,16 @@ def utils():
             bam_max_soft_clipped, bam_check_proper_pair
         )
 
-    elif args['which'] == 'infer_snp_genotype_from_normal':
-        remixt.analysis.haplotype.infer_snp_genotype_from_normal(
-            args['output'], args['seqdata'], args['chromosome'], {}
-        )
+    elif args['which'] == 'infer_snp_genotype':
+        if args['data_type'] == 'normal':
+            remixt.analysis.haplotype.infer_snp_genotype_from_normal(
+                args['output'], args['seqdata'], args['chromosome'], {}
+            )
+        else:
+            remixt.analysis.haplotype.infer_snp_genotype_from_tumour(
+                args['output'], [args['seqdata']], args['chromosome'], {}
+            )
+
     elif args['which'] == 'infer_haps':
         infer_haps(
             args['snp_genotype'], args['chromosome'], args['output'],
