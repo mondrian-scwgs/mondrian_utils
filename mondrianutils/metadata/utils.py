@@ -24,27 +24,31 @@ def separate_tumour_and_normal_metadata(
     )
 
     files = {
-        os.path.basename(tumour_bam[0]): {
-            'result_type': 'merged_cells_bam', 'filtering': 'passed',
-            'auxiliary': helpers.get_auxiliary_files(tumour_bam[0])
-        },
-        os.path.basename(tumour_bam[1]): {
-            'result_type': 'merged_cells_bam', 'filtering': 'passed',
-            'auxiliary': helpers.get_auxiliary_files(tumour_bam[1])
-        },
-        os.path.basename(normal_bam[0]): {
-            'result_type': 'merged_cells_bam', 'filtering': 'passed',
-            'auxiliary': helpers.get_auxiliary_files(normal_bam[0])
-        },
-        os.path.basename(normal_bam[1]): {
-            'result_type': 'merged_cells_bam', 'filtering': 'passed',
-            'auxiliary': helpers.get_auxiliary_files(normal_bam[1])
-        },
         os.path.basename(heatmap): {
             'result_type': 'hmmcopy_heatmap_plots',
             'auxiliary': helpers.get_auxiliary_files(heatmap)
         }
     }
+
+    if normal_bam:
+        files[os.path.basename(normal_bam[0])] = {
+            'result_type': 'merged_cells_bam', 'filtering': 'passed',
+            'auxiliary': helpers.get_auxiliary_files(normal_bam[0])
+        }
+        files[os.path.basename(normal_bam[1])] = {
+            'result_type': 'merged_cells_bam', 'filtering': 'passed',
+            'auxiliary': helpers.get_auxiliary_files(normal_bam[1])
+        }
+
+    if tumour_bam:
+        files[os.path.basename(tumour_bam[0])] = {
+            'result_type': 'merged_cells_bam', 'filtering': 'passed',
+            'auxiliary': helpers.get_auxiliary_files(tumour_bam[0])
+        }
+        files[os.path.basename(tumour_bam[1])] = {
+            'result_type': 'merged_cells_bam', 'filtering': 'passed',
+            'auxiliary': helpers.get_auxiliary_files(tumour_bam[1])
+        }
 
     out_data['files'] = files
 
