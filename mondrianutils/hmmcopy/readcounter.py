@@ -222,12 +222,6 @@ class ReadCounter(object):
             data[cell_id][binval] += 1
         return data
 
-    def is_empty(self):
-        if os.path.getsize(self.bamfile) < 10:
-            with open(self.bamfile, 'rt') as reader:
-                if reader.readline().startswith('NO DATA'):
-                    return True
-
     def main(self):
         """for each chromosome, iterate over all reads. use starting position
         of the read to calculate read counts per bin (no double counting).
@@ -238,9 +232,6 @@ class ReadCounter(object):
                 os.remove(f)
         else:
             os.makedirs(self.output)
-
-        if self.is_empty():
-            return
 
         add_track = True
         for chrom in self.chromosomes:
