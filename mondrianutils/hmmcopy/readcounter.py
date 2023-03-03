@@ -43,14 +43,9 @@ class ReadCounter(object):
         else:
             self.excluded = None
 
-        if self.is_empty():
-            self.bam = None
-            self.chr_lengths = None
-            self.cells = []
-        else:
-            self.bam = self.__get_bam_reader()
-            self.chr_lengths = self.__get_chr_lengths()
-            self.cells = self.get_cells()
+        self.bam = self.__get_bam_reader()
+        self.chr_lengths = self.__get_chr_lengths()
+        self.cells = self.get_cells()
 
     def __get_bam_header(self):
         return self.bam.header
