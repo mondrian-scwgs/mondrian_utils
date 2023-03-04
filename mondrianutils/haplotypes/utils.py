@@ -382,7 +382,7 @@ def utils():
             )
         else:
             remixt.analysis.haplotype.infer_snp_genotype_from_tumour(
-                args['output'], [args['seqdata']], args['chromosome'], {}
+                args['output'], {'tumour_id': args['seqdata']}, args['chromosome'], {}
             )
 
     elif args['which'] == 'infer_haps':
