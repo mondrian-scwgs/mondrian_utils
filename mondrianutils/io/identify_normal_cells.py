@@ -6,6 +6,7 @@ import pandas as pd
 import yaml
 from mondrianutils import helpers
 from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
+from pandas.arrays import IntervalArray
 from scipy.spatial.distance import cdist
 from scipy.stats import mode
 
@@ -77,11 +78,36 @@ def load_reads_data(reads_data, cells):
     return df
 
 
-def annotate_metrics(input_metrics, output_metrics, normal_cells):
+def get_overlapping_bin(value, bins):
+    if np.isnan(value):
+        return 'nan'
+
+    contains = bins.contains(value)
+
+    idx = np.where(contains == True)
+
+    assert len(idx) == 1
+
+    return str(bins[idx][0])
+
+
+def get_bins():
+    bins = [(0, 0.005), (0.005, 0.01)] + [(v * 0.01, (v + 1) * 0.01) for v in range(1, 10)] + [(0.1, 1.1)]
+    bins = IntervalArray.from_tuples(bins)
+    bins = bins.set_closed('left')
+
+    return bins
+
+
+def annotate_metrics(input_metrics, output_metrics, normal_cells, relative_aneuploidy):
     normal_cells = set(normal_cells)
     df = csverve.read_csv(input_metrics)
 
     df['is_normal'] = df['cell_id'].apply(lambda x: 'Normal' if x in normal_cells else 'Tumor')
+
+    bins = get_bins()
+    df['relative_aneuploidy'] = df['cell_id'].apply(lambda x: relative_aneuploidy.get(x, float('nan')))
+    df['relative_aneuploidy_bin'] = df['relative_aneuploidy'].apply(lambda x: get_overlapping_bin(x, bins))
 
     organisms = [v for v in df.columns.values if v.startswith('fastqscreen_')]
     organisms = sorted(set([v.split('_')[1] for v in organisms]))
@@ -145,6 +171,7 @@ def identify_normal_cells(
     observations['aneuploidy_score'] = aneu
 
     normal_cells = observations.query(f'aneuploidy_score <= {allowed_aneuploidy_score}').index
+    relative_aneuploidy = observations['rel_aneuploidy'].to_dict()
 
     with open(output_yaml, 'wt') as writer:
         yamldata = {
@@ -159,4 +186,4 @@ def identify_normal_cells(
         }
         yaml.dump(yamldata, writer, default_flow_style=False)
 
-    annotate_metrics(metrics_data_path, output_csv, normal_cells)
+    annotate_metrics(metrics_data_path, output_csv, normal_cells, relative_aneuploidy)

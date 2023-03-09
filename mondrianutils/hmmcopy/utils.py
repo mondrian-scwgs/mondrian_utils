@@ -16,7 +16,7 @@ from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
 from mondrianutils.hmmcopy.readcounter import ReadCounter
 
 
-def plot_heatmap(reads, metrics, chromosomes, output, sidebar_column='pick_met'):
+def plot_heatmap(reads, metrics, chromosomes, output, sidebar_column='pick_met', disable_clustering=None):
     plot = PlotPcolor(
         reads, metrics, output,
         column_name='state',
@@ -24,7 +24,8 @@ def plot_heatmap(reads, metrics, chromosomes, output, sidebar_column='pick_met')
         scale_by_cells=False,
         mappability_threshold=0.9,
         chromosomes=chromosomes,
-        sidebar_column=sidebar_column
+        sidebar_column=sidebar_column,
+        disable_clustering=disable_clustering
     )
     plot.main()
 
@@ -264,6 +265,11 @@ def parse_args():
         '--sidebar_column',
         default='pick_met'
     )
+    heatmap.add_argument(
+        '--disable_clustering',
+        default=False,
+        action='store_true'
+    )
 
     add_quality = subparsers.add_parser('add_quality')
     add_quality.set_defaults(which='add_quality')
@@ -400,7 +406,7 @@ def utils():
     elif args['which'] == 'heatmap':
         plot_heatmap(
             args['reads'], args['metrics'], args['chromosomes'], args['output'],
-            sidebar_column=args['sidebar_column']
+            sidebar_column=args['sidebar_column'], disable_clustering=args['disable_clustering']
         )
     elif args['which'] == 'generate_html_report':
         generate_html_report(

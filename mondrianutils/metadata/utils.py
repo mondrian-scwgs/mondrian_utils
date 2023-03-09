@@ -24,10 +24,6 @@ def separate_tumour_and_normal_metadata(
     )
 
     files = {
-        os.path.basename(heatmap): {
-            'result_type': 'hmmcopy_heatmap_plots',
-            'auxiliary': helpers.get_auxiliary_files(heatmap)
-        },
         os.path.basename(normal_cells_yaml): {
             'result_type': 'yaml',
             'auxiliary': helpers.get_auxiliary_files(normal_cells_yaml)
@@ -54,6 +50,12 @@ def separate_tumour_and_normal_metadata(
             'auxiliary': helpers.get_auxiliary_files(tumour_bam[1])
         }
 
+    for heatmap_file in heatmap:
+        files[os.path.basename(heatmap_file)] = {
+            'result_type': 'hmmcopy_heatmap_plots',
+            'auxiliary': helpers.get_auxiliary_files(heatmap_file)
+        }
+
     out_data['files'] = files
 
     with open(metadata_output, 'wt') as writer:
@@ -76,7 +78,7 @@ def parse_args():
         '--tumour_bam', nargs=2
     )
     separate_tumour_and_normal.add_argument(
-        '--heatmap'
+        '--heatmap', nargs='*'
     )
     separate_tumour_and_normal.add_argument(
         '--normal_cells_yaml'

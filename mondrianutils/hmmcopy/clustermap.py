@@ -248,6 +248,8 @@ class ClusterMap(object):
 
         if ticklabels:
             cbar.set_ticklabels(ticklabels)
+            if len(ticklabels) > 2:
+                cbar.ax.tick_params(rotation=90)
         else:
             cbar.set_ticklabels(bounds)
 
@@ -263,7 +265,7 @@ class ClusterMap(object):
         fig = plt.figure(figsize=figsize)
 
         # fig's height and starting pos
-        y = 0.1
+        y = 0.05
         h = 0.85
 
         # dendrogram figure placement on the page
