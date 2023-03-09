@@ -5,7 +5,6 @@ import argparse
 import pysam
 import yaml
 from mondrianutils import helpers
-from mondrianutils.io import identify_normal_cells
 
 
 def get_cells(bam_reader):
@@ -162,27 +161,6 @@ def utils():
     if args['which'] == 'split_bam_by_barcode':
         split_bam_by_barcode(
             args['infile'], args['outdir']
-        )
-    elif args['which'] == 'identify_normal_cells':
-        identify_normal_cells.identify_normal_cells(
-            args['reads_data'],
-            args['metrics_data'],
-            args['output_yaml'],
-            args['output_csv'],
-            args['reference_name'],
-            args['blacklist_file'],
-            min_reads=args['min_reads'],
-            min_quality=args['min_quality'],
-            allowed_aneuploidy_score=args['allowed_aneuploidy_score'],
-            relative_aneuploidy_threshold=args['relative_aneuploidy_threshold'],
-            ploidy_threshold=args['ploidy_threshold']
-        )
-    elif args['which'] == 'separate_normal_and_tumour_cells':
-        separate_normal_and_tumour_cells(
-            args['infile'],
-            args['normal_output'],
-            args['tumour_output'],
-            args['normal_cells_yaml'],
         )
     else:
         raise Exception()

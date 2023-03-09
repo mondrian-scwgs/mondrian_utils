@@ -77,11 +77,26 @@ def load_reads_data(reads_data, cells):
     return df
 
 
-def annotate_metrics(input_metrics, output_metrics, normal_cells):
+def get_overlapping_bin(value, bins):
+    if np.isnan(value):
+        return 'nan'
+
+    contains = bins.contains(value)
+
+    idx = np.where(contains == True)
+
+    assert len(idx) == 1
+
+    return str(bins[idx][0])
+
+
+def annotate_metrics(input_metrics, output_metrics, normal_cells, relative_aneuploidy):
     normal_cells = set(normal_cells)
     df = csverve.read_csv(input_metrics)
 
     df['is_normal'] = df['cell_id'].apply(lambda x: 'Normal' if x in normal_cells else 'Tumor')
+
+    df['relative_aneuploidy'] = df['cell_id'].apply(lambda x: relative_aneuploidy.get(x, float('nan')))
 
     organisms = [v for v in df.columns.values if v.startswith('fastqscreen_')]
     organisms = sorted(set([v.split('_')[1] for v in organisms]))
@@ -91,6 +106,15 @@ def annotate_metrics(input_metrics, output_metrics, normal_cells):
         df, output_metrics,
         hmmcopy_dtypes(fastqscreen_genomes=organisms)['metrics']
     )
+
+
+def get_coverage(metrics, normal_cells):
+    normal_metrics = metrics[metrics['cell_id'].isin(normal_cells)]
+    readcount = sum(normal_metrics['total_reads'])
+
+    coverage = (readcount / 3e9) * 150
+
+    return readcount, coverage
 
 
 def identify_normal_cells(
@@ -145,6 +169,9 @@ def identify_normal_cells(
     observations['aneuploidy_score'] = aneu
 
     normal_cells = observations.query(f'aneuploidy_score <= {allowed_aneuploidy_score}').index
+    relative_aneuploidy = observations['aneuploidy_score'].to_dict()
+
+    num_reads_normal, coverage_normal = get_coverage(metrics, normal_cells)
 
     with open(output_yaml, 'wt') as writer:
         yamldata = {
@@ -155,8 +182,14 @@ def identify_normal_cells(
                 'allowed_aneuploidy_score': allowed_aneuploidy_score,
                 'relative_aneuploidy_threshold': relative_aneuploidy_threshold,
                 'ploidy_threshold': ploidy_threshold
+            },
+            'normal_metrics': {
+                'total_read_count': num_reads_normal,
+                'coverage': coverage_normal,
+                'total_eligible_cells': len(metrics),
+                'normal_cells': len(normal_cells)
             }
         }
         yaml.dump(yamldata, writer, default_flow_style=False)
 
-    annotate_metrics(metrics_data_path, output_csv, normal_cells)
+    annotate_metrics(metrics_data_path, output_csv, normal_cells, relative_aneuploidy)

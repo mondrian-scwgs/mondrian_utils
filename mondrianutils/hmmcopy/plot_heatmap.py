@@ -37,7 +37,8 @@ class PlotPcolor(object):
             chromosomes=[str(v) for v in range(1, 23)] + ['X', 'Y'],
             mappability_threshold=0.9,
             sidebar_column='pick_met',
-            scale_by_cells=False
+            scale_by_cells=False,
+            disable_clustering=False
     ):
         self.input = infile
         self.metrics = metrics
@@ -51,6 +52,7 @@ class PlotPcolor(object):
 
         self.scale_by_cells = scale_by_cells
         self.sidebar_column = sidebar_column
+        self.disable_clustering = disable_clustering
 
     def read_segs(self):
         return helpers.load_and_pivot_reads_data(self.input, self.column_name)
@@ -92,8 +94,15 @@ class PlotPcolor(object):
 
             title = ' (%s) n=%s/%s' % (sep, len(samples), num_samples)
 
+            if self.disable_clustering:
+                allvals = {v: i for i, v in enumerate(set(colordata.values()))}
+                dist_mat = [allvals[colordata[v]] for v in pltdata.index]
+                dist_mat = np.matrix([[v] * 10 for v in dist_mat])
+            else:
+                dist_mat = None
+
             self.plot_heatmap(
-                pltdata, colordata, title, lims, pdfout,
+                pltdata, colordata, title, lims, pdfout, distance_matrix=dist_mat
             )
 
         if not self.output:

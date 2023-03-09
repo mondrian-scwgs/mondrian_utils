@@ -25,8 +25,8 @@ setup(
             'sv_genotyping_utils = mondrianutils.sv_genotyping.utils:utils',
             'reference_utils = mondrianutils.reference.utils:utils',
             'dlp_utils = mondrianutils.dlp_utils.utils:utils',
-            'mondrian_build_utils = mondrianutils.mondrian_build.utils:utils',
-            'metadata_utils = mondrianutils.metadata.utils:utils',
+            'normalizer_utils = mondrianutils.normalizer.utils:utils',
+            'mondrian_build_utils = mondrianutils.mondrian_build.utils:utils'
         ]
     },
     package_data={'': ['*.py', '*.R', '*.npz', "*.yaml", "data/*", "*.sh"]}
