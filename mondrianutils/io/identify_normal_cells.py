@@ -171,7 +171,7 @@ def identify_normal_cells(
     observations['aneuploidy_score'] = aneu
 
     normal_cells = observations.query(f'aneuploidy_score <= {allowed_aneuploidy_score}').index
-    relative_aneuploidy = observations['rel_aneuploidy'].to_dict()
+    relative_aneuploidy = observations['aneuploidy_score'].to_dict()
 
     with open(output_yaml, 'wt') as writer:
         yamldata = {
