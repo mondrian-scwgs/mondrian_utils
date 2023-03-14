@@ -43,9 +43,20 @@ class ReadCounter(object):
         else:
             self.excluded = None
 
-        self.bam = self.__get_bam_reader()
-        self.chr_lengths = self.__get_chr_lengths()
-        self.cells = self.get_cells()
+        if self.is_empty():
+            self.bam = None
+            self.chr_lengths = None
+            self.cells = []
+        else:
+            self.bam = self.__get_bam_reader()
+            self.chr_lengths = self.__get_chr_lengths()
+            self.cells = self.get_cells()
+
+    def is_empty(self):
+        if os.path.getsize(self.bamfile) < 10:
+            with open(self.bamfile, 'rt') as reader:
+                if reader.readline().startswith('NO DATA'):
+                    return True
 
     def __get_bam_header(self):
         return self.bam.header
@@ -227,6 +238,9 @@ class ReadCounter(object):
                 os.remove(f)
         else:
             os.makedirs(self.output)
+
+        if self.is_empty():
+            return
 
         add_track = True
         for chrom in self.chromosomes:
