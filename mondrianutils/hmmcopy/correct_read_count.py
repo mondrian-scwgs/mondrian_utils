@@ -158,7 +158,7 @@ class CorrectReadCount(object):
         quantile_names = [str(x) for x in q_range]
 
         # need at least 3 values to compute the quantiles
-        if len(df_regression) < 10 or sum(df_regression['reads']) < 30:
+        if len(df_regression) < 10 or sum(df_regression['reads']) < 100:
             df_regression['modal_quantile'] = None
             df_regression['modal_curve'] = None
             df_regression['modal_corrected'] = None

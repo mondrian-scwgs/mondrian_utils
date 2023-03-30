@@ -90,13 +90,13 @@ def get_overlapping_bin(value, bins):
     return str(bins[idx][0])
 
 
-def annotate_metrics(input_metrics, output_metrics, normal_cells, relative_aneuploidy):
+def annotate_metrics(input_metrics, output_metrics, normal_cells, aneuploidy_scores):
     normal_cells = set(normal_cells)
     df = csverve.read_csv(input_metrics)
 
     df['is_normal'] = df['cell_id'].apply(lambda x: 'Normal' if x in normal_cells else 'Tumor')
 
-    df['relative_aneuploidy'] = df['cell_id'].apply(lambda x: relative_aneuploidy.get(x, float('nan')))
+    df['aneuploidy_score'] = df['cell_id'].apply(lambda x: aneuploidy_scores.get(x, float('nan')))
 
     organisms = [v for v in df.columns.values if v.startswith('fastqscreen_')]
     organisms = sorted(set([v.split('_')[1] for v in organisms]))
@@ -127,7 +127,7 @@ def identify_normal_cells(
         min_reads: int = 500000,
         min_quality: float = 0.85,
         allowed_aneuploidy_score: float = 0,
-        relative_aneuploidy_threshold: float = 0.05,
+        relative_aneuploidy_threshold: float = 0.005,
         ploidy_threshold: float = 2.5
 ):
     metrics = load_metrics(metrics_data_path, min_reads, min_quality)
@@ -171,7 +171,7 @@ def identify_normal_cells(
     assert len(observations[observations['aneuploidy_score'].isna()]) == 0
 
     normal_cells = observations.query(f'aneuploidy_score <= {allowed_aneuploidy_score}').index
-    relative_aneuploidy = observations['aneuploidy_score'].to_dict()
+    aneuploidy_scores = observations['aneuploidy_score'].to_dict()
 
     num_reads_normal, coverage_normal = get_coverage(metrics, normal_cells)
 
@@ -194,4 +194,4 @@ def identify_normal_cells(
         }
         yaml.dump(yamldata, writer, default_flow_style=False)
 
-    annotate_metrics(metrics_data_path, output_csv, normal_cells, relative_aneuploidy)
+    annotate_metrics(metrics_data_path, output_csv, normal_cells, aneuploidy_scores)

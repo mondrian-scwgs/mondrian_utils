@@ -72,8 +72,7 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon', 'human', 'mouse']):
         'fastqscreen_total_reads': 'int',
         'fastqscreen_nohit_ratio': 'float',
         'is_normal': 'category',
-        'relative_aneuploidy_bin': 'str',
-        'relative_aneuploidy': 'float'
+        'aneuploidy_score': 'float'
     }
 
     for genome in fastqscreen_genomes:

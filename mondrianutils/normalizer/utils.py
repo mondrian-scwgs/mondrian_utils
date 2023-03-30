@@ -179,7 +179,7 @@ def parse_args():
     identify_normal_cells.add_argument('--min_reads', default=500000)
     identify_normal_cells.add_argument('--min_quality', default=0.85)
     identify_normal_cells.add_argument('--allowed_aneuploidy_score', default=0)
-    identify_normal_cells.add_argument('--relative_aneuploidy_threshold', default=0.05)
+    identify_normal_cells.add_argument('--relative_aneuploidy_threshold', default=0.005)
     identify_normal_cells.add_argument('--ploidy_threshold', default=2.5)
 
     separate_normal_and_tumour_cells = subparsers.add_parser('separate_normal_and_tumour_cells')
@@ -189,17 +189,12 @@ def parse_args():
     separate_normal_and_tumour_cells.add_argument('--tumour_output', required=True)
     separate_normal_and_tumour_cells.add_argument('--normal_cells_yaml', required=True)
 
-    normal_heatmap = subparsers.add_parser('normal_heatmap')
-    normal_heatmap.set_defaults(which='normal_heatmap')
-    normal_heatmap.add_argument('--metrics', required=True)
-    normal_heatmap.add_argument('--reads', required=True)
-    normal_heatmap.add_argument('--output', required=True)
-
     aneuploidy_heatmap = subparsers.add_parser('aneuploidy_heatmap')
     aneuploidy_heatmap.set_defaults(which='aneuploidy_heatmap')
     aneuploidy_heatmap.add_argument('--metrics', required=True)
     aneuploidy_heatmap.add_argument('--reads', required=True)
     aneuploidy_heatmap.add_argument('--output', required=True)
+    aneuploidy_heatmap.add_argument('--aneuploidy_score', default=0.005)
 
     separate_tumour_and_normal_metadata = subparsers.add_parser('separate_tumour_and_normal_metadata')
     separate_tumour_and_normal_metadata.set_defaults(which='separate_tumour_and_normal_metadata')
@@ -251,17 +246,12 @@ def utils():
             args['tumour_output'],
             args['normal_cells_yaml'],
         )
-    elif args['which'] == 'normal_heatmap':
-        heatmap.normal_heatmap(
-            args['reads'],
-            args['metrics'],
-            args['output'],
-        )
     elif args['which'] == 'aneuploidy_heatmap':
         heatmap.aneuploidy_heatmap(
             args['reads'],
             args['metrics'],
             args['output'],
+            aneuploidy_score=args['aneuploidy_score']
         )
     elif args['which'] == 'separate_tumour_and_normal_metadata':
         separate_tumour_and_normal_metadata(
