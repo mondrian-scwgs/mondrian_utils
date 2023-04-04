@@ -20,6 +20,19 @@ import yaml
 from mondrianutils import __version__
 
 
+def get_cells(bam_reader):
+    cells = []
+    header = bam_reader.header
+    for line in str(header).split('\n'):
+        if not line.startswith("@CO"):
+            continue
+        line = line.strip().split()
+        cb = line[1]
+        cell = cb.split(':')[1]
+        cells.append(cell)
+    return cells
+
+
 def _sum_two_dataframes(df):
     def sum_nan(y):
         if np.isnan(y).all():

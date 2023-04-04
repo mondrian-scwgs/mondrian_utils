@@ -6,6 +6,7 @@ import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import mondrianutils.hmmcopy.classify as classify
 import pandas as pd
+import pysam
 import yaml
 from mondrianutils import __version__
 from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
@@ -14,6 +15,73 @@ from mondrianutils.hmmcopy.complete_hmmcopy import complete_hmmcopy
 from mondrianutils.hmmcopy.generate_qc_html import generate_html_report
 from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
 from mondrianutils.hmmcopy.readcounter import ReadCounter
+
+
+def _readcounter_command(infile, outdir, chromosome, exclude_list=None, mapping_quality_threshold=0, window_size=1000):
+    return [
+        'hmmcopy_utils', 'readcounter',
+        '--infile', infile,
+        '--outdir', outdir,
+        '-w', window_size,
+        '--chromosomes', chromosome,
+        '-m', mapping_quality_threshold,
+        '--exclude_list', exclude_list,
+        '--ncores', 1
+    ]
+
+
+def _merge_wig(infiles, outfile, cell):
+    with open(outfile, 'wt') as writer:
+        writer.write(f'track type=wiggle_0 name={cell}\n')
+        for infile in infiles:
+            with open(infile, 'rt') as reader:
+                for line in reader:
+                    if line.startswith('track type'):
+                        continue
+                    writer.write(line)
+
+
+def readcounter(
+        infile,
+        outdir,
+        tempdir,
+        chromosomes,
+        exclude_list=None,
+        ncores=16,
+        mapping_quality_threshold=20,
+        window_size=500000
+):
+    if ncores == 1:
+        with ReadCounter(infile, outdir, window_size,
+                         chromosomes, mapping_quality_threshold,
+                         excluded=exclude_list) as rcount:
+            rcount.main()
+        return
+
+    if os.path.exists(tempdir):
+        shutil.rmtree(tempdir)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+
+    os.makedirs(tempdir)
+    os.makedirs(outdir)
+
+    cells = helpers.get_cells(pysam.AlignmentFile(infile, 'rb'))
+
+    commands = [
+        _readcounter_command(infile, os.path.join(tempdir, chromosome), chromosome, exclude_list=exclude_list,
+                             mapping_quality_threshold=mapping_quality_threshold, window_size=window_size)
+        for chromosome in chromosomes
+    ]
+
+    scripts_tempdir = os.path.join(tempdir, 'scripts_split')
+
+    helpers.run_in_gnu_parallel(commands, scripts_tempdir, ncores)
+
+    for cell in cells:
+        wig_files = [os.path.join(tempdir, chromosome, f'{cell}.wig') for chromosome in chromosomes]
+
+        _merge_wig(wig_files, os.path.join(outdir, f'{cell}.wig'), cell)
 
 
 def plot_heatmap(reads, metrics, chromosomes, output, sidebar_column='pick_met', disable_clustering=None):
@@ -183,12 +251,16 @@ def parse_args():
     readcounter = subparsers.add_parser('readcounter')
     readcounter.set_defaults(which='readcounter')
     readcounter.add_argument(
-        '--infile'
+        '--infile',
+        required=True
     )
     readcounter.add_argument(
         '--outdir',
+        required=True
     )
-
+    readcounter.add_argument(
+        '--tempdir',
+    )
     readcounter.add_argument(
         '--chromosomes',
         nargs='*',
@@ -198,22 +270,28 @@ def parse_args():
     readcounter.add_argument(
         '-w', '--window_size',
         type=int,
-        default=1000,
+        default=500000,
         help='specify bin size'
     )
     readcounter.add_argument(
         '-m', '--mapping_quality_threshold',
         type=int,
-        default=0,
+        default=20,
         help='threshold for the mapping quality, reads ' \
              'with quality lower than threshold will be ignored'
     )
-
     readcounter.add_argument(
         '--exclude_list',
         default=None,
         help='regions to skip'
     )
+    readcounter.add_argument(
+        '--ncores',
+        default=12,
+        type=int,
+        help='regions to skip'
+    )
+
 
     run_hmmcopy = subparsers.add_parser('hmmcopy')
     run_hmmcopy.set_defaults(which='hmmcopy')
@@ -379,10 +457,17 @@ def utils():
     args = parse_args()
 
     if args['which'] == 'readcounter':
-        with ReadCounter(args['infile'], args['outdir'], args['window_size'],
-                         args['chromosomes'], args['mapping_quality_threshold'],
-                         excluded=args['exclude_list']) as rcount:
-            rcount.main()
+        readcounter(
+            args['infile'],
+            args['outdir'],
+            args['tempdir'],
+            args['chromosomes'],
+            exclude_list=args['exclude_list'],
+            ncores=args['ncores'],
+            mapping_quality_threshold=args['mapping_quality_threshold'],
+            window_size=args['window_size']
+        )
+
     elif args['which'] == 'hmmcopy':
         complete_hmmcopy(
             args['readcount_wig'], args["gc_wig_file"], args['map_wig_file'],
