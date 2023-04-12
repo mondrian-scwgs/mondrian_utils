@@ -5,6 +5,7 @@ import yaml
 from mondrianutils import helpers
 
 from . import consensus
+from mondrianutils.breakpoint_calling import destruct_csv_to_vcf
 
 
 def infer_type(files):
@@ -59,6 +60,14 @@ def parse_args():
     consensus.add_argument('--region')
     consensus.add_argument('--blacklist_bed')
 
+    csv_to_vcf = subparsers.add_parser('destruct_csv_to_vcf')
+    csv_to_vcf.set_defaults(which='destruct_csv_to_vcf')
+    csv_to_vcf.add_argument('--infile', required=True)
+    csv_to_vcf.add_argument('--outfile', required=True)
+    csv_to_vcf.add_argument('--reference', required=True)
+    csv_to_vcf.add_argument('--sample_id', required=True)
+
+
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
     generate_metadata.add_argument(
@@ -92,6 +101,11 @@ def utils():
         generate_metadata(
             args['files'], args['metadata_yaml_files'], args['samples'],
             args['metadata_output']
+        )
+    elif args['which'] == 'destruct_csv_to_vcf':
+        destruct_csv_to_vcf.destruct_csv_to_vcf(
+            args['infile'], args['outfile'], args['reference'],
+            args['sample_id']
         )
     else:
         raise Exception()
