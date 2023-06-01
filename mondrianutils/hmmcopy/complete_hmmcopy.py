@@ -106,3 +106,4 @@ def complete_hmmcopy(
         reads, segments, params, metrics, reference,
         segments_output, bias_output
     )
+

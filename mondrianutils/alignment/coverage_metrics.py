@@ -51,12 +51,12 @@ class CoverageMetrics(object):
         read_quals = read.query_alignment_qualities
         if read.is_reverse:
             read_quals = read_quals[::-1]
-        for i, qual in zip(range(read.reference_start, read.reference_end), read_quals):
+        for i, qual in zip(range(read.reference_start, read.reference_end+1), read_quals):
             if start is None and qual >= self.min_base_qual:
                 start = i
             else:
                 if start is not None and qual < self.min_base_qual:
-                    regions.append((start, i))
+                    regions.append((start, i-1))
                     start = None
         if start is not None:
             regions.append((start, i))
@@ -143,6 +143,7 @@ class CoverageMetrics(object):
 
 
 def expected_and_aligned_coverage(bamfile):
+
     with CoverageMetrics(bamfile) as cov:
         genome_length = cov.genome_length
 

@@ -108,7 +108,8 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon', 'human', 'mouse']):
         'modal_curve': 'float',
         'modal_quantile': 'float',
         'multiplier': 'int',
-        'is_low_mappability': 'bool'
+        'is_low_mappability': 'bool',
+        'fraction_overlapping_reads': 'float'
     }
 
     segs = {

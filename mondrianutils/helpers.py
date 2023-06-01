@@ -20,6 +20,23 @@ import yaml
 from mondrianutils import __version__
 
 
+def get_chr_lengths(bam):
+    names = bam.references
+    lengths = bam.lengths
+    return {name: length for name, length in zip(names, lengths)}
+
+
+def get_bins_per_chromosome(chromosome_length, binsize):
+    start = 1
+    end = start - 1 + binsize
+    bins = [(start, end)]
+    while end < chromosome_length:
+        start += binsize
+        end = start - 1 + binsize
+        bins.append((start, end))
+    return bins
+
+
 def get_cells(bam_reader):
     cells = []
     header = bam_reader.header
@@ -231,8 +248,8 @@ def run_cmd(cmd, output=None):
     cmdout, cmderr = p.communicate()
     retc = p.returncode
 
-    cmdout = cmdout.decode('utf-8')
-    cmderr = cmderr.decode('utf-8')
+    cmdout = "" if cmdout is None else cmdout.decode('utf-8')
+    cmderr = "" if cmderr is None else cmderr.decode('utf-8')
 
     if output:
         stdout.close()
