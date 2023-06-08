@@ -18,7 +18,7 @@ def _filter_read(read, mapping_quality_threshold=20):
         return True
     elif read.is_duplicate:
         return True
-    elif not read.is_paired:
+    elif read.is_unmapped:
         return True
     elif read.is_qcfail:
         return True
