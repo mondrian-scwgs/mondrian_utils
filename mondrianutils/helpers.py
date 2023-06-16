@@ -20,6 +20,22 @@ import yaml
 from mondrianutils import __version__
 
 
+def parse_region(region):
+    if region is None:
+        return None, None, None
+
+    if ':' not in region:
+        return region, None, None
+
+    chrom, coords = region.split(':')
+
+    assert '-' in coords
+
+    beg, end = coords.split('-')
+
+    return chrom, int(beg), int(end)
+
+
 def get_chr_lengths(bam):
     names = bam.references
     lengths = bam.lengths

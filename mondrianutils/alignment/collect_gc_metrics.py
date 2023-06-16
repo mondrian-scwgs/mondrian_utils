@@ -28,6 +28,7 @@ def collect_gc_metrics(bias_file, output, sample_id):
         data = data.T
         data['cell_id'] = data.index
         data.columns = data.columns.astype(str)
+        data = data.replace('?', 0)
     except pd.errors.EmptyDataError:
         logging.getLogger("single_cell.align.gcbias").warn(
             'No data in the GCBias output')

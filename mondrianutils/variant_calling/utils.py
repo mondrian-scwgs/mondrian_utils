@@ -39,9 +39,19 @@ def merge_vcf_files(infiles, outfile):
 
 
 def generate_intervals(ref, chromosomes, size=1000000):
-    fasta = pysam.FastaFile(ref)
-    lengths = fasta.lengths
-    names = fasta.references
+
+    if ref.endswith('.fai'):
+        lengths = []
+        names = []
+        with open(ref, 'rt') as reader:
+            for line in reader:
+                line = line.strip().split()
+                names.append(line[0])
+                lengths.append(int(line[1]))
+    else:
+        fasta = pysam.FastaFile(ref)
+        lengths = fasta.lengths
+        names = fasta.references
 
     for name, length in zip(names, lengths):
         if name not in chromosomes:

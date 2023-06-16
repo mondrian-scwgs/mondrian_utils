@@ -10,6 +10,12 @@ def dtypes():
         'start': 'int',
         'end': 'int',
         'readcount': 'int',
-        'cell_id': 'category'
+        'cell_id': 'category',
+        'ref_count': 'int',
+        'alt_count': 'int',
+        'AA': 'int',
+        'AB': 'int',
+        'BB': 'int',
+        'total_count': 'int'
     }
     return haplotypes

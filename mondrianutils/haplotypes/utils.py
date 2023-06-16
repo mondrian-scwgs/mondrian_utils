@@ -1,8 +1,7 @@
-import json
-import os
-
 import argparse
 import csverve.api as csverve
+import json
+import os
 import pandas as pd
 import remixt.analysis
 import remixt.analysis.haplotype
@@ -13,7 +12,7 @@ import remixt.workflow
 import yaml
 from mondrianutils import helpers
 from mondrianutils.dtypes.haplotypes import dtypes
-from mondrianutils.haplotypes.infer_haps import infer_haps
+from mondrianutils.haplotypes import shapeit
 
 import remixt
 
@@ -58,11 +57,6 @@ def generate_metadata(
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(data, writer, default_flow_style=False)
-
-
-def convert_csv_to_tsv(csv_infile, tsv_outfile):
-    df = csverve.read_csv(csv_infile)
-    df.to_csv(tsv_outfile, sep='\t', index=False)
 
 
 def finalize_tsv(infile, outfile, seqdata, skip_header=False):
@@ -121,6 +115,11 @@ def annotate_haps(haps_csv, thousand_genomes, tempdir, output_csv):
     )
 
 
+def convert_csv_to_tsv(csv_infile, tsv_outfile):
+    df = csverve.read_csv(csv_infile)
+    df.to_csv(tsv_outfile, sep='\t', index=False)
+
+
 def parse_args():
     default_chroms = [str(v) for v in range(1, 23)] + ['X', 'Y']
 
@@ -157,120 +156,6 @@ def parse_args():
         '--cell_id'
     )
 
-    extract_chromosome_seqdata = subparsers.add_parser('extract_chromosome_seqdata')
-    extract_chromosome_seqdata.set_defaults(which='extract_chromosome_seqdata')
-    extract_chromosome_seqdata.add_argument(
-        '--bam',
-        required=True
-    )
-    extract_chromosome_seqdata.add_argument(
-        '--output',
-        required=True
-    )
-    extract_chromosome_seqdata.add_argument(
-        '--snp_positions',
-        required=True
-    )
-    extract_chromosome_seqdata.add_argument(
-        '--chromosome',
-        required=True
-    )
-
-    infer_snp_genotype = subparsers.add_parser('infer_snp_genotype')
-    infer_snp_genotype.set_defaults(which='infer_snp_genotype')
-    infer_snp_genotype.add_argument(
-        '--seqdata',
-        required=True
-    )
-    infer_snp_genotype.add_argument(
-        '--output',
-        required=True
-    )
-    infer_snp_genotype.add_argument(
-        '--chromosome',
-        required=True
-    )
-    infer_snp_genotype.add_argument(
-        '--data_type',
-        choices=['normal', 'tumour'],
-        default='normal'
-    )
-
-
-    infer_haps = subparsers.add_parser('infer_haps')
-    infer_haps.set_defaults(which='infer_haps')
-    infer_haps.add_argument(
-        '--snp_genotype',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--thousand_genomes_tar',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--output',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--chromosome',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--tempdir',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--snp_positions',
-        required=True
-    )
-    infer_haps.add_argument(
-        '--sex',
-        default='female'
-    )
-
-    merge_haps = subparsers.add_parser('merge_haps')
-    merge_haps.set_defaults(which='merge_haps')
-    merge_haps.add_argument(
-        '--inputs',
-        nargs='*',
-        required=True
-    )
-    merge_haps.add_argument(
-        '--output',
-        required=True
-    )
-
-    merge_seqdata = subparsers.add_parser('merge_seqdata')
-    merge_seqdata.set_defaults(which='merge_seqdata')
-    merge_seqdata.add_argument(
-        '--inputs',
-        nargs='*',
-        required=True
-    )
-    merge_seqdata.add_argument(
-        '--output',
-        required=True
-    )
-
-    annotate_haps = subparsers.add_parser('annotate_haps')
-    annotate_haps.set_defaults(which='annotate_haps')
-    annotate_haps.add_argument(
-        '--input',
-        required=True
-    )
-    annotate_haps.add_argument(
-        '--thousand_genomes',
-        required=True
-    )
-    annotate_haps.add_argument(
-        '--output',
-        required=True
-    )
-    annotate_haps.add_argument(
-        '--tempdir',
-        required=True
-    )
-
     create_segments = subparsers.add_parser('create_segments')
     create_segments.set_defaults(which='create_segments')
     create_segments.add_argument(
@@ -290,15 +175,8 @@ def parse_args():
         '--output',
         required=True
     )
-
-    convert_haplotypes_csv_to_tsv = subparsers.add_parser('convert_haplotypes_csv_to_tsv')
-    convert_haplotypes_csv_to_tsv.set_defaults(which='convert_haplotypes_csv_to_tsv')
-    convert_haplotypes_csv_to_tsv.add_argument(
-        '--input',
-        required=True
-    )
-    convert_haplotypes_csv_to_tsv.add_argument(
-        '--output',
+    create_segments.add_argument(
+        '--tempdir',
         required=True
     )
 
@@ -345,6 +223,52 @@ def parse_args():
         '--metadata_output'
     )
 
+    run_shapeit = subparsers.add_parser('run_shapeit')
+    run_shapeit.set_defaults(which='run_shapeit')
+    run_shapeit.add_argument(
+        '--input_bcf_file', required=True
+    )
+    run_shapeit.add_argument(
+        '--genetic_map', required=True
+    )
+    run_shapeit.add_argument(
+        '--regions_file', required=True
+    )
+    run_shapeit.add_argument(
+        '--chromosome', required=True
+    )
+    run_shapeit.add_argument(
+        '--tempdir', required=True
+    )
+    run_shapeit.add_argument(
+        '--output', required=True
+    )
+    run_shapeit.add_argument(
+        '--phased_chromosomes', nargs='*',
+        default=tuple([f'chr{v}' for v in range(1, 23)] + ['chrX'])
+    )
+    run_shapeit.add_argument(
+        '--is_female', default=False, action='store_true'
+    )
+    run_shapeit.add_argument(
+        '--phased_chromosome_x', default='chrX'
+    )
+    run_shapeit.add_argument(
+        '--shapeit_num_samples', default=100, type=int
+    )
+    run_shapeit.add_argument(
+        '--shapeit_confidence_threshold', default=0.95, type=float
+    )
+    convert_haplotypes_csv_to_tsv = subparsers.add_parser('convert_haplotypes_csv_to_tsv')
+    convert_haplotypes_csv_to_tsv.set_defaults(which='convert_haplotypes_csv_to_tsv')
+    convert_haplotypes_csv_to_tsv.add_argument(
+        '--input',
+        required=True
+    )
+    convert_haplotypes_csv_to_tsv.add_argument(
+        '--output',
+        required=True
+    )
     args = vars(parser.parse_args())
 
     return args
@@ -353,7 +277,17 @@ def parse_args():
 def utils():
     args = parse_args()
 
-    if args['which'] == 'extract_seqdata':
+    if args['which'] == 'run_shapeit':
+        shapeit.run_shapeit4(
+            args['input_bcf_file'], args['genetic_map'], args['regions_file'], args['chromosome'],
+            args['tempdir'], args['output'],
+            phased_chromosomes=args['phased_chromosomes'],
+            is_female=args['is_female'],
+            phased_chromx=args['phased_chromosome_x'],
+            shapeit_num_samples=args['shapeit_num_samples'],
+            shapeit_confidence_threshold=args['shapeit_confidence_threshold']
+        )
+    elif args['which'] == 'extract_seqdata':
         bam_max_fragment_length = remixt.config.get_param({}, 'bam_max_fragment_length')
         bam_max_soft_clipped = remixt.config.get_param({}, 'bam_max_soft_clipped')
         bam_check_proper_pair = remixt.config.get_param({}, 'bam_check_proper_pair')
@@ -364,51 +298,25 @@ def utils():
         )
         if args['cell_id']:
             add_cell_id_to_seqdata(args['output'], args['cell_id'])
-
-    elif args['which'] == 'extract_chromosome_seqdata':
-        bam_max_fragment_length = remixt.config.get_param({}, 'bam_max_fragment_length')
-        bam_max_soft_clipped = remixt.config.get_param({}, 'bam_max_soft_clipped')
-        bam_check_proper_pair = remixt.config.get_param({}, 'bam_check_proper_pair')
-        remixt.seqdataio.create_chromosome_seqdata(
-            args['output'], args['bam'], args['snp_positions'],
-            args['chromosome'], bam_max_fragment_length,
-            bam_max_soft_clipped, bam_check_proper_pair
-        )
-
-    elif args['which'] == 'infer_snp_genotype':
-        if args['data_type'] == 'normal':
-            remixt.analysis.haplotype.infer_snp_genotype_from_normal(
-                args['output'], args['seqdata'], args['chromosome'], {}
-            )
-        else:
-            remixt.analysis.haplotype.infer_snp_genotype_from_tumour(
-                args['output'], {'tumour_id': args['seqdata']}, args['chromosome'], {}
-            )
-
-    elif args['which'] == 'infer_haps':
-        infer_haps(
-            args['snp_genotype'], args['chromosome'], args['output'],
-            args['thousand_genomes_tar'], args['snp_positions'], args['tempdir'],
-            sex=args['sex'].lower()
-        )
-    elif args['which'] == 'merge_haps':
-        remixt.utils.merge_tables(
-            args['output'], *args['inputs']
-        )
-    elif args['which'] == 'merge_seqdata':
-        remixt.seqdataio.merge_seqdata(
-            args['output'], args['inputs']
-        )
-    elif args['which'] == 'annotate_haps':
-        annotate_haps(
-            args['input'], args['thousand_genomes'], args['tempdir'], args['output']
-        )
     elif args['which'] == 'create_segments':
+        chr_prefix = 'chr' if args['chromosomes'][0].startswith('chr') else ''
+        helpers.makedirs(args['tempdir'])
+        new_gap = os.path.join(args['tempdir'], 'gap.txt.gz')
+        with helpers.getFileHandle(args['gap_table'], 'rt') as reader, helpers.getFileHandle(new_gap, 'wt') as writer:
+            for line in reader:
+                line = line.strip().split('\t')
+                if chr_prefix == 'chr':
+                    line[1] = line[1] if line[1].startswith('chr') else 'chr' + line[1]
+                else:
+                    line[1] = line[1][3:] if line[1].startswith('chr') else line[1]
+                line = '\t'.join(line) + '\n'
+                writer.write(line)
+
         config = {
             'genome_fai_template': args['reference_fai'],
-            'gap_table_template': args['gap_table'],
+            'gap_table_template': new_gap,
             'chromosomes': args['chromosomes'],
-            'chr_name_prefix': 'chr' if args['chromosomes'][0].startswith('chr') else ''
+            'chr_name_prefix': chr_prefix
         }
         ref_data_dir = os.path.dirname(args['reference_fai'])
         remixt.analysis.segment.create_segments(
@@ -421,14 +329,14 @@ def utils():
             tempout, args['segments'], args['seqdata'], args['haplotypes'], {}
         )
         finalize_tsv(tempout, args['output'], args['seqdata'], skip_header=args['skip_header'])
-    elif args['which'] == "convert_haplotypes_csv_to_tsv":
-        convert_csv_to_tsv(
-            args['input'], args['output']
-        )
     elif args['which'] == 'generate_metadata':
         generate_metadata(
             args['files'], args['metadata_yaml_files'], args['samples'],
             args['metadata_output']
+        )
+    elif args['which'] == "convert_haplotypes_csv_to_tsv":
+        convert_csv_to_tsv(
+            args['input'], args['output']
         )
     else:
         raise Exception()

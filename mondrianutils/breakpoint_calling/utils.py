@@ -6,7 +6,7 @@ from mondrianutils import helpers
 
 from . import consensus
 from mondrianutils.breakpoint_calling import destruct_csv_to_vcf
-
+from mondrianutils.breakpoint_calling import destruct_extract_cell_counts
 
 def infer_type(files):
     with open(files, 'rt') as reader:
@@ -29,6 +29,7 @@ def infer_type(files):
         return 'breakpoint_destruct'
     else:
         raise Exception()
+
 
 
 def generate_metadata(
@@ -67,6 +68,17 @@ def parse_args():
     csv_to_vcf.add_argument('--reference', required=True)
     csv_to_vcf.add_argument('--sample_id', required=True)
 
+    destruct_extract_cell_counts = subparsers.add_parser('destruct_extract_cell_counts')
+    destruct_extract_cell_counts.set_defaults(which='destruct_extract_cell_counts')
+    destruct_extract_cell_counts.add_argument('--reads', required=True)
+    destruct_extract_cell_counts.add_argument('--bam', required=True)
+    destruct_extract_cell_counts.add_argument('--output', required=True)
+    destruct_extract_cell_counts.add_argument('--region', type=str)
+
+    destruct_merge_cell_counts = subparsers.add_parser('destruct_merge_cell_counts')
+    destruct_merge_cell_counts.set_defaults(which='destruct_merge_cell_counts')
+    destruct_merge_cell_counts.add_argument('--infiles', required=True, nargs='*')
+    destruct_merge_cell_counts.add_argument('--outfile', required=True)
 
     generate_metadata = subparsers.add_parser('generate_metadata')
     generate_metadata.set_defaults(which='generate_metadata')
@@ -106,6 +118,15 @@ def utils():
         destruct_csv_to_vcf.destruct_csv_to_vcf(
             args['infile'], args['outfile'], args['reference'],
             args['sample_id']
+        )
+    elif args['which'] == 'destruct_extract_cell_counts':
+        destruct_extract_cell_counts.get_counts(
+            args['reads'], args['bam'], args['output'],
+            region=args['region']
+        )
+    elif args['which'] == 'destruct_merge_cell_counts':
+        destruct_extract_cell_counts.merge_counts_files(
+            args['infiles'], args['outfile'],
         )
     else:
         raise Exception()
