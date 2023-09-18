@@ -75,6 +75,9 @@ def input_validation(meta_yaml, input_json):
     _check_metadata_required_field(meta_data, 'is_control')
     _check_metadata_required_field(meta_data, 'library_id')
     _check_metadata_required_field(meta_data, 'sample_id')
+    # these are required in hmmcopy
+    _check_metadata_required_field(meta_data, 'pick_met')
+    _check_metadata_required_field(meta_data, 'condition')
 
     _check_sample_id_uniqueness(meta_data)
 
