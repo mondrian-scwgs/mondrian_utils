@@ -21,8 +21,8 @@ def get_counts(breakpoint_read_filename, output_csv):
         usecols=['prediction_id', 'comment', 'filtered'])
 
     bkp_read_table['comment'] = bkp_read_table['comment'].str.lstrip('+')
-    bkp_read_table['read_id'] = bkp_read_table['comment'].str.split('_CB:').str[0]
-    bkp_read_table['cell_id'] = bkp_read_table['comment'].str.split('_CB:').str[1]
+    bkp_read_table['read_id'] = bkp_read_table['comment'].str.split(':CB_').str[0]
+    bkp_read_table['cell_id'] = bkp_read_table['comment'].str.split(':CB_').str[1]
     bkp_read_table = bkp_read_table.drop(columns=['comment']).drop_duplicates()
 
     bkp_read_table = bkp_read_table[bkp_read_table['filtered'] == False]
