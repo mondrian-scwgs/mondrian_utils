@@ -45,6 +45,7 @@ def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon']):
         'fastqscreen_nohit': 'int',
         'fastqscreen_total_reads': 'int',
         'fastqscreen_nohit_ratio': float,
+        'tss_enrichment_score': float
     }
 
     for genome in fastqscreen_genomes:

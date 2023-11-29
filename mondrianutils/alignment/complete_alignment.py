@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import shutil
+import csverve
 
 import mondrianutils.helpers as helpers
 import pysam
@@ -12,6 +13,8 @@ from mondrianutils.alignment.coverage_metrics import get_coverage_metrics
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
 from mondrianutils.alignment.trim_galore import trim_galore
+
+from mondrianutils.dtypes.alignment import dtypes
 
 
 def load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id):
@@ -246,6 +249,48 @@ def bam_index(infile):
     ])
 
 
+def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, tempdir):
+    with pysam.AlignmentFile(bamfile, "rb") as bam_reader:
+        bam_chromosomes = bam_reader.references
+
+    chromosomes = [str(v) for v in range(1, 23)] + ['X']
+    genome_version = 'grch37'
+    if bam_chromosomes[0].startswith('chr'):
+        chromosomes = ['chr' + v for v in chromosomes]
+        genome_version = 'grch38'
+
+    chromosomes = [v for v in chromosomes if v in bam_chromosomes]
+    assert len(chromosomes) > 1
+
+    helpers.makedirs(tempdir)
+
+    tempoutput = os.path.join(tempdir, 'temp_tss_output.txt')
+
+    scripts_directory = os.path.realpath(os.path.dirname(__file__))
+    run_rscript = os.path.join(scripts_directory, 'tss_enrichment.R')
+    cmd = [
+        run_rscript,
+        '--bamfile', bamfile,
+        '--output', tempoutput,
+        '--tempdir', tempdir,
+        '--genome_version', genome_version,
+        '--chromosomes', ','.join(chromosomes)
+    ]
+    helpers.run_cmd(cmd)
+
+    tss_score = open(tempoutput, 'rt').readlines()
+    assert len(tss_score) == 1
+    tss_score = tss_score[0]
+
+    csverve.simple_annotate_csv(
+        metrics_file,
+        annotated_metrics,
+        'tss_enrichment_score',
+        tss_score,
+        dtypes()['metrics']['tss_enrichment_score']
+    )
+
+
 def alignment(
         fastq_files, metadata_yaml, reference, reference_name, supplementary_references, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
@@ -377,9 +422,16 @@ def alignment(
     get_coverage_metrics(bam_output, read_attrition_metrics)
 
     print("parsing all bam metrics")
+    helpers.makedirs(os.path.join(tempdir, cell_id, 'metrics'))
+    temp_collect_metrics = os.path.join(tempdir, cell_id, 'metrics', 'temp_metrics.csv.gz')
     collect_metrics(
         metrics_wgs, metrics_insert, metrics_flagstat, metrics_markdups,
-        read_attrition_metrics, metrics_output, cell_id
+        read_attrition_metrics, temp_collect_metrics, cell_id
+    )
+    helpers.makedirs(os.path.join(tempdir, cell_id, 'tss_enrichment'))
+    add_tss_enrichment(
+        bam_output, temp_collect_metrics, metrics_output,
+        os.path.join(tempdir, cell_id, 'tss_enrichment')
     )
 
     print("parsing GC metrics")

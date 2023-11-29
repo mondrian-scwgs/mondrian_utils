@@ -52,6 +52,8 @@ def compare_alignment(metrics, metrics_ref, gc_metrics, gc_metrics_ref):
     ref_metrics = pd.read_csv(metrics_ref)
     ref_gc_metrics = pd.read_csv(gc_metrics_ref)
     for colname in metrics.columns.values:
+        if colname == 'tss_enrichment_score':
+            continue
         if metrics[colname].dtype == float:
             assert np.allclose(metrics[colname], ref_metrics[colname], atol=0.001)
         else:
