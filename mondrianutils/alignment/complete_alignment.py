@@ -285,11 +285,15 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version,
         '--genome_version', genome_version,
         '--chromosomes', ','.join(chromosomes)
     ]
-    helpers.run_cmd(cmd)
 
-    tss_score = open(tempoutput, 'rt').readlines()
-    assert len(tss_score) == 1
-    tss_score = tss_score[0]
+    stdout, stderr = helpers.run_cmd(cmd)
+
+    if not os.path.exists(tempoutput) and 'Can not get any proper mapped reads' in stdout:
+        tss_score = 'NA'
+    else:
+        tss_score = open(tempoutput, 'rt').readlines()
+        assert len(tss_score) == 1
+        tss_score = tss_score[0]
 
     csverve.simple_annotate_csv(
         metrics_file,

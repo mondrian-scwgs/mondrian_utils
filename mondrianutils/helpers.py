@@ -284,6 +284,7 @@ def run_cmd(cmd, output=None):
     print(console_out)
     print(console_err)
 
+    return console_out, console_err
 
 class getFileHandle(object):
     def __init__(self, filename, mode='rt'):
