@@ -249,16 +249,25 @@ def bam_index(infile):
     ])
 
 
-def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, tempdir):
+def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version, tempdir):
+    genome_version = genome_version.lower()
+
+    if genome_version not in ('grch37', 'grch38', 'hg18', 'hg19'):
+        csverve.simple_annotate_csv(
+            metrics_file,
+            annotated_metrics,
+            'tss_enrichment_score',
+            'NA',
+            dtypes()['metrics']['tss_enrichment_score']
+        )
+        return
+
     with pysam.AlignmentFile(bamfile, "rb") as bam_reader:
         bam_chromosomes = bam_reader.references
 
     chromosomes = [str(v) for v in range(1, 23)] + ['X']
-    genome_version = 'grch37'
     if bam_chromosomes[0].startswith('chr'):
         chromosomes = ['chr' + v for v in chromosomes]
-        genome_version = 'grch38'
-
     chromosomes = [v for v in chromosomes if v in bam_chromosomes]
     assert len(chromosomes) > 1
 
@@ -292,7 +301,7 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, tempdir):
 
 
 def alignment(
-        fastq_files, metadata_yaml, reference, reference_name, supplementary_references, tempdir,
+        fastq_files, metadata_yaml, reference, reference_name, reference_version, supplementary_references, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output, fastqscreen_detailed_output, fastqscreen_summary_output,
         tar_output, num_threads, run_fastqc=False
@@ -430,7 +439,7 @@ def alignment(
     )
     helpers.makedirs(os.path.join(tempdir, cell_id, 'tss_enrichment'))
     add_tss_enrichment(
-        bam_output, temp_collect_metrics, metrics_output,
+        bam_output, temp_collect_metrics, metrics_output, reference_version,
         os.path.join(tempdir, cell_id, 'tss_enrichment')
     )
 

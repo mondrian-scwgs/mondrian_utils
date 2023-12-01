@@ -687,6 +687,9 @@ def parse_args():
         '--reference_name'
     )
     alignment.add_argument(
+        '--reference_version'
+    )
+    alignment.add_argument(
         '--supplementary_references_json'
     )
     alignment.add_argument(
@@ -812,7 +815,7 @@ def utils():
     elif args['which'] == 'alignment':
         alignment(
             args['fastq_files'], args['metadata_yaml'], args['reference'],
-            args['reference_name'], args['supplementary_references_json'], args['tempdir'],
+            args['reference_name'], args['reference_version'], args['supplementary_references_json'], args['tempdir'],
             args['adapter1'], args['adapter2'], args['cell_id'], args['wgs_metrics_mqual'],
             args['wgs_metrics_bqual'], args['wgs_metrics_count_unpaired'],
             args['bam_output'], args['metrics_output'], args['metrics_gc_output'],

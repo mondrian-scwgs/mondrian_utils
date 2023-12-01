@@ -37,8 +37,8 @@ if (is.null(opt$genome_version)) {
   stop("--genome version is required.")
 }
 
-if (!(opt$genome_version %in% c("grch37", "grch38"))) {
-  stop("Invalid genome version. Please use either 'grch37' or 'grch38'.\n")
+if (!(opt$genome_version %in% c("grch37", "grch38", "hg18", "hg19"))) {
+  stop("Invalid genome version. Please use grch37, grch38, hg18 or hg19.\n")
 }
 
 if (!dir.exists(opt$tempdir)) {
@@ -54,7 +54,7 @@ if (file.exists(shiftedBamfile)) {
 chromosomes <-  strsplit(opt$chromosomes, ",")[[1]]
 
 
-if (opt$genome_version == "grch37"){
+if (opt$genome_version %in% c("grch37", "hg18")){
   seqinformation <- seqinfo(TxDb.Hsapiens.UCSC.hg18.knownGene)
   which <- as(seqinformation, "GRanges")
   seqlevelsStyle(which) <- "NCBI"
