@@ -248,6 +248,12 @@ def bam_index(infile):
         infile + '.bai'
     ])
 
+def is_valid_tss_error(stdout):
+    if 'Can not get any signals' in stdout:
+        return True
+    if 'Can not get any proper mapped reads' in stdout:
+        return True
+    return False
 
 def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version, tempdir):
     genome_version = genome_version.lower()
@@ -288,8 +294,11 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version,
 
     stdout, stderr = helpers.run_cmd(cmd)
 
-    if not os.path.exists(tempoutput) and 'Can not get any proper mapped reads' in stdout:
-        tss_score = 'NA'
+    if not os.path.exists(tempoutput):
+        if is_valid_tss_error(stdout):
+            tss_score = 'NA'
+        else:
+            raise Exception(stdout)
     else:
         tss_score = open(tempoutput, 'rt').readlines()
         assert len(tss_score) == 1
