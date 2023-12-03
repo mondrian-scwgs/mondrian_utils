@@ -173,13 +173,15 @@ def run_shapeit4(
 
     # Skip unphased chromosomes
     if str(chromosome_1kg) not in phased_chromosomes:
-        write_null(haps_filename)
+        haplotypes = pd.DataFrame(columns=['chromosome', 'position', 'allele', 'hap_label', 'allele_id'])
+        csverve.write_dataframe_to_csv_and_yaml(haplotypes, haps_filename, dtypes=dtypes.dtypes())
         return
 
     # If we are analyzing male data and this is chromosome X
     # then there are no het snps and no haplotypes
     if chromosome == phased_chromx and not is_female:
-        write_null(haps_filename)
+        haplotypes = pd.DataFrame(columns=['chromosome', 'position', 'allele', 'hap_label', 'allele_id'])
+        csverve.write_dataframe_to_csv_and_yaml(haplotypes, haps_filename, dtypes=dtypes.dtypes())
         return
 
     # Temporary directory for shapeit files
