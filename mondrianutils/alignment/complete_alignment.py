@@ -296,7 +296,7 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version,
 
     if not os.path.exists(tempoutput):
         if is_valid_tss_error(stdout):
-            tss_score = 'NA'
+            tss_score = float('nan')
         else:
             raise Exception(stdout)
     else:
