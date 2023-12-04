@@ -253,6 +253,8 @@ def is_valid_tss_error(stdout):
         return True
     if 'Can not get any proper mapped reads' in stdout:
         return True
+    if 'Only single end reads' in stdout:
+        return True
     return False
 
 def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version, tempdir):
@@ -295,7 +297,7 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version,
     stdout, stderr = helpers.run_cmd(cmd)
 
     if not os.path.exists(tempoutput):
-        if is_valid_tss_error(stdout):
+        if is_valid_tss_error(stdout+stderr):
             tss_score = float('nan')
         else:
             raise Exception(stdout)
