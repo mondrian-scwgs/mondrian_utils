@@ -55,9 +55,7 @@ def get_supernormal_reads_data(
     return reads[reads.index.isin(supernormal.index)]
 
 
-def remove_blacklist_bins(bins, reference_name, blacklist_file):
-    if not reference_name.lower() == 'grch37':
-        raise NotImplementedError('Only GRCh37 is supported at this time')
+def remove_blacklist_bins(bins, blacklist_file):
 
     blacklist = pd.read_csv(blacklist_file, dtype='str')
     blacklist_bins = blacklist['chr'] + '-' + blacklist['start'] + ':' + blacklist['end']
@@ -154,7 +152,7 @@ def identify_normal_cells(
     if not (xcopies == 1 or xcopies == 2):
         warnings.warn(f"Found abnormal sex chromosome copies: chrX={xcopies}")
 
-    non_blacklist_bins = remove_blacklist_bins(cn_data.columns, reference_name, blacklist_file)
+    non_blacklist_bins = remove_blacklist_bins(cn_data.columns, blacklist_file)
 
     observed = cn_data[non_blacklist_bins]
     observed = observed.to_numpy()
