@@ -120,8 +120,7 @@ def identify_normal_cells(
         metrics_data_path: str,
         output_yaml: str,
         output_csv: str,
-        reference_name: str,
-        blacklist_file: str,
+        blacklist_file: str = None,
         min_reads: int = 500000,
         min_quality: float = 0.85,
         allowed_aneuploidy_score: float = 0,
@@ -152,7 +151,10 @@ def identify_normal_cells(
     if not (xcopies == 1 or xcopies == 2):
         warnings.warn(f"Found abnormal sex chromosome copies: chrX={xcopies}")
 
-    non_blacklist_bins = remove_blacklist_bins(cn_data.columns, blacklist_file)
+    if blacklist_file is not None:
+        non_blacklist_bins = remove_blacklist_bins(cn_data.columns, blacklist_file)
+    else:
+        non_blacklist_bins = cn_data.columns
 
     observed = cn_data[non_blacklist_bins]
     observed = observed.to_numpy()

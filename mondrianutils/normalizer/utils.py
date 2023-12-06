@@ -174,8 +174,7 @@ def parse_args():
     identify_normal_cells.add_argument('--metrics_data', required=True)
     identify_normal_cells.add_argument('--output_yaml', required=True)
     identify_normal_cells.add_argument('--output_csv', required=True)
-    identify_normal_cells.add_argument('--reference_name', required=True)
-    identify_normal_cells.add_argument('--blacklist_file', required=True)
+    identify_normal_cells.add_argument('--blacklist_file')
     identify_normal_cells.add_argument('--min_reads', default=500000)
     identify_normal_cells.add_argument('--min_quality', default=0.85)
     identify_normal_cells.add_argument('--allowed_aneuploidy_score', default=0)
@@ -231,8 +230,7 @@ def utils():
             args['metrics_data'],
             args['output_yaml'],
             args['output_csv'],
-            args['reference_name'],
-            args['blacklist_file'],
+            blacklist_file=args['blacklist_file'],
             min_reads=args['min_reads'],
             min_quality=args['min_quality'],
             allowed_aneuploidy_score=args['allowed_aneuploidy_score'],
