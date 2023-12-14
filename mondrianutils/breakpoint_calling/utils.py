@@ -3,7 +3,7 @@ import yaml
 import click
 
 from mondrianutils import helpers
-from mondrianutils.breakpoint_calling.consensus import consensus
+from .consensus import consensus
 from mondrianutils.breakpoint_calling import destruct_csv_to_vcf
 from mondrianutils.breakpoint_calling import destruct_extract_cell_counts
 
