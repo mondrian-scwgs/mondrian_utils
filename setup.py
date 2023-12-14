@@ -20,7 +20,7 @@ setup(
             'pdf_utils = mondrianutils.io.pdf:utils',
             'vcf_utils = mondrianutils.io.vcf:utils',
             'bam_utils = mondrianutils.io.bam:utils',
-            'haplotype_utils = mondrianutils.haplotypes.utils:utils',
+            'haplotype_utils = mondrianutils.haplotypes.utils:cli',
             'snv_genotyping_utils = mondrianutils.snv_genotyping.utils:utils',
             'sv_genotyping_utils = mondrianutils.sv_genotyping.utils:utils',
             'reference_utils = mondrianutils.reference.utils:utils',
