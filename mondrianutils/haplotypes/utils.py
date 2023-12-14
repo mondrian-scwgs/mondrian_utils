@@ -196,8 +196,8 @@ def haplotype_allele_readcount_cmd(segments, seqdata, haplotypes, output, tempdi
 
 @cli.command()
 @click.option('--files')
-@click.option('--metadata_yaml_files', nargs='*')
-@click.option('--samples', nargs='*')
+@click.option('--metadata_yaml_files', multiple=True)
+@click.option('--samples', multiple=True)
 @click.option('--metadata_output')
 def generate_metadata_cmd(files, metadata_yaml_files, samples, metadata_output):
     generate_metadata(
