@@ -1,13 +1,7 @@
 import json
-
-import argparse
 import yaml
+
 from mondrianutils import helpers
-
-from . import consensus
-from mondrianutils.breakpoint_calling import destruct_csv_to_vcf
-from mondrianutils.breakpoint_calling import destruct_extract_cell_counts
-
 
 def infer_type(files):
     with open(files, 'rt') as reader:
@@ -42,79 +36,3 @@ def generate_metadata(
         yaml.dump(data, writer, default_flow_style=False)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    subparsers = parser.add_subparsers()
-
-    consensus = subparsers.add_parser('consensus')
-    consensus.set_defaults(which='consensus')
-    consensus.add_argument('--destruct', required=True)
-    consensus.add_argument('--lumpy', required=True)
-    consensus.add_argument('--gridss', required=True)
-    consensus.add_argument('--svaba', required=True)
-    consensus.add_argument('--sample_id', required=True)
-    consensus.add_argument('--consensus', required=True)
-    consensus.add_argument('--tempdir', required=True)
-    consensus.add_argument('--region')
-    consensus.add_argument('--blacklist_bed')
-
-    csv_to_vcf = subparsers.add_parser('destruct_csv_to_vcf')
-    csv_to_vcf.set_defaults(which='destruct_csv_to_vcf')
-    csv_to_vcf.add_argument('--infile', required=True)
-    csv_to_vcf.add_argument('--outfile', required=True)
-    csv_to_vcf.add_argument('--reference', required=True)
-    csv_to_vcf.add_argument('--sample_id', required=True)
-
-    destruct_extract_cell_counts = subparsers.add_parser('destruct_extract_cell_counts')
-    destruct_extract_cell_counts.set_defaults(which='destruct_extract_cell_counts')
-    destruct_extract_cell_counts.add_argument('--reads', required=True)
-    destruct_extract_cell_counts.add_argument('--output', required=True)
-
-    generate_metadata = subparsers.add_parser('generate_metadata')
-    generate_metadata.set_defaults(which='generate_metadata')
-    generate_metadata.add_argument(
-        '--files'
-    )
-    generate_metadata.add_argument(
-        '--metadata_yaml_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--samples', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--metadata_output'
-    )
-
-    args = vars(parser.parse_args())
-
-    return args
-
-
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'consensus':
-        consensus.consensus(
-            args['destruct'], args['lumpy'], args['svaba'], args['gridss'],
-            args['consensus'], args['sample_id'], args['tempdir'], region=args['region'],
-            blacklist_bed=args['blacklist_bed']
-        )
-    elif args['which'] == 'generate_metadata':
-        generate_metadata(
-            args['files'], args['metadata_yaml_files'], args['samples'],
-            args['metadata_output']
-        )
-    elif args['which'] == 'destruct_csv_to_vcf':
-        destruct_csv_to_vcf.destruct_csv_to_vcf(
-            args['infile'], args['outfile'], args['reference'],
-            args['sample_id']
-        )
-    elif args['which'] == 'destruct_extract_cell_counts':
-        destruct_extract_cell_counts.get_counts(
-            args['reads'], args['output']
-        )
-    else:
-        raise Exception()

@@ -2,7 +2,6 @@ import csv
 import gzip
 import os
 
-import argparse
 import pandas as pd
 import pysam
 from mondrianutils import helpers
@@ -133,73 +132,3 @@ def get_intervals(reference, output, chromosomes, interval_size):
             writer.write(interval + '\n')
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    subparsers = parser.add_subparsers()
-
-    repeats = subparsers.add_parser('repeats')
-    repeats.set_defaults(which='repeats')
-    repeats.add_argument('--rmsk_file', required=True)
-    repeats.add_argument('--chrom_map', required=True)
-    repeats.add_argument('--repeats', required=True)
-    repeats.add_argument('--satellites', required=True)
-
-    snp_positions_grch37 = subparsers.add_parser('snp_positions_grch37')
-    snp_positions_grch37.set_defaults(which='snp_positions_grch37')
-    snp_positions_grch37.add_argument(
-        '--reference_fai'
-    )
-    snp_positions_grch37.add_argument(
-        '--data_dir'
-    )
-    snp_positions_grch37.add_argument(
-        '--snp_positions'
-    )
-
-    snp_positions_grch38 = subparsers.add_parser('snp_positions_grch38')
-    snp_positions_grch38.set_defaults(which='snp_positions_grch38')
-    snp_positions_grch38.add_argument(
-        '--data_dir'
-    )
-    snp_positions_grch38.add_argument(
-        '--snp_positions'
-    )
-    snp_positions_grch38.add_argument(
-        '--chromosomes', nargs='*', default=None
-    )
-
-    get_intervals = subparsers.add_parser('get_intervals')
-    get_intervals.set_defaults(which='get_intervals')
-    get_intervals.add_argument('--reference', required=True)
-    get_intervals.add_argument('--output', required=True)
-    get_intervals.add_argument('--chromosomes', nargs='*', required=True)
-    get_intervals.add_argument('--interval_size', type=int, default=1e6)
-
-    args = vars(parser.parse_args())
-
-    return args
-
-
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'repeats':
-        build_repeats(args['rmsk_file'], args['chrom_map'], args['repeats'], args['satellites'])
-
-    elif args['which'] == 'snp_positions_grch37':
-        create_snp_positions_grch37(
-            args['reference_fai'], args['data_dir'], args['snp_positions']
-        )
-    elif args['which'] == 'snp_positions_grch38':
-        create_snp_positions_grch38(
-            args['data_dir'], args['snp_positions'], chromosomes=args['chromosomes']
-        )
-    elif args['which'] == 'get_intervals':
-        get_intervals(
-            args['reference'], args['output'], args['chromosomes'], args['interval_size']
-        )
-    else:
-        raise Exception()

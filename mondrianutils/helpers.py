@@ -229,7 +229,7 @@ def metadata_helper(files_json, metadata_yamls, samples, wf_type):
 
     metadata = {'type': wf_type, 'version': __version__}
 
-    assert len(samples) == len(metadata_yamls)
+    assert len(samples) == len(metadata_yamls), (samples, metadata_yamls)
     for sample, metadata_yaml in zip(samples, metadata_yamls):
         with open(metadata_yaml, 'rt') as reader:
             meta = yaml.safe_load(reader)
@@ -255,6 +255,9 @@ def get_auxiliary_files(filepath):
 
 
 def run_cmd(cmd, output=None):
+    if isinstance(cmd, list):
+        cmd = [str(v) for v in cmd]
+
     stdout = PIPE
     if output:
         stdout = open(output, "w")
@@ -285,6 +288,7 @@ def run_cmd(cmd, output=None):
     print(console_err)
 
     return console_out, console_err
+
 
 class getFileHandle(object):
     def __init__(self, filename, mode='rt'):

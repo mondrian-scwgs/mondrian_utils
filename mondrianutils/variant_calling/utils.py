@@ -1,16 +1,12 @@
 import gzip
 import json
 
-import argparse
 import math
 import numpy as np
 import pandas as pd
 import pysam
 import yaml
 from mondrianutils import helpers
-
-from . import consensus
-
 
 def get_header(infile):
     with helpers.getFileHandle(infile, 'rt') as reader:
@@ -39,7 +35,6 @@ def merge_vcf_files(infiles, outfile):
 
 
 def generate_intervals(ref, chromosomes, size=1000000):
-
     if ref.endswith('.fai'):
         lengths = []
         names = []
@@ -318,202 +313,3 @@ def generate_metadata(
     with open(metadata_output, 'wt') as writer:
         yaml.dump(data, writer, default_flow_style=False)
 
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    subparsers = parser.add_subparsers()
-
-    genintervals = subparsers.add_parser("generate_intervals")
-    genintervals.set_defaults(which='generate_intervals')
-    genintervals.add_argument(
-        "--reference",
-        help='specify reference fasta'
-    )
-    genintervals.add_argument(
-        "--chromosomes",
-        nargs='*',
-        default=list(map(str, range(1, 23))) + ['X', 'Y'],
-        help='specify target chromosomes'
-    )
-    genintervals.add_argument(
-        "--size",
-        default=1000000,
-        type=int,
-        help='specify interval size'
-    )
-
-    split_interval = subparsers.add_parser("split_interval")
-    split_interval.set_defaults(which='split_interval')
-    split_interval.add_argument(
-        "--interval",
-        help='specify reference fasta'
-    )
-    split_interval.add_argument(
-        "--num_splits",
-        type=int,
-        help='specify target chromosomes'
-    )
-
-    merge_vcf_files = subparsers.add_parser("merge_vcf_files")
-    merge_vcf_files.set_defaults(which='merge_vcf_files')
-    merge_vcf_files.add_argument(
-        "--inputs", nargs='*',
-        help='vcf files to merge'
-    )
-    merge_vcf_files.add_argument(
-        "--output",
-        help='merged output vcf'
-    )
-
-    genome_size = subparsers.add_parser("genome_size")
-    genome_size.set_defaults(which='genome_size')
-    genome_size.add_argument(
-        "--reference",
-        help='specify reference fasta'
-    )
-    genome_size.add_argument(
-        "--chromosomes",
-        nargs='*',
-        default=list(map(str, range(1, 23))) + ['X', 'Y'],
-        help='specify target chromosomes'
-    )
-
-    merge_chromosome_depths_strelka = subparsers.add_parser("merge_chromosome_depths_strelka")
-    merge_chromosome_depths_strelka.set_defaults(which='merge_chromosome_depths_strelka')
-    merge_chromosome_depths_strelka.add_argument(
-        "--inputs",
-        nargs='*',
-        help='specify input'
-    )
-    merge_chromosome_depths_strelka.add_argument(
-        "--output",
-        help='specify output'
-    )
-
-    get_sid_bam = subparsers.add_parser("get_sample_id_bam")
-    get_sid_bam.set_defaults(which='get_sample_id_bam')
-    get_sid_bam.add_argument(
-        "--input",
-        help='specify input bam'
-    )
-
-    consensus = subparsers.add_parser('consensus')
-    consensus.set_defaults(which='consensus')
-    consensus.add_argument('--museq_vcf', required=True)
-    consensus.add_argument('--mutect_vcf', required=True)
-    consensus.add_argument('--strelka_indel', required=True)
-    consensus.add_argument('--strelka_snv', required=True)
-    consensus.add_argument('--consensus_output', required=True)
-    consensus.add_argument('--counts_output', required=True)
-    consensus.add_argument('--chromosomes', default=[str(v) for v in range(1, 23)] + ['X', 'Y'], nargs='*')
-
-    vcf_reheader_id = subparsers.add_parser('vcf_reheader_id')
-    vcf_reheader_id.set_defaults(which='vcf_reheader_id')
-    vcf_reheader_id.add_argument('--input', required=True)
-    vcf_reheader_id.add_argument('--output', required=True)
-    vcf_reheader_id.add_argument('--tumour', required=True)
-    vcf_reheader_id.add_argument('--normal', required=True)
-    vcf_reheader_id.add_argument('--vcf_normal_id', required=True)
-    vcf_reheader_id.add_argument('--vcf_tumour_id', required=True)
-
-    update_maf_id = subparsers.add_parser('update_maf_ids')
-    update_maf_id.set_defaults(which='update_maf_ids')
-    update_maf_id.add_argument('--input', required=True)
-    update_maf_id.add_argument('--output', required=True)
-    update_maf_id.add_argument('--tumour_bam')
-    update_maf_id.add_argument('--normal_bam')
-
-    update_maf_id = subparsers.add_parser('update_maf_counts')
-    update_maf_id.set_defaults(which='update_maf_counts')
-    update_maf_id.add_argument('--input', required=True)
-    update_maf_id.add_argument('--counts', required=True)
-    update_maf_id.add_argument('--output', required=True)
-
-    merge_mafs = subparsers.add_parser('merge_mafs')
-    merge_mafs.set_defaults(which='merge_mafs')
-    merge_mafs.add_argument('--infiles', nargs='*', required=True)
-    merge_mafs.add_argument('--output', required=True)
-
-    concat_csv_parser = subparsers.add_parser('concat_csv')
-    concat_csv_parser.set_defaults(which='concat_csv')
-    concat_csv_parser.add_argument('--inputs', nargs='*', required=True)
-    concat_csv_parser.add_argument('--output', required=True)
-
-    fix_museq_vcf = subparsers.add_parser('fix_museq_vcf')
-    fix_museq_vcf.set_defaults(which='fix_museq_vcf')
-    fix_museq_vcf.add_argument('--input', required=True)
-    fix_museq_vcf.add_argument('--output', required=True)
-
-    merge_bams = subparsers.add_parser('merge_bams')
-    merge_bams.set_defaults(which='merge_bams')
-    merge_bams.add_argument('--inputs', nargs="*", required=True)
-    merge_bams.add_argument('--output', required=True)
-    merge_bams.add_argument('--threads', type=int, required=True)
-    merge_bams.add_argument('--tempdir', required=True)
-
-    generate_metadata = subparsers.add_parser('generate_metadata')
-    generate_metadata.set_defaults(which='generate_metadata')
-    generate_metadata.add_argument(
-        '--files'
-    )
-    generate_metadata.add_argument(
-        '--metadata_yaml_files', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--samples', nargs='*'
-    )
-    generate_metadata.add_argument(
-        '--metadata_output'
-    )
-
-    args = vars(parser.parse_args())
-
-    return args
-
-
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'generate_intervals':
-        generate_intervals(args['reference'], args['chromosomes'], args['size'])
-    elif args['which'] == 'split_interval':
-        split_interval(args['interval'], args['num_splits'])
-    elif args['which'] == 'genome_size':
-        get_genome_size(args['reference'], args['chromosomes'])
-    elif args['which'] == 'merge_chromosome_depths_strelka':
-        merge_chromosome_depths_strelka(args['inputs'], args['output'])
-    elif args['which'] == 'get_sample_id_bam':
-        get_sample_id_bam(args['input'])
-    elif args['which'] == 'vcf_reheader_id':
-        vcf_reheader_id(args['input'], args['output'], args['tumour'], args['normal'], args['vcf_normal_id'],
-                        args['vcf_tumour_id'])
-    elif args['which'] == 'update_maf_ids':
-        update_maf_ids(args['input'], args['output'], args['tumour_bam'], args['normal_bam'])
-    elif args['which'] == 'merge_mafs':
-        merge_mafs(args['infiles'], args['output'])
-    elif args['which'] == 'update_maf_counts':
-        update_maf_counts(args['input'], args['counts'], args['output'])
-    elif args['which'] == 'concat_csv':
-        concatenate_csv(args['inputs'], args['output'])
-    elif args['which'] == 'fix_museq_vcf':
-        fix_museq_vcf(args['input'], args['output'])
-    elif args['which'] == 'consensus':
-        consensus.main(
-            args['museq_vcf'], args['strelka_snv'], args['mutect_vcf'], args['strelka_indel'],
-            args['consensus_output'], args['counts_output'],
-            args['chromosomes']
-        )
-    elif args['which'] == 'generate_metadata':
-        generate_metadata(
-            args['files'], args['metadata_yaml_files'],
-            args['samples'], args['metadata_output']
-        )
-    elif args['which'] == 'merge_vcf_files':
-        merge_vcf_files(args['inputs'], args['output'])
-    elif args['which'] == 'merge_bams':
-        helpers.merge_bams(args['inputs'], args['output'], args['tempdir'], args['threads'])
-    else:
-        raise Exception()

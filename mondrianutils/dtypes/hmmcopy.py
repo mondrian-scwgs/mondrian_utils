@@ -1,6 +1,7 @@
 def dtypes(fastqscreen_genomes=['grch37', 'mm10', 'salmon', 'human', 'mouse']):
     metrics = {
         'multiplier': 'int',
+        'tss_ennrichment_score': 'float',
         'cell_id': 'category',
         'sample_id': 'category',
         'library_id': 'category',

@@ -1,7 +1,6 @@
 import os
 import shutil
 
-import argparse
 import csverve.api as csverve
 import pandas as pd
 import pysam
@@ -126,7 +125,7 @@ def overlapping_fraction_per_bin(
         split_commands = []
         for chromosome in chromosomes:
             cmd = [
-                'bam_utils', 'overlapping_fraction_per_bin',
+                'io_utils', 'overlapping-fraction-per-bin',
                 '--bam', bam, '--chromosomes', chromosome,
                 '--output', os.path.join(tempdir, f'output_{chromosome}.csv.gz'),
                 '--binsize', binsize, '--mapping_quality', mapping_quality,
@@ -210,9 +209,9 @@ def _split_in_parallel(infile, outdir, chromosomes, tempdir, ncores=8):
     split_commands = []
     for chromosome in chromosomes:
         cmd = [
-            'bam_utils', 'split_bam_by_barcode',
+            'io_utils', 'split-bam-by-barcode',
             '--infile', infile, '--outdir',
-            os.path.join(outdir, str(chromosome)), '--chromosome', chromosome, '--ncores', 1
+            os.path.join(outdir, str(chromosome)), '--chromosomes ', chromosome, '--ncores', 1
         ]
         split_commands.append(cmd)
 
@@ -272,53 +271,3 @@ def split_bam_by_barcode(infile, outdir, tempdir, chromosomes, ncores=8):
         chromosomes,
         ncores=ncores
     )
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    subparsers = parser.add_subparsers()
-
-    split_bam = subparsers.add_parser('split_bam_by_barcode')
-    split_bam.set_defaults(which='split_bam_by_barcode')
-    split_bam.add_argument('--infile', required=True)
-    split_bam.add_argument('--outdir', required=True)
-    split_bam.add_argument('--tempdir')
-    split_bam.add_argument('--chromosomes', nargs='*')
-    split_bam.add_argument('--ncores', default=8, type=int)
-
-    overlapping_fraction = subparsers.add_parser('overlapping_fraction_per_bin')
-    overlapping_fraction.set_defaults(which='overlapping_fraction_per_bin')
-    overlapping_fraction.add_argument('--bam', required=True)
-    overlapping_fraction.add_argument('--output', required=True)
-    overlapping_fraction.add_argument('--tempdir')
-    overlapping_fraction.add_argument('--chromosomes', default=[str(v) for v in range(1, 23)] + ['X', 'Y'], nargs='*')
-    overlapping_fraction.add_argument('--binsize', default=500000, type=int)
-    overlapping_fraction.add_argument('--mapping_quality', default=20, type=int)
-    overlapping_fraction.add_argument('--ncores', default=8, type=int)
-
-    args = vars(parser.parse_args())
-
-    return args
-
-
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'split_bam_by_barcode':
-        split_bam_by_barcode(
-            args['infile'], args['outdir'], args['tempdir'],
-            args['chromosomes'], ncores=args['ncores']
-        )
-    elif args['which'] == 'overlapping_fraction_per_bin':
-        overlapping_fraction_per_bin(
-            args['bam'], args['output'], args['tempdir'],
-            chromosomes=args['chromosomes'],
-            binsize=args['binsize'],
-            mapping_quality=args['mapping_quality'],
-            ncores=args['ncores']
-        )
-    else:
-        raise Exception()

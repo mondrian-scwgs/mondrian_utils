@@ -1,6 +1,6 @@
 import os
 
-import argparse
+import click
 import numpy as np
 import pandas as pd
 from mondrianutils import helpers
@@ -151,69 +151,3 @@ def exclude_blacklist(input_vcf, output_vcf, exclusion_blacklist):
 
             writer.write(line)
 
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    subparsers = parser.add_subparsers()
-
-    split_vcf = subparsers.add_parser('split_vcf')
-    split_vcf.set_defaults(which='split_vcf')
-    split_vcf.add_argument('--infile', required=True)
-    split_vcf.add_argument('--outdir', required=True)
-    split_vcf.add_argument('--num_splits', type=int, required=True)
-
-    split_vcf_by_chrom = subparsers.add_parser('split_vcf_by_chrom')
-    split_vcf_by_chrom.set_defaults(which='split_vcf_by_chrom')
-    split_vcf_by_chrom.add_argument('--infile', required=True)
-    split_vcf_by_chrom.add_argument('--outdir', required=True)
-
-    remove_duplicates = subparsers.add_parser('remove_duplicates')
-    remove_duplicates.set_defaults(which='remove_duplicates')
-    remove_duplicates.add_argument('--infile', required=True)
-    remove_duplicates.add_argument('--outfile', required=True)
-    remove_duplicates.add_argument('--include_ref_alt', action='store_true', default=False)
-
-    exclude_blacklist = subparsers.add_parser('exclude_blacklist')
-    exclude_blacklist.set_defaults(which='exclude_blacklist')
-    exclude_blacklist.add_argument('--infile', required=True)
-    exclude_blacklist.add_argument('--outfile', required=True)
-    exclude_blacklist.add_argument('--exclusion_blacklist', default=False)
-
-    merge_vcfs = subparsers.add_parser('merge_vcfs')
-    merge_vcfs.set_defaults(which='merge_vcfs')
-    merge_vcfs.add_argument('--infiles', nargs='*', required=True)
-    merge_vcfs.add_argument('--outfile', required=True)
-
-    args = vars(parser.parse_args())
-
-    return args
-
-
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'split_vcf':
-        split_vcf(
-            args['infile'], args['outdir'], args['num_splits']
-        )
-    elif args['which'] == 'split_vcf_by_chrom':
-        split_vcf_by_chrom(
-            args['infile'], args['outdir']
-        )
-    elif args['which'] == 'remove_duplicates':
-        remove_duplicates(
-            args['infile'], args['outfile'], include_ref_alt=args['include_ref_alt']
-        )
-    elif args['which'] == 'merge_vcfs':
-        vcf_merge.merge_vcfs(
-            args['infiles'], args['outfile']
-        )
-    elif args['which'] == 'exclude_blacklist':
-        exclude_blacklist(
-            args['infile'], args['outfile'], args['exclusion_blacklist']
-        )
-    else:
-        raise Exception()

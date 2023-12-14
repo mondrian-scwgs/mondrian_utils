@@ -247,7 +247,7 @@ def write_vcf(consensus, vcf_output, counts_output, normal_id, tumor_id):
             count_file.write(outstr)
 
 
-def main(
+def consensus(
         museq_snv_vcf,
         strelka_snv_vcf,
         mutect_snv_vcf,
