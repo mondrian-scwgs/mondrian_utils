@@ -68,14 +68,14 @@ def breakpoint_consensus(destruct, lumpy, gridss, svaba, sample_id, consensus_ou
 @click.option('--outfile', required=True)
 @click.option('--reference', required=True)
 @click.option('--sample_id', required=True)
-def destruct_csv_to_vcf_cmd(infile, outfile, reference, sample_id):
+def breakpoint_destruct_csv_to_vcf(infile, outfile, reference, sample_id):
     destruct_csv_to_vcf.destruct_csv_to_vcf(infile, outfile, reference, sample_id)
 
 
 @cli.command()
 @click.option('--reads', required=True)
 @click.option('--output', required=True)
-def destruct_extract_cell_counts_cmd(reads, output):
+def breakpoint_destruct_extract_cell_counts(reads, output):
     destruct_extract_cell_counts.get_counts(reads, output)
 
 
@@ -84,7 +84,7 @@ def destruct_extract_cell_counts_cmd(reads, output):
 @click.option('--metadata_yaml_files', multiple=True)
 @click.option('--samples', multiple=True)
 @click.option('--metadata_output')
-def generate_metadata_cmd(files, metadata_yaml_files, samples, metadata_output):
+def breakpoint_generate_metadata(files, metadata_yaml_files, samples, metadata_output):
     generate_metadata(files, metadata_yaml_files, samples, metadata_output)
 
 
