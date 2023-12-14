@@ -13,7 +13,7 @@ setup(
         'console_scripts': [
             'mondrianutils = mondrianutils.run:main',
             'variant_utils = mondrianutils.variant_calling.utils:utils',
-            'breakpoint_utils = mondrianutils.breakpoint_calling.utils:utils',
+            'breakpoint_utils = mondrianutils.breakpoint_calling.utils:cli',
             'alignment_utils = mondrianutils.alignment.utils:utils',
             'hmmcopy_utils = mondrianutils.hmmcopy.utils:utils',
             'csverve_utils = mondrianutils.io.csverve:utils',
