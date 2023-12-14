@@ -52,7 +52,7 @@ def cli():
 @click.option('--gridss', required=True)
 @click.option('--svaba', required=True)
 @click.option('--sample_id', required=True)
-@click.option('--consensus', required=True)
+@click.option('--consensus_output', required=True)
 @click.option('--tempdir', required=True)
 @click.option('--region')
 @click.option('--blacklist_bed')
