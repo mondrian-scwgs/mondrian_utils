@@ -4,7 +4,7 @@ Created on Feb 20, 2018
 @author: dgrewal
 '''
 
-import argparse
+import click
 import os
 from PyPDF2 import PdfFileMerger, PdfFileWriter, PdfFileReader
 from mondrianutils import helpers
@@ -53,38 +53,24 @@ def merge_pdfs_with_scaling(infiles, outfile, width=500, height=500):
         pdf_writer.write(fout)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    subparsers = parser.add_subparsers()
-
-    merge_pdfs = subparsers.add_parser('merge_pdfs')
-    merge_pdfs.set_defaults(which='merge_pdfs')
-    merge_pdfs.add_argument('--infiles', nargs='*', required=True)
-    merge_pdfs.add_argument('--outfile', required=True)
-
-    merge_pdfs_scaled = subparsers.add_parser('merge_pdfs_scaled')
-    merge_pdfs_scaled.set_defaults(which='merge_pdfs_scaled')
-    merge_pdfs_scaled.add_argument('--infiles', nargs='*', required=True)
-    merge_pdfs_scaled.add_argument('--outfile', required=True)
-
-    args = vars(parser.parse_args())
-
-    return args
+@click.group()
+def cli():
+    pass
 
 
-def utils():
-    args = parse_args()
+@cli.command()
+@click.option('--infiles', multiple=True, required=True, help='List of input PDF files')
+@click.option('--outfile', required=True, help='Path to the output PDF file')
+def merge_pdfs_cmd(infiles, outfile):
+    merge_pdfs(infiles, outfile)
 
-    if args['which'] == 'merge_pdfs':
-        merge_pdfs(
-            args['infiles'], args['outfile']
-        )
-    elif args['which'] == 'merge_pdfs_scaled':
-        merge_pdfs_with_scaling(
-            args['infiles'], args['outfile']
-        )
-    else:
-        raise Exception()
+
+@cli.command()
+@click.option('--infiles', multiple=True, required=True, help='List of input PDF files')
+@click.option('--outfile', required=True, help='Path to the output PDF file')
+def merge_pdfs_scaled_cmd(infiles, outfile):
+    merge_pdfs_with_scaling(infiles, outfile)
+
+
+if __name__ == '__main__':
+    cli()

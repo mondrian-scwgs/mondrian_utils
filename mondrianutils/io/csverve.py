@@ -1,4 +1,4 @@
-import argparse
+import click
 import csverve.api as csverve
 from mondrianutils.dtypes import hmmcopy_metrics
 from mondrianutils.dtypes import hmmcopy_params
@@ -24,30 +24,17 @@ def rewrite_csv(infile, outfile, dtypes):
     csverve.rewrite_csv_file(infile, outfile, dtypes=dtypes)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
 
-    subparsers = parser.add_subparsers()
+@click.group()
+def cli():
+    pass
 
-    rewrite_csv = subparsers.add_parser('rewrite_csv')
-    rewrite_csv.set_defaults(which='rewrite_csv')
-    rewrite_csv.add_argument('--infile', required=True)
-    rewrite_csv.add_argument('--dtypes', required=True)
-    rewrite_csv.add_argument('--outfile', required=True)
+@cli.command()
+@click.option('--infile', required=True, help='Path to the input CSV file')
+@click.option('--dtypes', required=True, help='Path to the file containing data types')
+@click.option('--outfile', required=True, help='Path to the output CSV file')
+def rewrite_csv_cmd(infile, dtypes, outfile):
+    rewrite_csv(infile, outfile, dtypes)
 
-    args = vars(parser.parse_args())
-
-    return args
-
-
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'rewrite_csv':
-        rewrite_csv(
-            args['infile'], args['outfile'], args['dtypes']
-        )
-    else:
-        raise Exception()
+if __name__ == '__main__':
+    cli()
