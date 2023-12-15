@@ -246,7 +246,7 @@ def cli():
     pass
 
 
-@click.command()
+@cli.command()
 @click.option('--infile', required=True)
 @click.option('--outdir', required=True)
 @click.option('--tempdir')
@@ -270,7 +270,7 @@ def readcounter_cmd(infile, outdir, tempdir, chromosomes, window_size, mapping_q
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--readcount_wig', required=True)
 @click.option('--gc_wig_file', required=True)
 @click.option('--map_wig_file', required=True)
@@ -297,7 +297,7 @@ def run_hmmcopy_cmd(readcount_wig, gc_wig_file, map_wig_file, metrics, params, r
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--reads')
 @click.option('--metrics')
 @click.option('--chromosomes', default=[str(v) for v in range(1, 23)] + ['X', 'Y'], multiple=True)
@@ -311,14 +311,14 @@ def heatmap_cmd(reads, metrics, chromosomes, output, sidebar_column, disable_clu
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--infile', required=True)
 @click.option('--outfile', required=True)
 def add_mappability_cmd(infile, outfile):
     add_mappability(infile, outfile)
 
 
-@click.command()
+@cli.command()
 @click.option('--hmmcopy_metrics', required=True)
 @click.option('--alignment_metrics', required=True)
 @click.option('--training_data', required=True)
@@ -329,7 +329,7 @@ def add_quality_cmd(hmmcopy_metrics, alignment_metrics, training_data, output, t
                 training_data)
 
 
-@click.command()
+@cli.command()
 @click.option('--segs_pdf', multiple=True)
 @click.option('--metrics')
 @click.option('--pass_output')
@@ -343,7 +343,7 @@ def create_segs_tar_cmd(segs_pdf, metrics, pass_output, fail_output, tempdir):
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--tempdir')
 @click.option('--html')
 @click.option('--metrics')
@@ -354,7 +354,7 @@ def generate_html_report_cmd(tempdir, html, metrics, gc_metrics):
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--reads')
 @click.option('--metrics')
 @click.option('--output')
@@ -363,7 +363,7 @@ def add_clustering_order_cmd(reads, metrics, output, chromosomes):
     add_clustering_order(reads, metrics, output, chromosomes=chromosomes)
 
 
-@click.command()
+@cli.command()
 @click.option('--metrics', nargs=2)
 @click.option('--params', nargs=2)
 @click.option('--reads', nargs=2)
