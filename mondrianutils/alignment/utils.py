@@ -450,7 +450,7 @@ def add_contamination_status_cmd(infile, outfile, reference):
 @click.option('--ncores', type=int, help='number of cores')
 def merge_cells_cmd(infile, cell_id, reference, control_outfile, contaminated_outfile, pass_outfile, metrics, tempdir,
                     ncores):
-    generate_bams(infile, reference, cell_ids, metrics, control_outfile, contaminated_outfile, pass_outfile, tempdir,
+    generate_bams(infile, reference, cell_id, metrics, control_outfile, contaminated_outfile, pass_outfile, tempdir,
                   ncores)
 
 
