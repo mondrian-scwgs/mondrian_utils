@@ -497,10 +497,10 @@ def generate_metadata_cmd(
 
 @cli.command()
 @click.option('--metrics', help='metrics file')
-@click.option('--metadata_yaml', help='metadata YAML file')
+@click.option('--metadata', help='metadata YAML file')
 @click.option('--output', help='output file')
-def add_metadata_cmd(metrics, metadata_yaml, output):
-    add_metadata(metrics, metadata_yaml, output)
+def add_metadata_cmd(metrics, metadata, output):
+    add_metadata(metrics, metadata, output)
 
 
 @cli.command()
