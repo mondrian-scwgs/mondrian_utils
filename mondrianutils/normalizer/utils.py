@@ -1,7 +1,7 @@
 import copy
 import os
 
-import argparse
+import click
 import pysam
 import yaml
 from mondrianutils import __version__
@@ -161,101 +161,80 @@ def separate_tumour_and_normal_metadata(
         yaml.dump(out_data, writer, default_flow_style=False)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+@click.command()
+@click.option('--reads_data', required=True)
+@click.option('--metrics_data', required=True)
+@click.option('--output_yaml', required=True)
+@click.option('--output_csv', required=True)
+@click.option('--blacklist_file')
+@click.option('--min_reads', default=500000)
+@click.option('--min_quality', default=0.85)
+@click.option('--allowed_aneuploidy_score', default=0)
+@click.option('--relative_aneuploidy_threshold', default=0.005)
+@click.option('--ploidy_threshold', default=2.5)
+def identify_normal_cells_cmd(
+        reads_data, metrics_data, output_yaml, output_csv, blacklist_file, min_reads, min_quality,
+        allowed_aneuploidy_score, relative_aneuploidy_threshold, ploidy_threshold
+):
+    identify_normal_cells.identify_normal_cells(
+        reads_data,
+        metrics_data,
+        output_yaml,
+        output_csv,
+        blacklist_file=blacklist_file,
+        min_reads=min_reads,
+        min_quality=min_quality,
+        allowed_aneuploidy_score=allowed_aneuploidy_score,
+        relative_aneuploidy_threshold=relative_aneuploidy_threshold,
+        ploidy_threshold=ploidy_threshold
     )
 
-    subparsers = parser.add_subparsers()
 
-    identify_normal_cells = subparsers.add_parser('identify_normal_cells')
-    identify_normal_cells.set_defaults(which='identify_normal_cells')
-    identify_normal_cells.add_argument('--reads_data', required=True)
-    identify_normal_cells.add_argument('--metrics_data', required=True)
-    identify_normal_cells.add_argument('--output_yaml', required=True)
-    identify_normal_cells.add_argument('--output_csv', required=True)
-    identify_normal_cells.add_argument('--blacklist_file')
-    identify_normal_cells.add_argument('--min_reads', default=500000)
-    identify_normal_cells.add_argument('--min_quality', default=0.85)
-    identify_normal_cells.add_argument('--allowed_aneuploidy_score', default=0)
-    identify_normal_cells.add_argument('--relative_aneuploidy_threshold', default=0.005)
-    identify_normal_cells.add_argument('--ploidy_threshold', default=2.5)
-
-    separate_normal_and_tumour_cells = subparsers.add_parser('separate_normal_and_tumour_cells')
-    separate_normal_and_tumour_cells.set_defaults(which='separate_normal_and_tumour_cells')
-    separate_normal_and_tumour_cells.add_argument('--infile', required=True)
-    separate_normal_and_tumour_cells.add_argument('--normal_output', required=True)
-    separate_normal_and_tumour_cells.add_argument('--tumour_output', required=True)
-    separate_normal_and_tumour_cells.add_argument('--normal_cells_yaml', required=True)
-
-    aneuploidy_heatmap = subparsers.add_parser('aneuploidy_heatmap')
-    aneuploidy_heatmap.set_defaults(which='aneuploidy_heatmap')
-    aneuploidy_heatmap.add_argument('--metrics', required=True)
-    aneuploidy_heatmap.add_argument('--reads', required=True)
-    aneuploidy_heatmap.add_argument('--output', required=True)
-    aneuploidy_heatmap.add_argument('--aneuploidy_score', default=0.005)
-
-    separate_tumour_and_normal_metadata = subparsers.add_parser('separate_tumour_and_normal_metadata')
-    separate_tumour_and_normal_metadata.set_defaults(which='separate_tumour_and_normal_metadata')
-    separate_tumour_and_normal_metadata.add_argument(
-        '--normal_bam', nargs=2
-    )
-    separate_tumour_and_normal_metadata.add_argument(
-        '--tumour_bam', nargs=2
-    )
-    separate_tumour_and_normal_metadata.add_argument(
-        '--heatmap', nargs='*'
-    )
-    separate_tumour_and_normal_metadata.add_argument(
-        '--normal_cells_yaml'
-    )
-    separate_tumour_and_normal_metadata.add_argument(
-        '--metadata_input'
-    )
-    separate_tumour_and_normal_metadata.add_argument(
-        '--metadata_output'
+@click.command()
+@click.option('--infile', required=True)
+@click.option('--normal_output', required=True)
+@click.option('--tumour_output', required=True)
+@click.option('--normal_cells_yaml', required=True)
+def separate_normal_and_tumour_cells_cmd(
+        infile, normal_output, tumour_output, normal_cells_yaml
+):
+    separate_normal_and_tumour_cells(
+        infile,
+        normal_output,
+        tumour_output,
+        normal_cells_yaml,
     )
 
-    args = vars(parser.parse_args())
 
-    return args
+@click.command()
+@click.option('--metrics', required=True)
+@click.option('--reads', required=True)
+@click.option('--output', required=True)
+@click.option('--aneuploidy_score', default=0.005)
+def aneuploidy_heatmap_cmd(
+        metrics, reads, output, aneuploidy_score
+):
+    heatmap.aneuploidy_heatmap(
+        reads,
+        metrics,
+        output,
+        aneuploidy_score=aneuploidy_score
+    )
 
 
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'identify_normal_cells':
-        identify_normal_cells.identify_normal_cells(
-            args['reads_data'],
-            args['metrics_data'],
-            args['output_yaml'],
-            args['output_csv'],
-            blacklist_file=args['blacklist_file'],
-            min_reads=args['min_reads'],
-            min_quality=args['min_quality'],
-            allowed_aneuploidy_score=args['allowed_aneuploidy_score'],
-            relative_aneuploidy_threshold=args['relative_aneuploidy_threshold'],
-            ploidy_threshold=args['ploidy_threshold']
-        )
-    elif args['which'] == 'separate_normal_and_tumour_cells':
-        separate_normal_and_tumour_cells(
-            args['infile'],
-            args['normal_output'],
-            args['tumour_output'],
-            args['normal_cells_yaml'],
-        )
-    elif args['which'] == 'aneuploidy_heatmap':
-        heatmap.aneuploidy_heatmap(
-            args['reads'],
-            args['metrics'],
-            args['output'],
-            aneuploidy_score=args['aneuploidy_score']
-        )
-    elif args['which'] == 'separate_tumour_and_normal_metadata':
-        separate_tumour_and_normal_metadata(
-            args['normal_bam'], args['tumour_bam'], args['heatmap'],
-            args['normal_cells_yaml'], args['metadata_input'],
-            args['metadata_output']
-        )
-    else:
-        raise Exception()
+@click.command()
+@click.option('--normal_bam', nargs=2)
+@click.option('--tumour_bam', nargs=2)
+@click.option('--heatmap', multiple=True)
+@click.option('--normal_cells_yaml')
+@click.option('--metadata_input')
+@click.option('--metadata_output')
+def separate_tumour_and_normal_metadata_cmd(
+        normal_bam, tumour_bam, heatmap, normal_cells_yaml, metadata_input,
+        metadata_output
+):
+    separate_tumour_and_normal_metadata(
+        normal_bam, tumour_bam, heatmap,
+        normal_cells_yaml, metadata_input,
+        metadata_output
+    )

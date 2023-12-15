@@ -1,7 +1,7 @@
 import os
 import shutil
 
-import argparse
+import click
 import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import mondrianutils.hmmcopy.classify as classify
@@ -241,273 +241,146 @@ def generate_metadata(
         yaml.dump(out_data, writer, default_flow_style=False)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+@click.group()
+def cli():
+    pass
 
-    subparsers = parser.add_subparsers()
 
-    readcounter = subparsers.add_parser('readcounter')
-    readcounter.set_defaults(which='readcounter')
-    readcounter.add_argument(
-        '--infile',
-        required=True
-    )
-    readcounter.add_argument(
-        '--outdir',
-        required=True
-    )
-    readcounter.add_argument(
-        '--tempdir',
-    )
-    readcounter.add_argument(
-        '--chromosomes',
-        nargs='*',
-        default=[str(v) for v in range(1, 23)] + ['X', 'Y'],
-        help='specify target chromosomes'
-    )
-    readcounter.add_argument(
-        '-w', '--window_size',
-        type=int,
-        default=500000,
-        help='specify bin size'
-    )
-    readcounter.add_argument(
-        '-m', '--mapping_quality_threshold',
-        type=int,
-        default=20,
-        help='threshold for the mapping quality, reads ' \
-             'with quality lower than threshold will be ignored'
-    )
-    readcounter.add_argument(
-        '--exclude_list',
-        default=None,
-        help='regions to skip'
-    )
-    readcounter.add_argument(
-        '--ncores',
-        default=12,
-        type=int,
-        help='regions to skip'
+@click.command()
+@click.option('--infile', required=True)
+@click.option('--outdir', required=True)
+@click.option('--tempdir')
+@click.option('--chromosomes', multiple=True, default=[str(v) for v in range(1, 23)] + ['X', 'Y'],
+              help='specify target chromosomes')
+@click.option('-w', '--window_size', type=int, default=500000, help='specify bin size')
+@click.option('-m', '--mapping_quality_threshold', type=int, default=20,
+              help='threshold for the mapping quality, reads with quality lower than threshold will be ignored')
+@click.option('--exclude_list', default=None, help='regions to skip')
+@click.option('--ncores', default=12, type=int, help='number of cores to use')
+def readcounter_cmd(infile, outdir, tempdir, chromosomes, window_size, mapping_quality_threshold, exclude_list, ncores):
+    readcounter(
+        infile,
+        outdir,
+        tempdir,
+        chromosomes,
+        exclude_list=exclude_list,
+        ncores=ncores,
+        mapping_quality_threshold=mapping_quality_threshold,
+        window_size=window_size
     )
 
 
-    run_hmmcopy = subparsers.add_parser('hmmcopy')
-    run_hmmcopy.set_defaults(which='hmmcopy')
-    run_hmmcopy.add_argument('--readcount_wig', required=True)
-    run_hmmcopy.add_argument('--gc_wig_file', required=True)
-    run_hmmcopy.add_argument('--map_wig_file', required=True)
-    run_hmmcopy.add_argument('--metrics', required=True)
-    run_hmmcopy.add_argument('--params', required=True)
-    run_hmmcopy.add_argument('--reads', required=True)
-    run_hmmcopy.add_argument('--segments', required=True)
-    run_hmmcopy.add_argument('--output_tarball', required=True)
-    run_hmmcopy.add_argument('--reference', required=True)
-    run_hmmcopy.add_argument('--segments_output', required=True)
-    run_hmmcopy.add_argument('--bias_output', required=True)
-    run_hmmcopy.add_argument('--cell_id', required=True)
-    run_hmmcopy.add_argument('--tempdir', required=True)
-    run_hmmcopy.add_argument(
-        '--map_cutoff',
-        default=0.9,
-        type=float,
+@click.command()
+@click.option('--readcount_wig', required=True)
+@click.option('--gc_wig_file', required=True)
+@click.option('--map_wig_file', required=True)
+@click.option('--metrics', required=True)
+@click.option('--params', required=True)
+@click.option('--reads', required=True)
+@click.option('--segments', required=True)
+@click.option('--output_tarball', required=True)
+@click.option('--reference', required=True)
+@click.option('--segments_output', required=True)
+@click.option('--bias_output', required=True)
+@click.option('--cell_id', required=True)
+@click.option('--tempdir', required=True)
+@click.option('--map_cutoff', default=0.9, type=float)
+def run_hmmcopy_cmd(readcount_wig, gc_wig_file, map_wig_file, metrics, params, reads, segments, output_tarball,
+                    reference, segments_output, bias_output, cell_id, tempdir, map_cutoff):
+    complete_hmmcopy(
+        readcount_wig, gc_wig_file, map_wig_file,
+        metrics, params,
+        reads, segments, output_tarball,
+        reference, segments_output, bias_output,
+        cell_id, tempdir,
+        mappability_cutoff=map_cutoff
     )
 
-    add_mappability = subparsers.add_parser('add_mappability')
-    add_mappability.set_defaults(which='add_mappability')
-    add_mappability.add_argument(
-        '--infile'
-    )
-    add_mappability.add_argument(
-        '--outfile'
+
+@click.command()
+@click.option('--reads')
+@click.option('--metrics')
+@click.option('--chromosomes', default=[str(v) for v in range(1, 23)] + ['X', 'Y'], multiple=True)
+@click.option('--output')
+@click.option('--sidebar_column', default='pick_met')
+@click.option('--disable_clustering', default=False, is_flag=True, help='Disable clustering')
+def heatmap_cmd(reads, metrics, chromosomes, output, sidebar_column, disable_clustering):
+    plot_heatmap(
+        reads, metrics, chromosomes, output,
+        sidebar_column=sidebar_column, disable_clustering=disable_clustering
     )
 
-    heatmap = subparsers.add_parser('heatmap')
-    heatmap.set_defaults(which='heatmap')
-    heatmap.add_argument(
-        '--reads'
-    )
-    heatmap.add_argument(
-        '--metrics'
-    )
-    heatmap.add_argument(
-        '--chromosomes',
-        default=[str(v) for v in range(1, 23)] + ['X', 'Y'],
-        nargs='*'
-    )
-    heatmap.add_argument(
-        '--output'
-    )
-    heatmap.add_argument(
-        '--sidebar_column',
-        default='pick_met'
-    )
-    heatmap.add_argument(
-        '--disable_clustering',
-        default=False,
-        action='store_true'
-    )
 
-    add_quality = subparsers.add_parser('add_quality')
-    add_quality.set_defaults(which='add_quality')
-    add_quality.add_argument(
-        '--hmmcopy_metrics'
-    )
-    add_quality.add_argument(
-        '--alignment_metrics'
-    )
-    add_quality.add_argument(
-        '--training_data'
-    )
-    add_quality.add_argument(
-        '--output'
-    )
-    add_quality.add_argument(
-        '--tempdir'
-    )
-
-    create_segs_tar = subparsers.add_parser('create_segs_tar')
-    create_segs_tar.set_defaults(which='create_segs_tar')
-    create_segs_tar.add_argument(
-        '--segs_pdf',
-        nargs='*'
-    )
-    create_segs_tar.add_argument(
-        '--metrics'
-    )
-    create_segs_tar.add_argument(
-        '--pass_output'
-    )
-    create_segs_tar.add_argument(
-        '--fail_output'
-    )
-    create_segs_tar.add_argument(
-        '--tempdir'
-    )
-
-    generate_html_report = subparsers.add_parser('generate_html_report')
-    generate_html_report.set_defaults(which='generate_html_report')
-    generate_html_report.add_argument(
-        '--tempdir',
-    )
-    generate_html_report.add_argument(
-        '--html'
-    )
-    generate_html_report.add_argument(
-        '--metrics'
-    )
-    generate_html_report.add_argument(
-        '--gc_metrics'
-    )
-
-    add_clustering_order = subparsers.add_parser('add_clustering_order')
-    add_clustering_order.set_defaults(which='add_clustering_order')
-    add_clustering_order.add_argument(
-        '--reads',
-    )
-    add_clustering_order.add_argument(
-        '--metrics'
-    )
-    add_clustering_order.add_argument(
-        '--output'
-    )
-    add_clustering_order.add_argument(
-        '--chromosomes',
-        default=[str(v) for v in range(1, 23)] + ['X', 'Y'],
-        nargs='*'
-    )
-
-    generate_metadata = subparsers.add_parser('generate_metadata')
-    generate_metadata.set_defaults(which='generate_metadata')
-    generate_metadata.add_argument(
-        '--metrics', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--params', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--reads', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--segments', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--segments_tar_pass'
-    )
-    generate_metadata.add_argument(
-        '--segments_tar_fail'
-    )
-    generate_metadata.add_argument(
-        '--heatmap'
-    )
-    generate_metadata.add_argument(
-        '--metadata_input'
-    )
-    generate_metadata.add_argument(
-        '--metadata_output'
-    )
-
-    args = vars(parser.parse_args())
-
-    return args
+@click.command()
+@click.option('--infile', required=True)
+@click.option('--outfile', required=True)
+def add_mappability_cmd(infile, outfile):
+    add_mappability(infile, outfile)
 
 
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'readcounter':
-        readcounter(
-            args['infile'],
-            args['outdir'],
-            args['tempdir'],
-            args['chromosomes'],
-            exclude_list=args['exclude_list'],
-            ncores=args['ncores'],
-            mapping_quality_threshold=args['mapping_quality_threshold'],
-            window_size=args['window_size']
-        )
-
-    elif args['which'] == 'hmmcopy':
-        complete_hmmcopy(
-            args['readcount_wig'], args["gc_wig_file"], args['map_wig_file'],
-            args['metrics'], args['params'],
-            args['reads'], args['segments'], args['output_tarball'],
-            args['reference'], args['segments_output'], args['bias_output'],
-            args['cell_id'], args['tempdir'],
-            mappability_cutoff=args['map_cutoff']
-        )
-    elif args['which'] == 'add_mappability':
-        add_mappability(args['infile'], args['outfile'])
-    elif args['which'] == 'add_quality':
-        add_quality(args['hmmcopy_metrics'], args['alignment_metrics'], args['tempdir'], args['output'],
-                    args['training_data'])
-    elif args['which'] == 'create_segs_tar':
-        create_segs_tar(
-            args['segs_pdf'], args['metrics'],
-            args['pass_output'], args['fail_output'],
-            args['tempdir']
-        )
-    elif args['which'] == 'heatmap':
-        plot_heatmap(
-            args['reads'], args['metrics'], args['chromosomes'], args['output'],
-            sidebar_column=args['sidebar_column'], disable_clustering=args['disable_clustering']
-        )
-    elif args['which'] == 'generate_html_report':
-        generate_html_report(
-            args['tempdir'], args['html'], args['metrics'], args['gc_metrics']
-        )
-    elif args['which'] == 'add_clustering_order':
-        add_clustering_order(args['reads'], args['metrics'], args['output'], chromosomes=args['chromosomes'])
-
-    elif args['which'] == 'generate_metadata':
-        generate_metadata(
-            args['metrics'], args['params'], args['reads'], args['segments'],
-            args['segments_tar_pass'], args['segments_tar_fail'],
-            args['heatmap'], args['metadata_input'], args['metadata_output']
-        )
-    else:
-        raise Exception()
+@click.command()
+@click.option('--hmmcopy_metrics', required=True)
+@click.option('--alignment_metrics', required=True)
+@click.option('--training_data', required=True)
+@click.option('--output', required=True)
+@click.option('--tempdir', required=True)
+def add_quality_cmd(hmmcopy_metrics, alignment_metrics, training_data, output, tempdir):
+    add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output,
+                training_data)
 
 
-utils()
+@click.command()
+@click.option('--segs_pdf', multiple=True)
+@click.option('--metrics')
+@click.option('--pass_output')
+@click.option('--fail_output')
+@click.option('--tempdir')
+def create_segs_tar_cmd(segs_pdf, metrics, pass_output, fail_output, tempdir):
+    create_segs_tar(
+        segs_pdf, metrics,
+        pass_output, fail_output,
+        tempdir
+    )
+
+
+@click.command()
+@click.option('--tempdir')
+@click.option('--html')
+@click.option('--metrics')
+@click.option('--gc_metrics')
+def generate_html_report_cmd(tempdir, html, metrics, gc_metrics):
+    generate_html_report(
+        tempdir, html, metrics, gc_metrics
+    )
+
+
+@click.command()
+@click.option('--reads')
+@click.option('--metrics')
+@click.option('--output')
+@click.option('--chromosomes', default=[str(v) for v in range(1, 23)] + ['X', 'Y'], multiple=True)
+def add_clustering_order_cmd(reads, metrics, output, chromosomes):
+    add_clustering_order(reads, metrics, output, chromosomes=chromosomes)
+
+
+@click.command()
+@click.option('--metrics', nargs=2)
+@click.option('--params', nargs=2)
+@click.option('--reads', nargs=2)
+@click.option('--segments', nargs=2)
+@click.option('--segments_tar_pass')
+@click.option('--segments_tar_fail')
+@click.option('--heatmap')
+@click.option('--metadata_input')
+@click.option('--metadata_output')
+def generate_metadata_cmd(metrics, params, reads, segments, segments_tar_pass, segments_tar_fail, heatmap,
+                          metadata_input, metadata_output):
+    generate_metadata(
+        metrics, params, reads, segments,
+        segments_tar_pass, segments_tar_fail,
+        heatmap, metadata_input, metadata_output
+    )
+
+
+if __name__ == '__main__':
+    cli()

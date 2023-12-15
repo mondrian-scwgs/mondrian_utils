@@ -3,7 +3,7 @@ import os
 import subprocess
 from collections import defaultdict
 
-import argparse
+import click
 import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pysam
@@ -154,7 +154,7 @@ def samtools_index(infile):
 
 
 def igvtools_count(infile, reference):
-    cmd = ['igvtools', 'count', infile, infile+'.tdf', reference]
+    cmd = ['igvtools', 'count', infile, infile + '.tdf', reference]
     helpers.run_cmd(cmd)
 
 
@@ -175,7 +175,6 @@ def merge_cells(infiles, tempdir, ncores, outfile, reference, empty_bam_content)
 
 
 def get_bam_header(bam):
-
     infile = pysam.AlignmentFile(bam, "rb")
 
     header = infile.header
@@ -371,458 +370,197 @@ def _json_file_parser(filepath):
     return json.load(open(filepath, 'rt'))
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    subparsers = parser.add_subparsers()
-
-    fastqscreen = subparsers.add_parser('fastqscreen')
-    fastqscreen.set_defaults(which='fastqscreen')
-    fastqscreen.add_argument(
-        "--r1",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--r2",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--output_r1",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--output_r2",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--detailed_metrics",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--summary_metrics",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--tempdir",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--cell_id",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--human_reference",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--mouse_reference",
-        help='specify reference fasta'
-    )
-    fastqscreen.add_argument(
-        "--salmon_reference",
-        help='specify reference fasta'
-    )
-
-    merge_fastqscreen_counts = subparsers.add_parser('merge_fastqscreen_counts')
-    merge_fastqscreen_counts.set_defaults(which='merge_fastqscreen_counts')
-    merge_fastqscreen_counts.add_argument(
-        '--detailed_counts',
-        nargs='*'
-    )
-    merge_fastqscreen_counts.add_argument(
-        '--summary_counts',
-        nargs='*'
-    )
-    merge_fastqscreen_counts.add_argument(
-        '--merged_detailed'
-    )
-    merge_fastqscreen_counts.add_argument(
-        '--merged_summary',
-    )
-
-    collect_metrics = subparsers.add_parser('collect_metrics')
-    collect_metrics.set_defaults(which='collect_metrics')
-    collect_metrics.add_argument(
-        '--wgs_metrics',
-    )
-    collect_metrics.add_argument(
-        '--insert_metrics',
-    )
-    collect_metrics.add_argument(
-        '--flagstat',
-    )
-    collect_metrics.add_argument(
-        '--markdups_metrics',
-    )
-    collect_metrics.add_argument(
-        '--coverage_metrics',
-    )
-    collect_metrics.add_argument(
-        '--output',
-    )
-    collect_metrics.add_argument(
-        '--cell_id',
-    )
-
-    collect_gc_metrics = subparsers.add_parser('collect_gc_metrics')
-    collect_gc_metrics.set_defaults(which='collect_gc_metrics')
-    collect_gc_metrics.add_argument(
-        '--infile',
-    )
-    collect_gc_metrics.add_argument(
-        '--outfile',
-    )
-    collect_gc_metrics.add_argument(
-        '--cell_id',
-    )
-
-    tag_bam = subparsers.add_parser('tag_bam_with_cellid')
-    tag_bam.set_defaults(which='tag_bam_with_cellid')
-    tag_bam.add_argument(
-        '--infile',
-    )
-    tag_bam.add_argument(
-        '--outfile',
-    )
-    tag_bam.add_argument(
-        '--cell_id',
-    )
-
-    contamination_status = subparsers.add_parser('add_contamination_status')
-    contamination_status.set_defaults(which='add_contamination_status')
-    contamination_status.add_argument(
-        '--infile',
-    )
-    contamination_status.add_argument(
-        '--outfile',
-    )
-    contamination_status.add_argument(
-        '--reference'
-    )
-
-    merge_cells = subparsers.add_parser('merge_cells')
-    merge_cells.set_defaults(which='merge_cells')
-    merge_cells.add_argument(
-        '--infiles', nargs='*'
-    )
-    merge_cells.add_argument(
-        '--cell_ids', nargs='*'
-    )
-    merge_cells.add_argument(
-        '--reference',
-    )
-    merge_cells.add_argument(
-        '--control_outfile',
-    )
-    merge_cells.add_argument(
-        '--contaminated_outfile',
-    )
-    merge_cells.add_argument(
-        '--pass_outfile',
-    )
-    merge_cells.add_argument(
-        '--metrics',
-    )
-    merge_cells.add_argument(
-        '--tempdir',
-    )
-    merge_cells.add_argument(
-        '--ncores',
-        type=int
-    )
-
-    classifier = subparsers.add_parser('classify_fastqscreen')
-    classifier.set_defaults(which='classify_fastqscreen')
-    classifier.add_argument(
-        '--training_data'
-    )
-    classifier.add_argument(
-        '--metrics'
-    )
-    classifier.add_argument(
-        '--output',
-    )
-
-    coverage_metrics = subparsers.add_parser('coverage_metrics')
-    coverage_metrics.set_defaults(which='coverage_metrics')
-    coverage_metrics.add_argument(
-        '--metrics'
-    )
-    coverage_metrics.add_argument(
-        '--bamfile'
-    )
-    coverage_metrics.add_argument(
-        '--output',
-    )
-
-    get_sample_id = subparsers.add_parser('get_sample_id')
-    get_sample_id.set_defaults(which='get_sample_id')
-    get_sample_id.add_argument(
-        '--metadata_yaml'
-    )
-    get_sample_id.add_argument(
-        '--cell_id'
-    )
-
-    get_library_id = subparsers.add_parser('get_library_id')
-    get_library_id.set_defaults(which='get_library_id')
-    get_library_id.add_argument(
-        '--metadata_yaml'
-    )
-    get_library_id.add_argument(
-        '--cell_id'
-    )
-
-    generate_metadata = subparsers.add_parser('generate_metadata')
-    generate_metadata.set_defaults(which='generate_metadata')
-    generate_metadata.add_argument(
-        '--metrics', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--gc_metrics', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--bam', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--control', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--contaminated', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--fastqscreen_detailed', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--tarfile'
-    )
-    generate_metadata.add_argument(
-        '--metadata_input'
-    )
-    generate_metadata.add_argument(
-        '--metadata_output'
-    )
-
-    add_metadata = subparsers.add_parser('add_metadata')
-    add_metadata.set_defaults(which='add_metadata')
-    add_metadata.add_argument(
-        '--metrics'
-    )
-    add_metadata.add_argument(
-        '--metadata_yaml'
-    )
-    add_metadata.add_argument(
-        '--output',
-    )
-
-    trim_galore = subparsers.add_parser('trim_galore')
-    trim_galore.set_defaults(which='trim_galore')
-    trim_galore.add_argument(
-        '--r1'
-    )
-    trim_galore.add_argument(
-        '--r2'
-    )
-    trim_galore.add_argument(
-        '--output_r1',
-    )
-    trim_galore.add_argument(
-        '--output_r2',
-    )
-    trim_galore.add_argument(
-        '--adapter1',
-    )
-    trim_galore.add_argument(
-        '--adapter2',
-    )
-    trim_galore.add_argument(
-        '--tempdir',
-    )
-
-    bwa_align = subparsers.add_parser('bwa_align')
-    bwa_align.set_defaults(which='bwa_align')
-    bwa_align.add_argument(
-        '--metadata_yaml'
-    )
-    bwa_align.add_argument(
-        '--reference'
-    )
-    bwa_align.add_argument(
-        '--output',
-    )
-    bwa_align.add_argument(
-        '--fastq1',
-    )
-    bwa_align.add_argument(
-        '--fastq2',
-    )
-    bwa_align.add_argument(
-        '--lane_id',
-    )
-    bwa_align.add_argument(
-        '--flowcell_id',
-    )
-    bwa_align.add_argument(
-        '--cell_id',
-    )
-
-    alignment = subparsers.add_parser('alignment')
-    alignment.set_defaults(which='alignment')
-    alignment.add_argument(
-        '--fastq_files'
-    )
-    alignment.add_argument(
-        '--num_threads',
-        default=1
-    )
-    alignment.add_argument(
-        '--metadata_yaml'
-    )
-    alignment.add_argument(
-        '--reference'
-    )
-    alignment.add_argument(
-        '--reference_name'
-    )
-    alignment.add_argument(
-        '--reference_version'
-    )
-    alignment.add_argument(
-        '--supplementary_references_json'
-    )
-    alignment.add_argument(
-        '--tempdir',
-    )
-    alignment.add_argument(
-        '--adapter1',
-    )
-    alignment.add_argument(
-        '--adapter2',
-    )
-    alignment.add_argument(
-        '--cell_id',
-    )
-    alignment.add_argument(
-        '--wgs_metrics_mqual',
-    )
-    alignment.add_argument(
-        '--wgs_metrics_bqual',
-    )
-    alignment.add_argument(
-        '--wgs_metrics_count_unpaired',
-    )
-    alignment.add_argument(
-        '--bam_output',
-    )
-    alignment.add_argument(
-        '--metrics_output',
-    )
-    alignment.add_argument(
-        '--metrics_gc_output',
-    )
-    alignment.add_argument(
-        '--fastqscreen_detailed_output',
-    )
-    alignment.add_argument(
-        '--fastqscreen_summary_output',
-    )
-    alignment.add_argument(
-        '--tar_output',
-    )
-    alignment.add_argument(
-        '--run_fastqc',
-        default=False,
-        action='store_true'
-    )
-
-    input_validation = subparsers.add_parser('input_validation')
-    input_validation.set_defaults(which='input_validation')
-    input_validation.add_argument(
-        '--meta_yaml', required=True
-    )
-    input_validation.add_argument(
-        '--input_data_json', required=True
-    )
-    args = vars(parser.parse_args())
-
-    return args
+@click.group()
+def cli():
+    pass
 
 
-def utils():
-    args = parse_args()
+@cli.command()
+@click.option('--r1', help='specify R1 fastq')
+@click.option('--r2', help='specify R2 fastq')
+@click.option('--output_r1', help='specify output R1 fastq')
+@click.option('--output_r2', help='specify output R2 fastq')
+@click.option('--detailed_metrics', help='specify detailed metrics file')
+@click.option('--summary_metrics', help='specify summary metrics file')
+@click.option('--tempdir', help='specify temporary directory')
+@click.option('--cell_id', help='specify cell ID')
+@click.option('--human_reference', help='specify human reference fasta')
+@click.option('--mouse_reference', help='specify mouse reference fasta')
+@click.option('--salmon_reference', help='specify salmon reference fasta')
+def fastqscreen_cmd(r1, r2, output_r1, output_r2, detailed_metrics, summary_metrics, tempdir, cell_id, human_reference,
+                    mouse_reference, salmon_reference):
+    organism_filter(r1, r2, output_r1, output_r2, detailed_metrics, summary_metrics, tempdir, cell_id, human_reference,
+                    mouse_reference, salmon_reference)
 
-    if args['which'] == 'fastqscreen':
-        organism_filter(
-            args['r1'], args['r2'], args['output_r1'], args['output_r2'],
-            args['detailed_metrics'], args['summary_metrics'], args['tempdir'],
-            args['cell_id'], args['human_reference'],
-            args['mouse_reference'], args['salmon_reference'])
-    elif args['which'] == 'merge_fastqscreen_counts':
-        merge_fastq_screen_counts(
-            args['detailed_counts'], args['summary_counts'],
-            args['merged_detailed'], args['merged_summary']
-        )
-    elif args['which'] == 'collect_metrics':
-        collect_metrics(
-            args['wgs_metrics'], args['insert_metrics'],
-            args['flagstat'], args['markdups_metrics'],
-            args['coverage_metrics'], args['output'],
-            args['cell_id']
-        )
-    elif args['which'] == 'collect_gc_metrics':
-        collect_gc_metrics(
-            args['infile'], args['outfile'], args['cell_id']
-        )
 
-    elif args['which'] == 'tag_bam_with_cellid':
-        tag_bam_with_cellid(
-            args['infile'], args['outfile'],
-            args['cell_id']
-        )
-    elif args['which'] == 'add_contamination_status':
-        add_contamination_status(
-            args['infile'], args['outfile'],
-            args['reference']
-        )
-    elif args['which'] == 'merge_cells':
-        generate_bams(
-            args['infiles'], args['reference'], args['cell_ids'], args['metrics'],
-            args['control_outfile'], args['contaminated_outfile'],
-            args['pass_outfile'], args['tempdir'], args['ncores']
-        )
-    # elif args['which'] == 'classify_fastqscreen':
-    #     classify_fastqscreen(
-    #         args['training_data'], args['metrics'], args['output']
-    #     )
-    elif args['which'] == 'coverage_metrics':
-        get_coverage_metrics(args['bamfile'], args['output'])
-    elif args['which'] == 'add_metadata':
-        add_metadata(
-            args['metrics'], args['metadata_yaml'], args['output']
-        )
-    elif args['which'] == 'generate_metadata':
-        generate_metadata(
-            args['bam'], args['control'], args['contaminated'], args['metrics'], args['gc_metrics'],
-            args['fastqscreen_detailed'], args['tarfile'], args['metadata_input'], args['metadata_output']
-        )
-    elif args['which'] == 'trim_galore':
-        trim_galore(
-            args['r1'], args['r2'], args['output_r1'], args['output_r2'],
-            args['adapter1'], args['adapter2'], args['tempdir']
-        )
-    elif args['which'] == 'alignment':
-        alignment(
-            args['fastq_files'], args['metadata_yaml'], args['reference'],
-            args['reference_name'], args['reference_version'], args['supplementary_references_json'], args['tempdir'],
-            args['adapter1'], args['adapter2'], args['cell_id'], args['wgs_metrics_mqual'],
-            args['wgs_metrics_bqual'], args['wgs_metrics_count_unpaired'],
-            args['bam_output'], args['metrics_output'], args['metrics_gc_output'],
-            args['fastqscreen_detailed_output'], args['fastqscreen_summary_output'],
-            args['tar_output'], args['num_threads'], run_fastqc=args['run_fastqc']
-        )
-    elif args['which'] == 'input_validation':
-        input_validation(args['meta_yaml'], args['input_data_json'])
-    else:
-        raise Exception()
+@cli.command()
+@click.option('--detailed_counts', multiple=True, help='detailed counts files')
+@click.option('--summary_counts', multiple=True, help='summary counts files')
+@click.option('--merged_detailed', help='merged detailed counts file')
+@click.option('--merged_summary', help='merged summary counts file')
+def merge_fastqscreen_counts_cmd(detailed_counts, summary_counts, merged_detailed, merged_summary):
+    merge_fastq_screen_counts(detailed_counts, summary_counts, merged_detailed, merged_summary)
+
+
+@cli.command()
+@click.option('--wgs_metrics', help='path to WGS metrics file')
+@click.option('--insert_metrics', help='path to insert metrics file')
+@click.option('--flagstat', help='path to flagstat file')
+@click.option('--markdups_metrics', help='path to markdups metrics file')
+@click.option('--coverage_metrics', help='path to coverage metrics file')
+@click.option('--output', help='output file')
+@click.option('--cell_id', help='cell ID')
+def collect_metrics_cmd(wgs_metrics, insert_metrics, flagstat, markdups_metrics, coverage_metrics, output, cell_id):
+    collect_metrics(wgs_metrics, insert_metrics, flagstat, markdups_metrics, coverage_metrics, output, cell_id)
+
+
+@cli.command()
+@click.option('--infile', help='input file')
+@click.option('--outfile', help='output file')
+@click.option('--cell_id', help='cell ID')
+def collect_gc_metrics_cmd(infile, outfile, cell_id):
+    collect_gc_metrics(infile, outfile, cell_id)
+
+
+@cli.command()
+@click.option('--infile', help='input file')
+@click.option('--outfile', help='output file')
+@click.option('--cell_id', help='cell ID')
+def tag_bam_with_cellid_cmd(infile, outfile, cell_id):
+    tag_bam_with_cellid(infile, outfile, cell_id)
+
+
+@cli.command()
+@click.option('--infile', help='input file')
+@click.option('--outfile', help='output file')
+@click.option('--reference', help='reference file')
+def add_contamination_status_cmd(infile, outfile, reference):
+    add_contamination_status(infile, outfile, reference)
+
+
+@cli.command()
+@click.option('--infiles', multiple=True, help='input files')
+@click.option('--cell_ids', multiple=True, help='cell IDs')
+@click.option('--reference', help='reference file')
+@click.option('--control_outfile', help='output file for control cells')
+@click.option('--contaminated_outfile', help='output file for contaminated cells')
+@click.option('--pass_outfile', help='output file for cells that pass')
+@click.option('--metrics', help='metrics file')
+@click.option('--tempdir', help='temporary directory')
+@click.option('--ncores', type=int, help='number of cores')
+def merge_cells_cmd(infiles, cell_ids, reference, control_outfile, contaminated_outfile, pass_outfile, metrics, tempdir,
+                    ncores):
+    generate_bams(infiles, reference, cell_ids, metrics, control_outfile, contaminated_outfile, pass_outfile, tempdir,
+                  ncores)
+
+
+# @cli.command()
+# @click.option('--training_data', help='training data file')
+# @click.option('--metrics', help='metrics file')
+# @click.option('--output', help='output file')
+# def classify_fastqscreen_cmd(training_data, metrics, output):
+#     classify_fastqscreen(training_data, metrics, output)
+
+
+@cli.command()
+@click.option('--bamfile', help='BAM file')
+@click.option('--output', help='output file')
+def coverage_metrics_cmd(bamfile, output):
+    get_coverage_metrics(bamfile, output)
+
+
+@cli.command()
+@click.option('--metrics', nargs=2, help='metrics files')
+@click.option('--gc_metrics', nargs=2, help='GC metrics files')
+@click.option('--bam', nargs=2, help='BAM files')
+@click.option('--control', nargs=2, help='control files')
+@click.option('--contaminated', nargs=2, help='contaminated files')
+@click.option('--fastqscreen_detailed', nargs=2, help='fastqscreen detailed files')
+@click.option('--tarfile', help='tarfile')
+@click.option('--metadata_input', help='metadata input file')
+@click.option('--metadata_output', help='metadata output file')
+def generate_metadata_cmd(
+        metrics,
+        gc_metrics,
+        bam,
+        control,
+        contaminated,
+        fastqscreen_detailed,
+        tarfile,
+        metadata_input,
+        metadata_output,
+):
+    generate_metadata(
+        bam, control, contaminated, metrics, gc_metrics, fastqscreen_detailed, tarfile, metadata_input, metadata_output
+    )
+
+
+@cli.command()
+@click.option('--metrics', help='metrics file')
+@click.option('--metadata_yaml', help='metadata YAML file')
+@click.option('--output', help='output file')
+def add_metadata_cmd(metrics, metadata_yaml, output):
+    add_metadata(metrics, metadata_yaml, output)
+
+
+@cli.command()
+@click.option('--r1', help='Input read 1 file')
+@click.option('--r2', help='Input read 2 file')
+@click.option('--output_r1', help='Output trimmed read 1 file')
+@click.option('--output_r2', help='Output trimmed read 2 file')
+@click.option('--adapter1', help='Adapter sequence for read 1')
+@click.option('--adapter2', help='Adapter sequence for read 2')
+@click.option('--tempdir', help='Temporary directory')
+def trim_galore_cmd(r1, r2, output_r1, output_r2, adapter1, adapter2, tempdir):
+    trim_galore(r1, r2, output_r1, output_r2, adapter1, adapter2, tempdir)
+
+
+@cli.command()
+@click.option('--meta_yaml', required=True, help='Path to the metadata YAML file')
+@click.option('--input_data_json', required=True, help='Path to the input data JSON file')
+def input_validation_cmd(meta_yaml, input_data_json):
+    input_validation(meta_yaml, input_data_json)
+
+
+@cli.command()
+@click.option('--fastq_files', help='Comma-separated list of FASTQ files')
+@click.option('--metadata_yaml', help='Path to the metadata YAML file')
+@click.option('--reference', help='Path to the reference file')
+@click.option('--reference_name', help='Reference name')
+@click.option('--reference_version', help='Reference version')
+@click.option('--supplementary_references_json', help='Path to supplementary references JSON file')
+@click.option('--tempdir', help='Path to the temporary directory')
+@click.option('--adapter1', help='Adapter sequence for read 1 trimming')
+@click.option('--adapter2', help='Adapter sequence for read 2 trimming')
+@click.option('--cell_id', help='Cell ID')
+@click.option('--wgs_metrics_mqual', help='Path to the WGS metrics mqual file')
+@click.option('--wgs_metrics_bqual', help='Path to the WGS metrics bqual file')
+@click.option('--wgs_metrics_count_unpaired', help='Path to the WGS metrics count unpaired file')
+@click.option('--bam_output', help='Path to the BAM output file')
+@click.option('--metrics_output', help='Path to the metrics output file')
+@click.option('--metrics_gc_output', help='Path to the GC metrics output file')
+@click.option('--fastqscreen_detailed_output', help='Path to the FastQScreen detailed output file')
+@click.option('--fastqscreen_summary_output', help='Path to the FastQScreen summary output file')
+@click.option('--tar_output', help='Path to the TAR output file')
+@click.option('--num_threads', default=1, help='Number of threads')
+@click.option('--run_fastqc', is_flag=True, help='Run FastQC')
+def alignment_cmd(
+        fastq_files, metadata_yaml, reference, reference_name, reference_version,
+        supplementary_references_json, tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
+        wgs_metrics_bqual, wgs_metrics_count_unpaired, bam_output, metrics_output,
+        metrics_gc_output, fastqscreen_detailed_output, fastqscreen_summary_output,
+        tar_output, num_threads, run_fastqc
+):
+    alignment(
+        fastq_files, metadata_yaml, reference,
+        reference_name, reference_version, supplementary_references_json, tempdir,
+        adapter1, adapter2, cell_id, wgs_metrics_mqual,
+        wgs_metrics_bqual, wgs_metrics_count_unpaired,
+        bam_output, metrics_output, metrics_gc_output,
+        fastqscreen_detailed_output, fastqscreen_summary_output,
+        tar_output, num_threads, run_fastqc=run_fastqc
+    )
+
+
+if __name__ == '__main__':
+    cli()

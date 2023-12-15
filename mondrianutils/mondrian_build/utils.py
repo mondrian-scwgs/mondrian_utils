@@ -1,8 +1,9 @@
-import argparse
+import click
 import mondrianutils.helpers as helpers
 import numpy as np
 import pandas as pd
 import yaml
+
 
 def _read_vcf(vcf_file, info_field_name):
     data = {}
@@ -64,6 +65,7 @@ def compare_alignment(metrics, metrics_ref, gc_metrics, gc_metrics_ref):
         else:
             assert gc_metrics[colname].equals(ref_gc_metrics[colname])
 
+
 def compare_hmmcopy(reads, reads_ref, metrics, metrics_ref):
     approx_cols = [
         'MSRSI_non_integerness', 'MBRSI_dispersion_non_integerness', 'MBRSM_dispersion',
@@ -111,118 +113,99 @@ def compare_sv_genotyping(
 ):
     _compare_csv(genotyper, genotyper_ref, [])
 
-def compare_normalizer(cells_yaml):
 
+def compare_normalizer(cells_yaml):
     with open(cells_yaml, 'rt') as reader:
         data = yaml.safe_load(reader)
 
         assert data['cells'] == ['SA1090-A96213A-R22-C43']
 
 
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+@click.command()
+@click.option('--metrics', required=True)
+@click.option('--metrics_ref', required=True)
+@click.option('--gc_metrics', required=True)
+@click.option('--gc_metrics_ref', required=True)
+def compare_alignment_cmd(metrics, metrics_ref, gc_metrics, gc_metrics_ref):
+    compare_alignment(
+        metrics, metrics_ref,
+        gc_metrics, gc_metrics_ref
     )
 
-    subparsers = parser.add_subparsers()
 
-    compare_alignment = subparsers.add_parser('compare_alignment')
-    compare_alignment.set_defaults(which='compare_alignment')
-    compare_alignment.add_argument('--metrics', required=True)
-    compare_alignment.add_argument('--metrics_ref', required=True)
-    compare_alignment.add_argument('--gc_metrics', required=True)
-    compare_alignment.add_argument('--gc_metrics_ref', required=True)
-
-    compare_hmmcopy = subparsers.add_parser('compare_hmmcopy')
-    compare_hmmcopy.set_defaults(which='compare_hmmcopy')
-    compare_hmmcopy.add_argument('--reads', required=True)
-    compare_hmmcopy.add_argument('--reads_ref', required=True)
-    compare_hmmcopy.add_argument('--metrics', required=True)
-    compare_hmmcopy.add_argument('--metrics_ref', required=True)
-
-    compare_variant_calling = subparsers.add_parser('compare_variant_calling')
-    compare_variant_calling.set_defaults(which='compare_variant_calling')
-    compare_variant_calling.add_argument('--museq', required=True)
-    compare_variant_calling.add_argument('--museq_ref', required=True)
-    compare_variant_calling.add_argument('--mutect', required=True)
-    compare_variant_calling.add_argument('--mutect_ref', required=True)
-    compare_variant_calling.add_argument('--strelka_snv', required=True)
-    compare_variant_calling.add_argument('--strelka_snv_ref', required=True)
-    compare_variant_calling.add_argument('--strelka_indel', required=True)
-    compare_variant_calling.add_argument('--strelka_indel_ref', required=True)
-
-    compare_breakpoint_calling = subparsers.add_parser('compare_breakpoint_calling')
-    compare_breakpoint_calling.set_defaults(which='compare_breakpoint_calling')
-    compare_breakpoint_calling.add_argument('--destruct', required=True)
-    compare_breakpoint_calling.add_argument('--destruct_ref', required=True)
-    compare_breakpoint_calling.add_argument('--lumpy', required=True)
-    compare_breakpoint_calling.add_argument('--lumpy_ref', required=True)
-    compare_breakpoint_calling.add_argument('--gridss', required=True)
-    compare_breakpoint_calling.add_argument('--gridss_ref', required=True)
-    compare_breakpoint_calling.add_argument('--svaba', required=True)
-    compare_breakpoint_calling.add_argument('--svaba_ref', required=True)
-
-    compare_snv_genotyping = subparsers.add_parser('compare_snv_genotyping')
-    compare_snv_genotyping.set_defaults(which='compare_snv_genotyping')
-    compare_snv_genotyping.add_argument('--genotyper', required=True)
-    compare_snv_genotyping.add_argument('--genotyper_ref', required=True)
-    compare_snv_genotyping.add_argument('--vartrix', required=True)
-    compare_snv_genotyping.add_argument('--vartrix_ref', required=True)
-
-    compare_sv_genotyping = subparsers.add_parser('compare_sv_genotyping')
-    compare_sv_genotyping.set_defaults(which='compare_sv_genotyping')
-    compare_sv_genotyping.add_argument('--genotyper', required=True)
-    compare_sv_genotyping.add_argument('--genotyper_ref', required=True)
-
-    compare_normalizer = subparsers.add_parser('compare_normalizer')
-    compare_normalizer.set_defaults(which='compare_normalizer')
-    compare_normalizer.add_argument('--cells_yaml', required=True)
-
-    args = vars(parser.parse_args())
-
-    return args
+@click.command()
+@click.option('--reads', required=True)
+@click.option('--reads_ref', required=True)
+@click.option('--metrics', required=True)
+@click.option('--metrics_ref', required=True)
+def compare_hmmcopy_cmd(reads, reads_ref, metrics, metrics_ref):
+    compare_hmmcopy(
+        reads, reads_ref,
+        metrics, metrics_ref
+    )
 
 
-def utils():
-    args = parse_args()
+@click.command()
+@click.option('--museq', required=True)
+@click.option('--museq_ref', required=True)
+@click.option('--mutect', required=True)
+@click.option('--mutect_ref', required=True)
+@click.option('--strelka_snv', required=True)
+@click.option('--strelka_snv_ref', required=True)
+@click.option('--strelka_indel', required=True)
+@click.option('--strelka_indel_ref', required=True)
+def compare_variant_calling_cmd(museq, museq_ref, mutect, mutect_ref, strelka_snv, strelka_snv_ref, strelka_indel,
+                                strelka_indel_ref):
+    compare_variant_calling(
+        museq, museq_ref,
+        mutect, mutect_ref,
+        strelka_snv, strelka_snv_ref,
+        strelka_indel, strelka_indel_ref
+    )
 
-    if args['which'] == 'compare_alignment':
-        compare_alignment(
-            args['metrics'], args['metrics_ref'],
-            args['gc_metrics'], args['gc_metrics_ref']
-        )
-    elif args['which'] == 'compare_hmmcopy':
-        compare_hmmcopy(
-            args['reads'], args['reads_ref'],
-            args['metrics'], args['metrics_ref']
-        )
-    elif args['which'] == 'compare_variant_calling':
-        compare_variant_calling(
-            args['museq'], args['museq_ref'],
-            args['mutect'], args['mutect_ref'],
-            args['strelka_snv'], args['strelka_snv_ref'],
-            args['strelka_indel'], args['strelka_indel_ref']
-        )
-    elif args['which'] == 'compare_breakpoint_calling':
-        compare_breakpoint_calling(
-            args['destruct'], args['destruct_ref'],
-            args['lumpy'], args['lumpy_ref'],
-            args['gridss'], args['gridss_ref'],
-            args['svaba'], args['svaba_ref'],
-        )
-    elif args['which'] == 'compare_snv_genotyping':
-        compare_snv_genotyping(
-            args['genotyper'], args['genotyper_ref'],
-            args['vartrix'], args['vartrix_ref']
-        )
-    elif args['which'] == 'compare_sv_genotyping':
-        compare_sv_genotyping(
-            args['genotyper'], args['genotyper_ref']
-        )
-    elif args['which'] == 'compare_normalizer':
-        compare_normalizer(
-            args['cells_yaml']
-        )
-    else:
-        raise Exception()
+
+@click.command()
+@click.option('--destruct', required=True)
+@click.option('--destruct_ref', required=True)
+@click.option('--lumpy', required=True)
+@click.option('--lumpy_ref', required=True)
+@click.option('--gridss', required=True)
+@click.option('--gridss_ref', required=True)
+@click.option('--svaba', required=True)
+@click.option('--svaba_ref', required=True)
+def compare_breakpoint_calling_cmd(destruct, destruct_ref, lumpy, lumpy_ref, gridss, gridss_ref, svaba, svaba_ref):
+    compare_breakpoint_calling(
+        destruct, destruct_ref,
+        lumpy, lumpy_ref,
+        gridss, gridss_ref,
+        svaba, svaba_ref,
+    )
+
+
+@click.command()
+@click.option('--genotyper', required=True)
+@click.option('--genotyper_ref', required=True)
+@click.option('--vartrix', required=True)
+@click.option('--vartrix_ref', required=True)
+def compare_snv_genotyping_cmd(genotyper, genotyper_ref, vartrix, vartrix_ref):
+    compare_snv_genotyping(
+        genotyper, genotyper_ref,
+        vartrix, vartrix_ref
+    )
+
+
+@click.command()
+@click.option('--genotyper', required=True)
+@click.option('--genotyper_ref', required=True)
+def compare_sv_genotyping_cmd(genotyper, genotyper_ref):
+    compare_sv_genotyping(
+        genotyper, genotyper_ref
+    )
+
+
+@click.command()
+@click.option('--cells_yaml', required=True)
+def compare_normalizer_cmd(cells_yaml):
+    compare_normalizer(
+        cells_yaml
+    )

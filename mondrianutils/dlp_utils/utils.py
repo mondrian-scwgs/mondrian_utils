@@ -1,31 +1,20 @@
-import argparse
+import click
 
 from mondrianutils.dlp_utils.dlp_bams_to_mondrian_bam import dlp_bams_to_mondrian_bam
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+@click.group()
+def cli():
+    pass
 
-    subparsers = parser.add_subparsers()
+@click.command()
+@click.option('--dlp_bam_dir', required=True)
+@click.option('--output', required=True)
+@click.option('--tempdir', required=True)
+@click.option('--cores', default=8)
+def dlp_bams_to_mondrian_bam_cmd(dlp_bam_dir, output, tempdir, cores):
+    dlp_bams_to_mondrian_bam(dlp_bam_dir, output, tempdir, ncores=cores)
 
-    dlp_bams_to_mondrian_bam = subparsers.add_parser('dlp_bams_to_mondrian_bam')
-    dlp_bams_to_mondrian_bam.set_defaults(which='dlp_bams_to_mondrian_bam')
-    dlp_bams_to_mondrian_bam.add_argument('--dlp_bam_dir', required=True)
-    dlp_bams_to_mondrian_bam.add_argument('--output', required=True)
-    dlp_bams_to_mondrian_bam.add_argument('--tempdir', required=True)
-    dlp_bams_to_mondrian_bam.add_argument('--cores', default=8)
+if __name__ == '__main__':
+    cli()
 
-    args = vars(parser.parse_args())
-
-    return args
-
-
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'dlp_bams_to_mondrian_bam':
-        dlp_bams_to_mondrian_bam(args['dlp_bam_dir'], args['output'], args['tempdir'], ncores=args['cores'])
-    else:
-        raise Exception()

@@ -1,6 +1,6 @@
 import os
 
-import argparse
+import click
 import pysam
 import yaml
 from mondrianutils import __version__
@@ -55,124 +55,107 @@ def generate_cell_barcodes_file(bamfile, output):
             writer.write(cell + '\n')
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.option('--bam', required=True)
+@click.option('--output', required=True)
+@click.option('--targets_vcf', required=True)
+@click.option('--cell_barcodes')
+@click.option('--interval')
+@click.option('--count_duplicates', default=False)
+@click.option('--sparse', is_flag=True, default=False)
+@click.option('--ignore_untagged_reads', is_flag=True, default=False)
+@click.option('--min_mqual', default=20)
+@click.option('--skip_header', is_flag=True, default=False)
+def snv_genotyper_cmd(
+        bam, output, targets_vcf, cell_barcodes, interval, count_duplicates, sparse,
+        ignore_untagged_reads, min_mqual, skip_header
+):
+    with SnvGenotyper(
+            bam, targets_vcf, output, cell_barcodes=cell_barcodes,
+            interval=interval, count_duplicates=count_duplicates,
+            sparse=sparse, min_mqual=min_mqual, ignore_untagged_reads=ignore_untagged_reads,
+            skip_header=skip_header
+    ) as genotyper:
+        genotyper.genotyping()
+
+
+@cli.command()
+@click.option('--bamfile')
+@click.option('--output')
+def generate_cell_barcodes_cmd(
+        bamfile, output
+):
+    generate_cell_barcodes_file(bamfile, output)
+
+
+@cli.command()
+@click.option('--outputs', nargs=2)
+@click.option('--vartrix_outputs', nargs=6)
+@click.option('--metadata_input')
+@click.option('--metadata_output')
+def generate_metadata_cmd(
+        outputs, vartrix_outputs, metadata_input, metadata_output
+):
+    generate_metadata(
+        outputs, vartrix_outputs, metadata_input, metadata_output
     )
 
-    subparsers = parser.add_subparsers()
 
-    snv_genotyper = subparsers.add_parser('snv_genotyper')
-    snv_genotyper.set_defaults(which='snv_genotyper')
-    snv_genotyper.add_argument('--bam', required=True)
-    snv_genotyper.add_argument('--output', required=True)
-    snv_genotyper.add_argument('--targets_vcf', required=True)
-    snv_genotyper.add_argument('--cell_barcodes')
-    snv_genotyper.add_argument('--interval')
-    snv_genotyper.add_argument('--count_duplicates', default=False)
-    snv_genotyper.add_argument('--sparse', action='store_true', default=False)
-    snv_genotyper.add_argument('--ignore_untagged_reads', action='store_true', default=False)
-    snv_genotyper.add_argument('--min_mqual', default=20)
-    snv_genotyper.add_argument(
-        '--skip_header',
-        action='store_true',
-        default=False
+@cli.command()
+@click.option('--barcodes', multiple=True, required=True)
+@click.option('--variants', multiple=True, required=True)
+@click.option('--ref_matrices', multiple=True, required=True)
+@click.option('--alt_matrices', multiple=True, required=True)
+@click.option('--vcf_files', multiple=True, required=True)
+@click.option('--parsed_output', required=True)
+@click.option('--tempdir', required=True)
+def merge_vartrix_cmd(
+        barcodes, variants, ref_matrices, alt_matrices, vcf_files, parsed_output, tempdir
+):
+    merge_vartrix(
+        barcodes, variants, ref_matrices, alt_matrices, vcf_files,
+        parsed_output, tempdir
     )
 
-    generate_cell_barcodes = subparsers.add_parser('generate_cell_barcodes')
-    generate_cell_barcodes.set_defaults(which='generate_cell_barcodes')
-    generate_cell_barcodes.add_argument(
-        '--bamfile'
-    )
-    generate_cell_barcodes.add_argument(
-        '--output'
-    )
 
-    generate_metadata = subparsers.add_parser('generate_metadata')
-    generate_metadata.set_defaults(which='generate_metadata')
-    generate_metadata.add_argument(
-        '--outputs', nargs=2
-    )
-    generate_metadata.add_argument(
-        '--vartrix_outputs', nargs=6
-    )
-    generate_metadata.add_argument(
-        '--metadata_input'
-    )
-    generate_metadata.add_argument(
-        '--metadata_output'
+@cli.command()
+@click.option('--barcode', required=True)
+@click.option('--variant', required=True)
+@click.option('--ref_matrix', required=True)
+@click.option('--alt_matrix', required=True)
+@click.option('--vcf_file', required=True)
+@click.option('--parsed_output', required=True)
+@click.option('--tempdir', required=True)
+@click.option('--skip_header', is_flag=True, default=False)
+def parse_vartrix_cmd(
+        barcode, variant, ref_matrix, alt_matrix, vcf_file, parsed_output, tempdir, skip_header
+):
+    parse_vartrix(
+        barcode, variant, ref_matrix, alt_matrix, vcf_file,
+        parsed_output, tempdir, skip_header=skip_header
     )
 
-    merge_vartrix = subparsers.add_parser('merge_vartrix')
-    merge_vartrix.set_defaults(which='merge_vartrix')
-    merge_vartrix.add_argument('--barcodes', nargs='*', required=True)
-    merge_vartrix.add_argument('--variants', nargs='*', required=True)
-    merge_vartrix.add_argument('--ref_matrices', nargs='*', required=True)
-    merge_vartrix.add_argument('--alt_matrices', nargs='*', required=True)
-    merge_vartrix.add_argument('--vcf_files', nargs='*', required=True)
-    merge_vartrix.add_argument('--parsed_output', required=True)
-    merge_vartrix.add_argument('--tempdir', required=True)
 
-    parse_vartrix = subparsers.add_parser('parse_vartrix')
-    parse_vartrix.set_defaults(which='parse_vartrix')
-    parse_vartrix.add_argument('--barcode', required=True)
-    parse_vartrix.add_argument('--variant', required=True)
-    parse_vartrix.add_argument('--ref_matrix', required=True)
-    parse_vartrix.add_argument('--alt_matrix', required=True)
-    parse_vartrix.add_argument('--vcf_file', required=True)
-    parse_vartrix.add_argument('--parsed_output', required=True)
-    parse_vartrix.add_argument('--tempdir', required=True)
-    parse_vartrix.add_argument(
-        '--skip_header',
-        action='store_true',
-        default=False
+@cli.command()
+@click.option('--barcodes', required=True)
+@click.option('--variants', required=True)
+@click.option('--ref_matrix', required=True)
+@click.option('--alt_matrix', required=True)
+@click.option('--parsed_data', required=True)
+@click.option('--tempdir', required=True)
+def regenerate_vartrix_format_cmd(
+        barcodes, variants, ref_matrix, alt_matrix, parsed_data, tempdir
+):
+    regenerate_vartrix_format(
+        barcodes, variants, ref_matrix, alt_matrix,
+        parsed_data, tempdir
     )
 
-    regenerate_vartrix_format = subparsers.add_parser('regenerate_vartrix_format')
-    regenerate_vartrix_format.set_defaults(which='regenerate_vartrix_format')
-    regenerate_vartrix_format.add_argument('--barcodes', required=True)
-    regenerate_vartrix_format.add_argument('--variants', required=True)
-    regenerate_vartrix_format.add_argument('--ref_matrix', required=True)
-    regenerate_vartrix_format.add_argument('--alt_matrix', required=True)
-    regenerate_vartrix_format.add_argument('--parsed_data', required=True)
-    regenerate_vartrix_format.add_argument('--tempdir', required=True)
 
-    args = vars(parser.parse_args())
-
-    return args
-
-
-def utils():
-    args = parse_args()
-
-    if args['which'] == 'snv_genotyper':
-        with SnvGenotyper(
-                args['bam'], args['targets_vcf'], args['output'], cell_barcodes=args['cell_barcodes'],
-                interval=args['interval'], count_duplicates=args['count_duplicates'],
-                sparse=args['sparse'], min_mqual=args['min_mqual'], ignore_untagged_reads=args['ignore_untagged_reads'],
-                skip_header=args['skip_header']
-        ) as genotyper:
-            genotyper.genotyping()
-    elif args['which'] == 'generate_metadata':
-        generate_metadata(
-            args['outputs'], args['vartrix_outputs'], args['metadata_input'], args['metadata_output']
-        )
-    elif args['which'] == "merge_vartrix":
-        merge_vartrix(
-            args['barcodes'], args['variants'], args['ref_matrices'], args['alt_matrices'], args['vcf_files'],
-            args['parsed_output'], args['tempdir']
-        )
-    elif args['which'] == "parse_vartrix":
-        parse_vartrix(
-            args['barcode'], args['variant'], args['ref_matrix'], args['alt_matrix'], args['vcf_file'],
-            args['parsed_output'], args['tempdir'], skip_header=args['skip_header']
-        )
-    elif args['which'] == "regenerate_vartrix_format":
-        regenerate_vartrix_format(
-            args['barcodes'], args['variants'], args['ref_matrix'], args['alt_matrix'],
-            args['parsed_data'], args['tempdir']
-        )
-    elif args['which'] == "generate_cell_barcodes":
-        generate_cell_barcodes_file(args['bamfile'], args['output'])
-    else:
-        raise Exception()
+if __name__ == '__main__':
+    cli()
