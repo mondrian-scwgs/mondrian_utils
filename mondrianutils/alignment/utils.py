@@ -440,7 +440,7 @@ def add_contamination_status_cmd(infile, outfile, reference):
 
 @cli.command()
 @click.option('--infile', multiple=True, help='input files')
-@click.option('--cell_ids', multiple=True, help='cell IDs')
+@click.option('--cell_id', multiple=True, help='cell IDs')
 @click.option('--reference', help='reference file')
 @click.option('--control_outfile', help='output file for control cells')
 @click.option('--contaminated_outfile', help='output file for contaminated cells')
@@ -448,7 +448,7 @@ def add_contamination_status_cmd(infile, outfile, reference):
 @click.option('--metrics', help='metrics file')
 @click.option('--tempdir', help='temporary directory')
 @click.option('--ncores', type=int, help='number of cores')
-def merge_cells_cmd(infile, cell_ids, reference, control_outfile, contaminated_outfile, pass_outfile, metrics, tempdir,
+def merge_cells_cmd(infile, cell_id, reference, control_outfile, contaminated_outfile, pass_outfile, metrics, tempdir,
                     ncores):
     generate_bams(infile, reference, cell_ids, metrics, control_outfile, contaminated_outfile, pass_outfile, tempdir,
                   ncores)
