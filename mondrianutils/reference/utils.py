@@ -163,7 +163,7 @@ def snp_positions_grch38(data_dir, snp_positions, chromosomes):
     create_snp_positions_grch38(data_dir, snp_positions, chromosomes=chromosomes)
 
 
-@click.command()
+@cli.command()
 @click.option('--reference', required=True, type=click.Path(exists=True))
 @click.option('--output', required=True, type=click.Path())
 @click.option('--chromosomes', multiple=True, required=True)
