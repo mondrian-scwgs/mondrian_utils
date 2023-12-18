@@ -125,7 +125,7 @@ def overlapping_fraction_per_bin(
         split_commands = []
         for chromosome in chromosomes:
             cmd = [
-                'io_utils', 'overlapping-fraction-per-bin-cmd',
+                'io_utils', 'overlapping-fraction-per-bin',
                 '--bam', bam, '--chromosomes', chromosome,
                 '--output', os.path.join(tempdir, f'output_{chromosome}.csv.gz'),
                 '--binsize', binsize, '--mapping_quality', mapping_quality,
