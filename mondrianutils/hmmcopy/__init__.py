@@ -4,6 +4,6 @@ from .utils import plot_heatmap
 from .utils import add_mappability
 from .utils import add_quality
 from .utils import create_segs_tar
-from .utils import generate_html_report
-from .utils import add_clustering_order
+from .generate_qc_html import generate_html_report
+from .clustering_order import add_clustering_order
 from .utils import generate_metadata
