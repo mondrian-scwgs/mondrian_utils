@@ -21,7 +21,7 @@ def cli():
 @click.option('--salmon_reference', help='specify salmon reference fasta')
 def fastqscreen(r1, r2, output_r1, output_r2, detailed_metrics, summary_metrics, tempdir, cell_id, human_reference,
                 mouse_reference, salmon_reference):
-    mondrianutils.alignment.fastqscreen.organism_filter(
+    mondrianutils.alignment.organism_filter(
         r1, r2, output_r1, output_r2, detailed_metrics, summary_metrics, tempdir, cell_id, human_reference,
         mouse_reference, salmon_reference
     )
@@ -33,7 +33,7 @@ def fastqscreen(r1, r2, output_r1, output_r2, detailed_metrics, summary_metrics,
 @click.option('--merged_detailed', help='merged detailed counts file')
 @click.option('--merged_summary', help='merged summary counts file')
 def merge_fastqscreen_counts(detailed_counts, summary_counts, merged_detailed, merged_summary):
-    mondrianutils.alignment.fastqscreen.merge_fastq_screen_counts(
+    mondrianutils.alignment.merge_fastq_screen_counts(
         detailed_counts, summary_counts, merged_detailed, merged_summary
     )
 
@@ -47,7 +47,7 @@ def merge_fastqscreen_counts(detailed_counts, summary_counts, merged_detailed, m
 @click.option('--output', help='output file')
 @click.option('--cell_id', help='cell ID')
 def collect_metrics(wgs_metrics, insert_metrics, flagstat, markdups_metrics, coverage_metrics, output, cell_id):
-    mondrianutils.alignment.collect_metrics.collect_metrics(
+    mondrianutils.alignment.collect_metrics(
         wgs_metrics, insert_metrics, flagstat, markdups_metrics, coverage_metrics, output, cell_id
     )
 
@@ -57,7 +57,7 @@ def collect_metrics(wgs_metrics, insert_metrics, flagstat, markdups_metrics, cov
 @click.option('--outfile', help='output file')
 @click.option('--cell_id', help='cell ID')
 def collect_gc_metrics(infile, outfile, cell_id):
-    mondrianutils.alignment.collect_gc_metrics.collect_gc_metrics(
+    mondrianutils.alignment.collect_gc_metrics(
         infile, outfile, cell_id
     )
 
@@ -67,7 +67,7 @@ def collect_gc_metrics(infile, outfile, cell_id):
 @click.option('--outfile', help='output file')
 @click.option('--cell_id', help='cell ID')
 def tag_bam_with_cellid(infile, outfile, cell_id):
-    mondrianutils.alignment.utils.tag_bam_with_cellid(
+    mondrianutils.alignment.tag_bam_with_cellid(
         infile, outfile, cell_id
     )
 
@@ -77,7 +77,7 @@ def tag_bam_with_cellid(infile, outfile, cell_id):
 @click.option('--outfile', help='output file')
 @click.option('--reference', help='reference file')
 def add_contamination_status(infile, outfile, reference):
-    mondrianutils.alignment.utils.add_contamination_status(
+    mondrianutils.alignment.add_contamination_status(
         infile, outfile, reference
     )
 
@@ -94,7 +94,7 @@ def add_contamination_status(infile, outfile, reference):
 @click.option('--ncores', type=int, help='number of cores')
 def merge_cells(infiles, cell_ids, reference, control_outfile, contaminated_outfile, pass_outfile, metrics, tempdir,
                     ncores):
-    mondrianutils.alignment.utils.generate_bams(
+    mondrianutils.alignment.generate_bams(
         infiles, reference, cell_ids, metrics, control_outfile, contaminated_outfile, pass_outfile, tempdir,
         ncores
     )
@@ -104,7 +104,7 @@ def merge_cells(infiles, cell_ids, reference, control_outfile, contaminated_outf
 @click.option('--bamfile', help='BAM file')
 @click.option('--output', help='output file')
 def coverage_metrics(bamfile, output):
-    mondrianutils.alignment.coverage_metrics.get_coverage_metrics(
+    mondrianutils.alignment.get_coverage_metrics(
         bamfile, output
     )
 
@@ -130,7 +130,7 @@ def generate_metadata(
         metadata_input,
         metadata_output,
 ):
-    mondrianutils.alignment.utils.generate_metadata(
+    mondrianutils.alignment.generate_metadata(
         bam, control, contaminated, metrics, gc_metrics, fastqscreen_detailed, tarfile, metadata_input, metadata_output
     )
 
@@ -140,7 +140,7 @@ def generate_metadata(
 @click.option('--metadata', help='metadata YAML file')
 @click.option('--output', help='output file')
 def add_metadata(metrics, metadata, output):
-    mondrianutils.alignment.utils.add_metadata(metrics, metadata, output)
+    mondrianutils.alignment.add_metadata(metrics, metadata, output)
 
 
 @cli.command()
@@ -152,14 +152,14 @@ def add_metadata(metrics, metadata, output):
 @click.option('--adapter2', help='Adapter sequence for read 2')
 @click.option('--tempdir', help='Temporary directory')
 def trim_galore(r1, r2, output_r1, output_r2, adapter1, adapter2, tempdir):
-    mondrianutils.alignment.trim_galore.trim_galore(r1, r2, output_r1, output_r2, adapter1, adapter2, tempdir)
+    mondrianutils.alignment.trim_galore(r1, r2, output_r1, output_r2, adapter1, adapter2, tempdir)
 
 
 @cli.command()
 @click.option('--meta_yaml', required=True, help='Path to the metadata YAML file')
 @click.option('--input_data_json', required=True, help='Path to the input data JSON file')
 def input_validation(meta_yaml, input_data_json):
-    mondrianutils.alignment.utils.input_validation(meta_yaml, input_data_json)
+    mondrianutils.alignment.input_validation(meta_yaml, input_data_json)
 
 
 @cli.command()
@@ -191,7 +191,7 @@ def alignment(
         metrics_gc_output, fastqscreen_detailed_output, fastqscreen_summary_output,
         tar_output, num_threads, run_fastqc
 ):
-    mondrianutils.alignment.complete_alignment.alignment(
+    mondrianutils.alignment.alignment(
         fastq_files, metadata_yaml, reference,
         reference_name, reference_version, supplementary_references_json, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual,
