@@ -1,5 +1,5 @@
 import click
-import mondrianutils
+import mondrianutils.variant_calling
 @click.group()
 def cli():
     pass

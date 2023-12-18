@@ -1,5 +1,5 @@
 import click
-import mondrianutils
+import mondrianutils.mondrian_build
 
 @click.command()
 @click.option('--metrics', required=True)

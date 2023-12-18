@@ -1,6 +1,6 @@
 import click
 
-import mondrianutils
+import mondrianutils.normalizer
 
 @click.command()
 @click.option('--reads_data', required=True)

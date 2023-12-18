@@ -1,5 +1,5 @@
 import click
-import mondrianutils
+import mondrianutils.hmmcopy
 
 @click.group()
 def cli():

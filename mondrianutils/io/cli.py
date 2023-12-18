@@ -1,5 +1,5 @@
 import click
-import mondrianutils
+import mondrianutils.io
 
 
 @click.group()

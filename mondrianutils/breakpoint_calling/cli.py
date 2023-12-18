@@ -1,6 +1,6 @@
 import click
 
-import mondrianutils
+import mondrianutils.breakpoint_calling
 
 @click.group()
 def cli():

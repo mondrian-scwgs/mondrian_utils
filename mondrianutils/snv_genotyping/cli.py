@@ -1,6 +1,6 @@
 import click
 
-import mondrianutils
+import mondrianutils.snv_genotyping
 
 
 @click.group()

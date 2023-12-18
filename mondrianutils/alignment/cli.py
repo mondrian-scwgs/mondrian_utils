@@ -1,5 +1,5 @@
 import click
-import mondrianutils
+import mondrianutils.alignment
 
 
 @click.group()

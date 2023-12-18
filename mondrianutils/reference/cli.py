@@ -1,6 +1,6 @@
 import click
 
-import mondrianutils
+import mondrianutils.reference
 
 @click.group()
 def cli():

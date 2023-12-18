@@ -1,6 +1,6 @@
 import os
 import click
-import mondrianutils
+import mondrianutils.haplotypes
 import remixt
 from mondrianutils import helpers
 
