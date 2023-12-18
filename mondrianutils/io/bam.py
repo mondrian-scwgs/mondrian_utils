@@ -285,7 +285,7 @@ def cli():
 @click.option('--tempdir', help='Path to the temporary directory')
 @click.option('--chromosomes', multiple=True, help='List of chromosomes')
 @click.option('--ncores', default=8, type=int, help='Number of cores')
-def split_bam_cmd(infile, outdir, tempdir, chromosomes, ncores):
+def split_bam_by_barcode_cmd(infile, outdir, tempdir, chromosomes, ncores):
     split_bam_by_barcode(infile, outdir, tempdir, chromosomes, ncores)
 
 
