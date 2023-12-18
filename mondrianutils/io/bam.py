@@ -126,7 +126,7 @@ def overlapping_fraction_per_bin(
         split_commands = []
         for chromosome in chromosomes:
             cmd = [
-                'bam_utils', 'overlapping_fraction_per_bin',
+                'bam_utils', 'overlapping-fraction-per-bin-cmd',
                 '--bam', bam, '--chromosomes', chromosome,
                 '--output', os.path.join(tempdir, f'output_{chromosome}.csv.gz'),
                 '--binsize', binsize, '--mapping_quality', mapping_quality,
@@ -210,7 +210,7 @@ def _split_in_parallel(infile, outdir, chromosomes, tempdir, ncores=8):
     split_commands = []
     for chromosome in chromosomes:
         cmd = [
-            'bam_utils', 'split_bam_by_barcode',
+            'bam_utils', 'split-bam-by-barcode-cmd',
             '--infile', infile, '--outdir',
             os.path.join(outdir, str(chromosome)), '--chromosome', chromosome, '--ncores', 1
         ]
