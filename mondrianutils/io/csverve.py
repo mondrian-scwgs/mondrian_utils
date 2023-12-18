@@ -1,22 +1,19 @@
 import csverve.api as csverve
-from mondrianutils.dtypes import hmmcopy_metrics
-from mondrianutils.dtypes import hmmcopy_params
-from mondrianutils.dtypes import hmmcopy_reads
-from mondrianutils.dtypes import hmmcopy_segs
+from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from mondrianutils.dtypes import haplotypes
 
 
 def rewrite_csv(infile, outfile, dtypes):
     if dtypes == 'hmmcopy_reads':
-        dtypes = hmmcopy_reads.dtypes()
+        dtypes = hmmcopy_dtypes()['reads']
     elif dtypes == 'hmmcopy_metrics':
-        dtypes = hmmcopy_metrics.dtypes()
+        dtypes = hmmcopy_dtypes()['metrics']
     elif dtypes == 'hmmcopy_params':
-        dtypes = hmmcopy_params.dtypes()
+        dtypes = hmmcopy_dtypes()['params']
     elif dtypes == 'hmmcopy_segs':
-        dtypes = hmmcopy_segs.dtypes()
+        dtypes = hmmcopy_dtypes()['segs']
     elif dtypes == 'haplotypes':
-        dtypes = haplotypes.dtypes()
+        dtypes = haplotypes.dtypes()['haplotypes']
     else:
         raise Exception()
 

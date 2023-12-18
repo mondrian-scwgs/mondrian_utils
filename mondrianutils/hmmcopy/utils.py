@@ -15,7 +15,7 @@ from mondrianutils.hmmcopy.readcounter import ReadCounter
 
 def _readcounter_command(infile, outdir, chromosome, exclude_list=None, mapping_quality_threshold=0, window_size=1000):
     return [
-        'hmmcopy_utils', 'readcounter-cmd',
+        'hmmcopy_utils', 'readcounter',
         '--infile', infile,
         '--outdir', outdir,
         '-w', window_size,
