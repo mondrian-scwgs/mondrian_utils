@@ -14,7 +14,7 @@ setup(
             'mondrianutils = mondrianutils.run:main',
             'variant_utils = mondrianutils.variant_calling.utils:cli',
             'breakpoint_utils = mondrianutils.breakpoint_calling.utils:cli',
-            'alignment_utils = mondrianutils.alignment.utils:cli',
+            'alignment_utils = mondrianutils.alignment.cli:cli',
             'hmmcopy_utils = mondrianutils.hmmcopy.utils:cli',
             'csverve_utils = mondrianutils.io.csverve:cli',
             'pdf_utils = mondrianutils.io.pdf:cli',
