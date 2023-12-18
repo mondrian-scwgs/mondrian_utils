@@ -186,7 +186,7 @@ def exclude_blacklist_cmd(infile, outfile, exclusion_blacklist):
     exclude_blacklist(infile, outfile, exclusion_blacklist)
 
 @cli.command()
-@click.option('--infiles', nargs='*', required=True, help='List of input VCF files')
+@click.option('--infiles', multiple=True, required=True, help='List of input VCF files')
 @click.option('--outfile', required=True, help='Path to the output VCF file')
 def merge_vcfs_cmd(infiles, outfile):
     vcf_merge.merge_vcfs(infiles, outfile)
