@@ -1,7 +1,6 @@
 import os
 import shutil
 
-import click
 import csverve.api as csverve
 import pandas as pd
 import pysam
@@ -272,41 +271,3 @@ def split_bam_by_barcode(infile, outdir, tempdir, chromosomes, ncores=8):
         chromosomes,
         ncores=ncores
     )
-
-
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
-@click.option('--infile', required=True, help='Path to the input BAM file')
-@click.option('--outdir', required=True, help='Path to the output directory')
-@click.option('--tempdir', help='Path to the temporary directory')
-@click.option('--chromosomes', multiple=True, help='List of chromosomes')
-@click.option('--ncores', default=8, type=int, help='Number of cores')
-def split_bam_by_barcode_cmd(infile, outdir, tempdir, chromosomes, ncores):
-    split_bam_by_barcode(infile, outdir, tempdir, chromosomes, ncores)
-
-
-@cli.command()
-@click.option('--bam', required=True, help='Path to the input BAM file')
-@click.option('--output', required=True, help='Path to the output file')
-@click.option('--tempdir', help='Path to the temporary directory')
-@click.option('--chromosomes', default=[str(v) for v in range(1, 23)] + ['X', 'Y'], multiple=True,
-              help='List of chromosomes')
-@click.option('--binsize', default=500000, type=int, help='Size of bins')
-@click.option('--mapping_quality', default=20, type=int, help='Mapping quality threshold')
-@click.option('--ncores', default=8, type=int, help='Number of cores')
-def overlapping_fraction_per_bin_cmd(bam, output, tempdir, chromosomes, binsize, mapping_quality, ncores):
-    overlapping_fraction_per_bin(
-        bam, output, tempdir,
-        chromosomes=chromosomes,
-        binsize=binsize,
-        mapping_quality=mapping_quality,
-        ncores=ncores
-    )
-
-
-if __name__ == '__main__':
-    cli()

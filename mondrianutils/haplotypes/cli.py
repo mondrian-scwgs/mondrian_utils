@@ -17,7 +17,7 @@ def cli():
 @click.option('--tempdir', required=True)
 @click.option('--chromosomes', multiple=True, default=[str(v) for v in range(1, 23)] + ['X', 'Y'])
 @click.option('--cell_id')
-def extract_seqdata_cmd(bam, output, snp_positions, tempdir, chromosomes, cell_id):
+def extract_seqdata(bam, output, snp_positions, tempdir, chromosomes, cell_id):
     bam_max_fragment_length = remixt.config.get_param({}, 'bam_max_fragment_length')
     bam_max_soft_clipped = remixt.config.get_param({}, 'bam_max_soft_clipped')
     bam_check_proper_pair = remixt.config.get_param({}, 'bam_check_proper_pair')
@@ -36,7 +36,7 @@ def extract_seqdata_cmd(bam, output, snp_positions, tempdir, chromosomes, cell_i
 @click.option('--chromosomes', multiple=True, default=[str(v) for v in range(1, 23)] + ['X', 'Y'])
 @click.option('--output', required=True)
 @click.option('--tempdir', required=True)
-def create_segments_cmd(reference_fai, gap_table, chromosomes, output, tempdir):
+def create_segments(reference_fai, gap_table, chromosomes, output, tempdir):
     chr_prefix = 'chr' if chromosomes[0].startswith('chr') else ''
     helpers.makedirs(tempdir)
     new_gap = os.path.join(tempdir, 'gap.txt.gz')
@@ -69,7 +69,7 @@ def create_segments_cmd(reference_fai, gap_table, chromosomes, output, tempdir):
 @click.option('--output', required=True)
 @click.option('--tempdir', required=True)
 @click.option('--skip_header', is_flag=True, default=False)
-def haplotype_allele_readcount_cmd(segments, seqdata, haplotypes, output, tempdir, skip_header):
+def haplotype_allele_readcount(segments, seqdata, haplotypes, output, tempdir, skip_header):
     helpers.makedirs(tempdir)
     tempout = os.path.join(tempdir, 'temp.tsv')
     remixt.analysis.readcount.haplotype_allele_readcount(
@@ -83,7 +83,7 @@ def haplotype_allele_readcount_cmd(segments, seqdata, haplotypes, output, tempdi
 @click.option('--metadata_yaml_files', multiple=True)
 @click.option('--samples', multiple=True)
 @click.option('--metadata_output')
-def generate_metadata_cmd(files, metadata_yaml_files, samples, metadata_output):
+def generate_metadata(files, metadata_yaml_files, samples, metadata_output):
     mondrianutils.haplotypes.generate_metadata(
         files, metadata_yaml_files, samples,
         metadata_output
@@ -102,7 +102,7 @@ def generate_metadata_cmd(files, metadata_yaml_files, samples, metadata_output):
 @click.option('--phased_chromosome_x', default='chrX')
 @click.option('--shapeit_num_samples', default=100, type=int)
 @click.option('--shapeit_confidence_threshold', default=0.95, type=float)
-def run_shapeit_cmd(input_bcf_file, genetic_map, regions_file, chromosome, tempdir, output, phased_chromosomes,
+def run_shapeit(input_bcf_file, genetic_map, regions_file, chromosome, tempdir, output, phased_chromosomes,
                     is_female, phased_chromosome_x, shapeit_num_samples, shapeit_confidence_threshold):
     mondrianutils.haplotypes.run_shapeit4(
         input_bcf_file, genetic_map, regions_file, chromosome,
@@ -118,7 +118,7 @@ def run_shapeit_cmd(input_bcf_file, genetic_map, regions_file, chromosome, tempd
 @cli.command()
 @click.option('--input', required=True)
 @click.option('--output', required=True)
-def convert_haplotypes_csv_to_tsv_cmd(input, output):
+def convert_haplotypes_csv_to_tsv(input, output):
     mondrianutils.haplotypes.convert_csv_to_tsv(
         input, output
     )

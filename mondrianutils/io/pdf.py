@@ -52,25 +52,3 @@ def merge_pdfs_with_scaling(infiles, outfile, width=500, height=500):
     with open(outfile, 'wb') as fout:
         pdf_writer.write(fout)
 
-
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
-@click.option('--infiles', multiple=True, required=True, help='List of input PDF files')
-@click.option('--outfile', required=True, help='Path to the output PDF file')
-def merge_pdfs_cmd(infiles, outfile):
-    merge_pdfs(infiles, outfile)
-
-
-@cli.command()
-@click.option('--infiles', multiple=True, required=True, help='List of input PDF files')
-@click.option('--outfile', required=True, help='Path to the output PDF file')
-def merge_pdfs_scaled_cmd(infiles, outfile):
-    merge_pdfs_with_scaling(infiles, outfile)
-
-
-if __name__ == '__main__':
-    cli()
