@@ -212,7 +212,7 @@ def _split_in_parallel(infile, outdir, chromosomes, tempdir, ncores=8):
         cmd = [
             'bam_utils', 'split-bam-by-barcode-cmd',
             '--infile', infile, '--outdir',
-            os.path.join(outdir, str(chromosome)), '--chromosome', chromosome, '--ncores', 1
+            os.path.join(outdir, str(chromosome)), '--chromosomes ', chromosome, '--ncores', 1
         ]
         split_commands.append(cmd)
 
