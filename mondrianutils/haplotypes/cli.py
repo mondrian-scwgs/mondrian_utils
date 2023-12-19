@@ -1,7 +1,12 @@
 import os
 import click
 import mondrianutils.haplotypes
-import remixt
+import remixt.analysis
+import remixt.analysis.haplotype
+import remixt.analysis.readcount
+import remixt.analysis.segment
+import remixt.seqdataio
+import remixt.workflow
 from mondrianutils import helpers
 
 
