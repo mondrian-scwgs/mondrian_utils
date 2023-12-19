@@ -229,7 +229,7 @@ def metadata_helper(files_json, metadata_yamls, samples, wf_type):
 
     metadata = {'type': wf_type, 'version': __version__}
 
-    assert len(samples) == len(metadata_yamls)
+    assert len(samples) == len(metadata_yamls), (samples, metadata_yamls)
     for sample, metadata_yaml in zip(samples, metadata_yamls):
         with open(metadata_yaml, 'rt') as reader:
             meta = yaml.safe_load(reader)
