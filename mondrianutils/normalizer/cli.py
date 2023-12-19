@@ -2,7 +2,13 @@ import click
 
 import mondrianutils.normalizer
 
-@click.command()
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
 @click.option('--reads_data', required=True)
 @click.option('--metrics_data', required=True)
 @click.option('--output_yaml', required=True)
@@ -31,7 +37,7 @@ def identify_normal_cells(
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--infile', required=True)
 @click.option('--normal_output', required=True)
 @click.option('--tumour_output', required=True)
@@ -47,7 +53,7 @@ def separate_normal_and_tumour_cells(
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--metrics', required=True)
 @click.option('--reads', required=True)
 @click.option('--output', required=True)
@@ -63,7 +69,7 @@ def aneuploidy_heatmap(
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--normal_bam', nargs=2)
 @click.option('--tumour_bam', nargs=2)
 @click.option('--heatmap', multiple=True)
