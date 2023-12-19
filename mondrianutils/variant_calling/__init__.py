@@ -3,7 +3,7 @@ from .utils import split_interval
 from .utils import merge_vcf_files
 from .utils import get_genome_size
 from .utils import merge_chromosome_depths_strelka
-from .utils import _get_sample_id_bam
+from .utils import get_sample_id_bam
 from .consensus import consensus
 from .utils import vcf_reheader_id
 from .utils import update_maf_ids
