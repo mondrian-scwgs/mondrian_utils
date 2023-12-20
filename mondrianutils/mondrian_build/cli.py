@@ -1,7 +1,12 @@
 import click
 import mondrianutils.mondrian_build
 
-@click.command()
+
+@click.group()
+def cli():
+    pass
+
+@cli.command()
 @click.option('--metrics', required=True)
 @click.option('--metrics_ref', required=True)
 @click.option('--gc_metrics', required=True)
@@ -13,7 +18,7 @@ def compare_alignment(metrics, metrics_ref, gc_metrics, gc_metrics_ref):
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--reads', required=True)
 @click.option('--reads_ref', required=True)
 @click.option('--metrics', required=True)
@@ -25,7 +30,7 @@ def compare_hmmcopy(reads, reads_ref, metrics, metrics_ref):
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--museq', required=True)
 @click.option('--museq_ref', required=True)
 @click.option('--mutect', required=True)
@@ -44,7 +49,7 @@ def compare_variant_calling(museq, museq_ref, mutect, mutect_ref, strelka_snv, s
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--destruct', required=True)
 @click.option('--destruct_ref', required=True)
 @click.option('--lumpy', required=True)
@@ -62,7 +67,7 @@ def compare_breakpoint_calling(destruct, destruct_ref, lumpy, lumpy_ref, gridss,
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--genotyper', required=True)
 @click.option('--genotyper_ref', required=True)
 @click.option('--vartrix', required=True)
@@ -74,7 +79,7 @@ def compare_snv_genotyping(genotyper, genotyper_ref, vartrix, vartrix_ref):
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--genotyper', required=True)
 @click.option('--genotyper_ref', required=True)
 def compare_sv_genotyping(genotyper, genotyper_ref):
@@ -83,7 +88,7 @@ def compare_sv_genotyping(genotyper, genotyper_ref):
     )
 
 
-@click.command()
+@cli.command()
 @click.option('--cells_yaml', required=True)
 def compare_normalizer(cells_yaml):
     mondrianutils.mondrian_build.compare_normalizer(
