@@ -16,7 +16,7 @@ def cli():
 @click.option('--blacklist_file')
 @click.option('--min_reads', default=500000)
 @click.option('--min_quality', default=0.85)
-@click.option('--allowed_aneuploidy_score', default=0)
+@click.option('--allowed_aneuploidy_score', default=0.0)
 @click.option('--relative_aneuploidy_threshold', default=0.005)
 @click.option('--ploidy_threshold', default=2.5)
 def identify_normal_cells(
