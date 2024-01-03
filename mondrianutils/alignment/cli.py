@@ -93,7 +93,7 @@ def add_contamination_status(infile, outfile, reference):
 @click.option('--tempdir', help='temporary directory')
 @click.option('--ncores', type=int, help='number of cores')
 def merge_cells(infiles, cell_ids, reference, control_outfile, contaminated_outfile, pass_outfile, metrics, tempdir,
-                    ncores):
+                ncores):
     mondrianutils.alignment.generate_bams(
         infiles, reference, cell_ids, metrics, control_outfile, contaminated_outfile, pass_outfile, tempdir,
         ncores
@@ -115,6 +115,15 @@ def coverage_metrics(bamfile, output):
 @click.option('--bam', nargs=2, help='BAM files')
 @click.option('--control', nargs=2, help='control files')
 @click.option('--contaminated', nargs=2, help='contaminated files')
+
+<< << << < HEAD
+== == == =
+
+@click.option('--fastqscreen_detailed', nargs=2, help='fastqscreen detailed files')
+
+>> >> >> > a2b6c4e683ca10c5a76f253f6fb9ef38b8b9c4e5
+
+
 @click.option('--tarfile', help='tarfile')
 @click.option('--metadata_input', help='metadata input file')
 @click.option('--metadata_output', help='metadata output file')
@@ -185,8 +194,7 @@ def alignment(
         fastq_files, metadata_yaml, reference, reference_name, reference_version,
         supplementary_references_json, tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired, bam_output, metrics_output,
-        metrics_gc_output, fastqscreen_detailed_output, fastqscreen_summary_output,
-        tar_output, num_threads, run_fastqc
+        metrics_gc_output, tar_output, num_threads, run_fastqc
 ):
     mondrianutils.alignment.alignment(
         fastq_files, metadata_yaml, reference,
@@ -194,7 +202,6 @@ def alignment(
         adapter1, adapter2, cell_id, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output,
-        fastqscreen_detailed_output, fastqscreen_summary_output,
         tar_output, num_threads, run_fastqc=run_fastqc
     )
 
