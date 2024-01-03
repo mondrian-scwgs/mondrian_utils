@@ -462,6 +462,7 @@ def alignment(
     )
 
     print("merging fastqscreen counts")
+    helpers.makedirs(os.path.join(tempdir, cell_id, 'fastqscreen'))
     detailed_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'detailed.csv.gz')
     summary_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'summary.csv.gz')
     merge_fastq_screen_counts(
