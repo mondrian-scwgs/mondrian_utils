@@ -248,6 +248,7 @@ def bam_index(infile):
         infile + '.bai'
     ])
 
+
 def is_valid_tss_error(stdout):
     if 'Can not get any signals' in stdout:
         return True
@@ -256,6 +257,7 @@ def is_valid_tss_error(stdout):
     if 'Only single end reads' in stdout:
         return True
     return False
+
 
 def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version, tempdir):
     genome_version = genome_version.lower()
@@ -297,7 +299,7 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version,
     stdout, stderr = helpers.run_cmd(cmd)
 
     if not os.path.exists(tempoutput):
-        if is_valid_tss_error(stdout+stderr):
+        if is_valid_tss_error(stdout + stderr):
             tss_score = float('nan')
         else:
             raise Exception(stdout)
@@ -318,7 +320,7 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version,
 def alignment(
         fastq_files, metadata_yaml, reference, reference_name, reference_version, supplementary_references, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
-        bam_output, metrics_output, metrics_gc_output, fastqscreen_detailed_output, fastqscreen_summary_output,
+        bam_output, metrics_output, metrics_gc_output,
         tar_output, num_threads, run_fastqc=False
 ):
     with open(supplementary_references, 'rt') as reader:
@@ -453,19 +455,30 @@ def alignment(
         read_attrition_metrics, temp_collect_metrics, cell_id
     )
     helpers.makedirs(os.path.join(tempdir, cell_id, 'tss_enrichment'))
+    temp_tss_metrics = os.path.join(tempdir, cell_id, 'metrics', 'temp_metrics.csv.gz')
     add_tss_enrichment(
-        bam_output, temp_collect_metrics, metrics_output, reference_version,
+        bam_output, temp_collect_metrics, temp_tss_metrics, reference_version,
         os.path.join(tempdir, cell_id, 'tss_enrichment')
+    )
+
+    print("merging fastqscreen counts")
+    detailed_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'detailed.csv.gz')
+    summary_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'summary.csv.gz')
+    merge_fastq_screen_counts(
+        all_detailed_counts, all_summary_counts, detailed_metrics,
+        summary_metrics
+    )
+
+    csverve.merge_csv(
+        [temp_tss_metrics, summary_metrics],
+        metrics_output,
+        how='outer',
+        on='cell_id',
+        skip_header=False
     )
 
     print("parsing GC metrics")
     collect_gc_metrics(metrics_gc, metrics_gc_output, cell_id)
-
-    print("merging fastqscreen counts")
-    merge_fastq_screen_counts(
-        all_detailed_counts, all_summary_counts, fastqscreen_detailed_output,
-        fastqscreen_summary_output
-    )
 
     print("building tar file of supplementary metrics")
     tar_dir = os.path.join(tempdir, '{}_metrics'.format(cell_id))
@@ -478,5 +491,6 @@ def alignment(
     shutil.copy(metrics_insert, tar_dir)
     shutil.copy(histogram_insert, tar_dir)
     shutil.copy(metrics_wgs, tar_dir)
+    shutil.copy(detailed_metrics, tar_dir)
 
     helpers.make_tarfile(tar_output, tar_dir)

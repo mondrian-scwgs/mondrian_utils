@@ -274,7 +274,7 @@ def add_metadata(metrics, metadata_yaml, output):
 
 def generate_metadata(
         bam, control, contaminated, metrics, gc_metrics,
-        fastqscreen, tarfile, metadata_input, metadata_output
+        tarfile, metadata_input, metadata_output
 ):
     with open(metadata_input, 'rt') as reader:
         data = yaml.safe_load(reader)
@@ -330,14 +330,6 @@ def generate_metadata(
         os.path.basename(contaminated[1]): {
             'result_type': 'merged_cells_bam', 'filtering': 'contaminated',
             'auxiliary': helpers.get_auxiliary_files(contaminated[1])
-        },
-        os.path.basename(fastqscreen[0]): {
-            'result_type': 'detailed_fastqscreen_breakdown',
-            'auxiliary': helpers.get_auxiliary_files(fastqscreen[0])
-        },
-        os.path.basename(fastqscreen[1]): {
-            'result_type': 'detailed_fastqscreen_breakdown',
-            'auxiliary': helpers.get_auxiliary_files(fastqscreen[1])
         },
         os.path.basename(tarfile): {
             'result_type': 'alignment_metrics_plots',
