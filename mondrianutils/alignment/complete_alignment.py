@@ -499,23 +499,20 @@ def alignment(
     helpers.makedirs(os.path.join(tempdir, cell_id, 'fastqscreen'))
     detailed_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'detailed.csv.gz')
     summary_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'summary.csv.gz')
+    merged_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'all_metrics.csv.gz')
     merge_fastq_screen_counts(
         all_detailed_counts, all_summary_counts, detailed_metrics,
         summary_metrics
     )
-
-    print("adding contamination status")
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'contamination'))
-    contamination_metrics = os.path.join(tempdir, cell_id, 'contamination', 'metrics.csv.gz')
-    add_contamination_status(temp_tss_metrics, contamination_metrics, reference_name)
-
     csverve.merge_csv(
-        [contamination_metrics, summary_metrics],
-        metrics_output,
+        [temp_tss_metrics, summary_metrics],
+        merged_metrics,
         how='outer',
         on='cell_id',
         skip_header=False
     )
+
+    add_contamination_status(merged_metrics, metrics_output, reference_name)
 
     print("parsing GC metrics")
     collect_gc_metrics(metrics_gc, metrics_gc_output, cell_id)
