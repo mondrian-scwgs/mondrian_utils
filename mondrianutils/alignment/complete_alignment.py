@@ -356,9 +356,9 @@ def add_metadata(metrics, metadata_yaml, output):
 
     metadata = yaml.safe_load(open(metadata_yaml, 'rt'))
 
-    cells = metadata['meta']['cells'].keys()
+    cells = set(df['cell_id'])
 
-    assert set(cells) == set(df['cell_id'])
+    metadata['meta']['cells'] = {k: v for k, v in metadata['meta']['cells'].items() if k in cells}
 
     for cellid, cell_info in metadata['meta']['cells'].items():
         for colname, val in cell_info.items():
