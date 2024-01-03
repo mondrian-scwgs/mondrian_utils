@@ -115,15 +115,6 @@ def coverage_metrics(bamfile, output):
 @click.option('--bam', nargs=2, help='BAM files')
 @click.option('--control', nargs=2, help='control files')
 @click.option('--contaminated', nargs=2, help='contaminated files')
-
-<< << << < HEAD
-== == == =
-
-@click.option('--fastqscreen_detailed', nargs=2, help='fastqscreen detailed files')
-
->> >> >> > a2b6c4e683ca10c5a76f253f6fb9ef38b8b9c4e5
-
-
 @click.option('--tarfile', help='tarfile')
 @click.option('--metadata_input', help='metadata input file')
 @click.option('--metadata_output', help='metadata output file')
@@ -133,13 +124,12 @@ def generate_metadata(
         bam,
         control,
         contaminated,
-        fastqscreen_detailed,
         tarfile,
         metadata_input,
         metadata_output,
 ):
     mondrianutils.alignment.generate_metadata(
-        bam, control, contaminated, metrics, gc_metrics, fastqscreen_detailed, tarfile, metadata_input, metadata_output
+        bam, control, contaminated, metrics, gc_metrics, tarfile, metadata_input, metadata_output
     )
 
 
