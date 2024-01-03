@@ -317,6 +317,40 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version,
     )
 
 
+def add_contamination_status(
+        infile, outfile,
+        reference, threshold=0.05
+):
+    def get_col_data(df, organism):
+        return df['fastqscreen_{}'.format(organism)] - df['fastqscreen_{}_multihit'.format(organism)]
+
+    data = csverve.read_csv(infile)
+
+    data = data.set_index('cell_id', drop=False)
+
+    organisms = [v for v in data.columns.values if v.startswith('fastqscreen_')]
+    organisms = sorted(set([v.split('_')[1] for v in organisms]))
+    organisms = [v for v in organisms if v not in ['nohit', 'total']]
+
+    if reference not in organisms:
+        raise Exception("Could not find the fastq screen counts")
+
+    alts = [col for col in organisms if not col == reference]
+
+    data['is_contaminated'] = False
+
+    for altcol in alts:
+        perc_alt = get_col_data(data, altcol) / data['fastqscreen_total_reads']
+        data.loc[perc_alt > threshold, 'is_contaminated'] = True
+
+    col_type = dtypes()['metrics']['is_contaminated']
+
+    data['is_contaminated'] = data['is_contaminated'].astype(col_type)
+    csverve.write_dataframe_to_csv_and_yaml(
+        data, outfile, dtypes(fastqscreen_genomes=organisms)['metrics']
+    )
+
+
 def alignment(
         fastq_files, metadata_yaml, reference, reference_name, reference_version, supplementary_references, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
@@ -470,8 +504,13 @@ def alignment(
         summary_metrics
     )
 
+    print("adding contamination status")
+    helpers.makedirs(os.path.join(tempdir, cell_id, 'contamination'))
+    contamination_metrics = os.path.join(tempdir, cell_id, 'contamination', 'metrics.csv.gz')
+    add_contamination_status(temp_tss_metrics, contamination_metrics, reference_name)
+
     csverve.merge_csv(
-        [temp_tss_metrics, summary_metrics],
+        [contamination_metrics, summary_metrics],
         metrics_output,
         how='outer',
         on='cell_id',
