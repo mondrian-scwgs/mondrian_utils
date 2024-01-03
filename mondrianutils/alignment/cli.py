@@ -166,7 +166,8 @@ def input_validation(meta_yaml, input_data_json):
 @click.option('--reference', help='Path to the reference file')
 @click.option('--reference_name', help='Reference name')
 @click.option('--reference_version', help='Reference version')
-@click.option('--supplementary_references_json', help='Path to supplementary references JSON file')
+@click.option('--supplementary_references', multiple=True, help='Path to supplementary references')
+@click.option('--supplementary_reference_names', multiple=True, help='Path to supplementary references')
 @click.option('--tempdir', help='Path to the temporary directory')
 @click.option('--adapter1', help='Adapter sequence for read 1 trimming')
 @click.option('--adapter2', help='Adapter sequence for read 2 trimming')
@@ -182,14 +183,16 @@ def input_validation(meta_yaml, input_data_json):
 @click.option('--run_fastqc', is_flag=True, help='Run FastQC')
 def alignment(
         fastq_files, metadata_yaml, reference, reference_name, reference_version,
-        supplementary_references_json, tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
+        supplementary_references, supplementary_reference_names,
+        tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired, bam_output, metrics_output,
         metrics_gc_output, tar_output, num_threads, run_fastqc
 ):
     mondrianutils.alignment.alignment(
-        fastq_files, metadata_yaml, reference,
-        reference_name, reference_version, supplementary_references_json, tempdir,
-        adapter1, adapter2, cell_id, wgs_metrics_mqual,
+        fastq_files, metadata_yaml,
+        reference, reference_name, reference_version,
+        supplementary_references, supplementary_reference_names,
+        tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output,
         tar_output, num_threads, run_fastqc=run_fastqc

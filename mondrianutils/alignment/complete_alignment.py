@@ -375,13 +375,12 @@ def add_metadata(metrics, metadata_yaml, output):
 
 
 def alignment(
-        fastq_files, metadata_yaml, reference, reference_name, reference_version, supplementary_references, tempdir,
-        adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
+        fastq_files, metadata_yaml, reference, reference_name, reference_version,
+        supplementary_references, supplementary_reference_names,
+        tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output,
         tar_output, num_threads, run_fastqc=False
 ):
-    with open(supplementary_references, 'rt') as reader:
-        supplementary_references = json.load(reader)
 
     with open(fastq_files, 'rt') as reader:
         fastqdata = json.load(reader)
@@ -414,7 +413,8 @@ def alignment(
         organism_filter(
             r1, r2, fastqscreen_r1, fastqscreen_r2,
             detailed_metrics, summary_metrics, fastqscreen_temp,
-            cell_id, reference, reference_name, supplementary_references, num_threads
+            cell_id, reference, reference_name, supplementary_references, supplementary_reference_names,
+            num_threads
         )
         all_detailed_counts.append(detailed_metrics)
         all_summary_counts.append(summary_metrics)

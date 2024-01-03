@@ -120,7 +120,7 @@ def run_fastq_screen_paired_end(fastq_r1, fastq_r2, tempdir, params, num_threads
             config_writer.write(outstr)
 
         if not num_threads == 1:
-            outstr = '\t'.join(['THREADS', num_threads])+'\n'
+            outstr = '\t'.join(['THREADS', num_threads]) + '\n'
             config_writer.write(outstr)
 
     cmd = [
@@ -228,13 +228,14 @@ def re_tag_reads(infile, outfile):
 def organism_filter(
         fastq_r1, fastq_r2, filtered_fastq_r1, filtered_fastq_r2,
         detailed_metrics, summary_metrics, tempdir, cell_id,
-        reference, reference_name, supplementary_references, num_threads
+        reference, reference_name, supplementary_references, supplementary_reference_names,
+        num_threads
 ):
     genomes = [{'name': reference_name, 'path': reference}]
 
-    for supp_reference in supplementary_references:
+    for ref, name in zip(supplementary_references, supplementary_reference_names):
         genomes.append(
-            {'name': supp_reference['genome_name'], 'path': supp_reference['reference']}
+            {'name': name, 'path': ref}
         )
 
     params = {

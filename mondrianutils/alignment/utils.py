@@ -352,3 +352,10 @@ def generate_metadata(
 
 def _json_file_parser(filepath):
     return json.load(open(filepath, 'rt'))
+
+
+def supplementary_reference_cmdline(jsonfile, key, prefix):
+    with open(jsonfile, 'rt') as reader:
+        data = json.load(reader)
+        args = [f'{--prefix} {v[key]}' for v in data]
+        print(" ".join(args))
