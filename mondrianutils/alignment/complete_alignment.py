@@ -351,6 +351,29 @@ def add_contamination_status(
     )
 
 
+def add_metadata(metrics, metadata_yaml, output):
+    df = csverve.read_csv(metrics)
+
+    metadata = yaml.safe_load(open(metadata_yaml, 'rt'))
+
+    cells = metadata['meta']['cells'].keys()
+
+    assert set(cells) == set(df['cell_id'])
+
+    for cellid, cell_info in metadata['meta']['cells'].items():
+        for colname, val in cell_info.items():
+            df.loc[df['cell_id'] == cellid, colname] = val
+
+    organisms = [v for v in df.columns.values if v.startswith('fastqscreen_')]
+    organisms = sorted(set([v.split('_')[1] for v in organisms]))
+    organisms = [v for v in organisms if v not in ['nohit', 'total']]
+
+    csverve.write_dataframe_to_csv_and_yaml(
+        df, output,
+        dtypes=dtypes(fastqscreen_genomes=organisms)['metrics']
+    )
+
+
 def alignment(
         fastq_files, metadata_yaml, reference, reference_name, reference_version, supplementary_references, tempdir,
         adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
@@ -499,7 +522,9 @@ def alignment(
     helpers.makedirs(os.path.join(tempdir, cell_id, 'fastqscreen'))
     detailed_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'detailed.csv.gz')
     summary_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'summary.csv.gz')
-    merged_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'all_metrics.csv.gz')
+    merged_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'merged_metrics.csv.gz')
+    is_contaminated_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'contaminated_metrics.csv.gz')
+
     merge_fastq_screen_counts(
         all_detailed_counts, all_summary_counts, detailed_metrics,
         summary_metrics
@@ -511,8 +536,8 @@ def alignment(
         on='cell_id',
         skip_header=False
     )
-
-    add_contamination_status(merged_metrics, metrics_output, reference_name)
+    add_contamination_status(merged_metrics, is_contaminated_metrics, reference_name)
+    add_metadata(is_contaminated_metrics, metadata_yaml, metrics_output)
 
     print("parsing GC metrics")
     collect_gc_metrics(metrics_gc, metrics_gc_output, cell_id)
