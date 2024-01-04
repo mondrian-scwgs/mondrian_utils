@@ -371,5 +371,5 @@ def fastqs_cmdline(jsonfile):
         data = json.load(reader)
         for entry in data:
             pairs.append(f"{entry['lane_id']},{entry['flowcell_id']},{entry['fastq1']},{entry['fastq2']}")
-    pairs = [f'--pairs {v}' for v in pairs]
+    pairs = [f'--fastq_pairs {v}' for v in pairs]
     print(" ".join(pairs))

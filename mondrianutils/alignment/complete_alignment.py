@@ -375,7 +375,7 @@ def add_metadata(metrics, metadata_yaml, output):
 
 
 def alignment(
-        fastq_files, metadata_yaml, reference, reference_name, reference_version,
+        fastq_pairs, metadata_yaml, reference, reference_name, reference_version,
         supplementary_references, supplementary_reference_names,
         tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output,
@@ -388,7 +388,7 @@ def alignment(
     final_lane_bams = []
     all_detailed_counts = []
     all_summary_counts = []
-    for lane in fastq_files:
+    for lane in fastq_pairs:
         r1 = lane[2]
         r2 = lane[3]
         lane_id = lane[0]
