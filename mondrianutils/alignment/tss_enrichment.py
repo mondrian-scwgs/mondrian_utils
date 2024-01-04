@@ -73,7 +73,7 @@ def tss_enrichment(bamfile, tss_metrics, genome_version, cell_id, tempdir):
         'tss_enrichment_score': score
     }
 
-    outdata = pd.DataFrame.from_dict(outdata, orient='index').T
+    data = pd.DataFrame.from_dict(data, orient='index').T
 
     csverve.write_dataframe_to_csv_and_yaml(
         data, tss_metrics, dtypes()['metrics'], skip_header=False
