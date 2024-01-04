@@ -382,6 +382,8 @@ def alignment(
         tar_output, num_threads, run_fastqc=False
 ):
 
+
+
     if os.path.exists(tempdir):
         shutil.rmtree(tempdir)
 

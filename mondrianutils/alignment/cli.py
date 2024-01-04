@@ -188,6 +188,8 @@ def alignment(
     supplementary_references = [v.split(',')[2] for v in supplementary_references]
     supplementary_reference_names = [v.split(',')[0] for v in supplementary_references]
 
+    raise Exception(supplementary_reference_names, supplementary_references)
+
     mondrianutils.alignment.alignment(
         fastq_pairs, metadata_yaml,
         reference, reference_name, reference_version,
