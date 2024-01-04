@@ -361,7 +361,7 @@ def supplementary_reference_cmdline(jsonfile):
         for entry in data:
             refs.append(f'{entry["genome_name"]},{entry["genome_version"]},{entry["reference"]}')
 
-        refs = [f'--supplementary_reference {v}' for v in refs]
+        refs = [f'--supplementary_references {v}' for v in refs]
         print(" ".join(refs))
 
 
