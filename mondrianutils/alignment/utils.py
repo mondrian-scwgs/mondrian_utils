@@ -354,8 +354,22 @@ def _json_file_parser(filepath):
     return json.load(open(filepath, 'rt'))
 
 
-def supplementary_reference_cmdline(jsonfile, key, prefix):
+def supplementary_reference_cmdline(jsonfile):
+    refs = []
     with open(jsonfile, 'rt') as reader:
         data = json.load(reader)
-        args = [f'{--prefix} {v[key]}' for v in data]
-        print(" ".join(args))
+        for entry in data:
+            refs.append(f'{entry["genome_name"]},{entry["genome_version"]},{entry["reference"]}')
+
+        refs = [f'--supplementary_reference {v}' for v in refs]
+        print(" ".join(refs))
+
+
+def fastqs_cmdline(jsonfile):
+    pairs = []
+    with open(jsonfile, 'rt') as reader:
+        data = json.load(reader)
+        for entry in data:
+            pairs.append(f"{entry['lane_id']},{entry['flowcell_id']},{entry['fastq1']},{entry['fastq2']}")
+    pairs = [f'--pairs {v}' for v in pairs]
+    print(" ".join(pairs))

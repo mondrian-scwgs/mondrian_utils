@@ -11,4 +11,4 @@ from .utils import add_metadata
 from .trim_galore import trim_galore
 from .utils import input_validation
 from .complete_alignment import alignment
-from .utils import supplementary_reference_cmdline
+from .utils import supplementary_reference_cmdline, fastqs_cmdline

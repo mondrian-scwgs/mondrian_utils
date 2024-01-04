@@ -382,20 +382,17 @@ def alignment(
         tar_output, num_threads, run_fastqc=False
 ):
 
-    with open(fastq_files, 'rt') as reader:
-        fastqdata = json.load(reader)
-
     if os.path.exists(tempdir):
         shutil.rmtree(tempdir)
 
     final_lane_bams = []
     all_detailed_counts = []
     all_summary_counts = []
-    for lane in fastqdata:
-        r1 = lane['fastq1']
-        r2 = lane['fastq2']
-        lane_id = lane['lane_id']
-        flowcell_id = lane['flowcell_id']
+    for lane in fastq_files:
+        r1 = lane[2]
+        r2 = lane[3]
+        lane_id = lane[0]
+        flowcell_id = lane[1]
 
         print("Processing Lane {} Flowcell {}".format(lane_id, flowcell_id))
 

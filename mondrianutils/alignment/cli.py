@@ -164,10 +164,7 @@ def input_validation(meta_yaml, input_data_json):
 @click.option('--fastq_files', help='Comma-separated list of FASTQ files')
 @click.option('--metadata_yaml', help='Path to the metadata YAML file')
 @click.option('--reference', help='Path to the reference file')
-@click.option('--reference_name', help='Reference name')
-@click.option('--reference_version', help='Reference version')
 @click.option('--supplementary_references', multiple=True, help='Path to supplementary references')
-@click.option('--supplementary_reference_names', multiple=True, help='Path to supplementary references')
 @click.option('--tempdir', help='Path to the temporary directory')
 @click.option('--adapter1', help='Adapter sequence for read 1 trimming')
 @click.option('--adapter2', help='Adapter sequence for read 2 trimming')
@@ -182,12 +179,15 @@ def input_validation(meta_yaml, input_data_json):
 @click.option('--num_threads', default=1, help='Number of threads')
 @click.option('--run_fastqc', is_flag=True, help='Run FastQC')
 def alignment(
-        fastq_files, metadata_yaml, reference, reference_name, reference_version,
-        supplementary_references, supplementary_reference_names,
+        fastq_files, metadata_yaml, reference, supplementary_references,
         tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired, bam_output, metrics_output,
         metrics_gc_output, tar_output, num_threads, run_fastqc
 ):
+    reference_name, reference_version, reference = reference.split(',')
+    supplementary_references = [v.split(2) for v in supplementary_references]
+    supplementary_reference_names = [v.split(0) for v in supplementary_references]
+
     mondrianutils.alignment.alignment(
         fastq_files, metadata_yaml,
         reference, reference_name, reference_version,
