@@ -390,6 +390,7 @@ def alignment(
     all_summary_counts = []
     for lane in fastq_pairs:
         lane = lane.split(',')
+        assert len(lane) == 4, lane
         r1 = lane[2]
         r2 = lane[3]
         lane_id = lane[0]
