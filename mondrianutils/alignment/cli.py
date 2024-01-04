@@ -184,14 +184,10 @@ def alignment(
         wgs_metrics_bqual, wgs_metrics_count_unpaired, bam_output, metrics_output,
         metrics_gc_output, tar_output, num_threads, run_fastqc
 ):
-    reference_name, reference_version, reference = reference.split(',')
-    supplementary_reference_files = [v.split(',')[2] for v in supplementary_references]
-    supplementary_reference_names = [v.split(',')[0] for v in supplementary_references]
 
     mondrianutils.alignment.alignment(
         fastq_pairs, metadata_yaml,
-        reference, reference_name, reference_version,
-        supplementary_reference_files, supplementary_reference_names,
+        reference, supplementary_references,
         tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output,
