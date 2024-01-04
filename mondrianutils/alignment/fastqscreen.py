@@ -12,6 +12,9 @@ from mondrianutils.dtypes.alignment import dtypes
 def merge_fastq_screen_counts(
         all_detailed_counts, all_summary_counts, merged_detailed_counts, merged_summary_counts
 ):
+    helpers.makedirs(os.path.dirname(merged_summary_counts))
+    helpers.makedirs(os.path.dirname(merged_detailed_counts))
+
     if isinstance(all_detailed_counts, dict):
         all_detailed_counts = all_detailed_counts.values()
 
