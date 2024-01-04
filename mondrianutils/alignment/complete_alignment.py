@@ -242,7 +242,7 @@ def alignment(
 
     print('calculating TSS score')
     tss_tempdir = os.path.join(tempdir, cell_id, 'tss_enrichment')
-    temp_tss_metrics = os.path.join(tempdir, cell_id, 'metrics', 'temp_metrics.csv.gz')
+    temp_tss_metrics = os.path.join(tempdir, cell_id, 'tss_enrichment', 'temp_metrics.csv.gz')
     tss_enrichment(
         bam_output, temp_tss_metrics, reference_version, cell_id, tss_tempdir
     )
