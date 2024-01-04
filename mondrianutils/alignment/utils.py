@@ -83,14 +83,6 @@ def input_validation(meta_yaml, input_json):
                 )
 
 
-# def get_cell_id_from_bam(infile):
-#     infile = pysam.AlignmentFile(infile, "rb")
-#
-#     iter = infile.fetch(until_eof=True)
-#     for read in iter:
-#         return read.get_tag('CB')
-
-
 def get_new_header(cells, bamfile, new_header):
     subprocess.run(['samtools', 'view', '-H', bamfile, '-o', new_header])
     with open(new_header, 'at') as header:
@@ -248,7 +240,6 @@ def add_contamination_status(
     )
 
 
-
 def add_metadata(metrics, metadata_yaml, output):
     df = csverve.read_csv(metrics)
 
@@ -348,10 +339,6 @@ def generate_metadata(
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(data, writer, default_flow_style=False)
-
-
-# def _json_file_parser(filepath):
-#     return json.load(open(filepath, 'rt'))
 
 
 def supplementary_reference_cmdline(jsonfile):

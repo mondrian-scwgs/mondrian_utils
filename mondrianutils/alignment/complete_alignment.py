@@ -1,14 +1,11 @@
-import json
 import os
 import pathlib
 import shutil
 import csverve
 
 import mondrianutils.helpers as helpers
-import pysam
 import yaml
-from mondrianutils.alignment.collect_gc_metrics import collect_gc_metrics
-from mondrianutils.alignment.collect_metrics import collect_metrics
+
 from mondrianutils.alignment.coverage_metrics import get_coverage_metrics
 from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
@@ -16,7 +13,12 @@ from mondrianutils.alignment.trim_galore import trim_galore
 
 from mondrianutils.alignment import utils as alignment_utils
 
-from mondrianutils.dtypes.alignment import dtypes
+from mondrianutils.alignment import mark_duplicates
+from mondrianutils.alignment import insert_metrics
+from mondrianutils.alignment import wgs_metrics
+from mondrianutils.alignment import flagstat
+from mondrianutils.alignment import gc_metrics
+from mondrianutils.alignment import tss_enrichment
 
 
 def load_metadata(metadata_yaml, lane_id, flowcell_id, cell_id):
@@ -100,211 +102,12 @@ def merge_bams(inputs, output, num_threads=1, mem="2G"):
     helpers.run_cmd(cmd)
 
 
-def bam_markdups(bam_filename, markduped_bam_filename, metrics_filename,
-                 tempdir, num_threads=1, mem="2G"):
-    if not os.path.exists(tempdir):
-        helpers.makedirs(tempdir)
-
-    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
-    if num_threads == 1:
-        cmd.append('-XX:ParallelGCThreads=1')
-    cmd.extend([
-        'MarkDuplicates',
-        'INPUT=' + bam_filename,
-        'OUTPUT=' + markduped_bam_filename,
-        'METRICS_FILE=' + metrics_filename,
-        'REMOVE_DUPLICATES=False',
-        'ASSUME_SORTED=True',
-        'VALIDATION_STRINGENCY=LENIENT',
-        'TMP_DIR=' + tempdir,
-        'MAX_RECORDS_IN_RAM=150000',
-        'QUIET=true'
-    ])
-    helpers.run_cmd(cmd)
-
-
-def bam_collect_gc_metrics(bam_filename, ref_genome, metrics_filename,
-                           summary_filename, chart_filename, tempdir,
-                           num_threads=1, mem="2G"):
-    if not os.path.exists(tempdir):
-        helpers.makedirs(tempdir)
-
-    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
-    if num_threads == 1:
-        cmd.append('-XX:ParallelGCThreads=1')
-    cmd.extend([
-        'CollectGcBiasMetrics',
-        'INPUT=' + bam_filename,
-        'OUTPUT=' + metrics_filename,
-        'REFERENCE_SEQUENCE=' + ref_genome,
-        'S=' + summary_filename,
-        'CHART_OUTPUT=' + chart_filename,
-        'VALIDATION_STRINGENCY=LENIENT',
-        'TMP_DIR=' + tempdir,
-        'MAX_RECORDS_IN_RAM=150000',
-        'QUIET=true'
-    ])
-    helpers.run_cmd(cmd)
-
-
-def bam_collect_insert_metrics(
-        bam_filename, flagstat_metrics_filename,
-        metrics_filename, histogram_filename, tempdir,
-        num_threads=1, mem="2G"
-):
-    # Check if any paired reads exist
-    has_paired = None
-    with open(flagstat_metrics_filename) as f:
-        for line in f:
-            if 'properly paired' in line:
-                if line.startswith('0 '):
-                    has_paired = False
-                else:
-                    has_paired = True
-
-    if has_paired is None:
-        raise Exception('Unable to determine number of properly paired reads from {}'.format(
-            flagstat_metrics_filename))
-
-    if not has_paired:
-        with open(metrics_filename, 'w') as f:
-            f.write('## FAILED: No properly paired reads\n')
-        with open(histogram_filename, 'w'):
-            pass
-        return
-
-    if not os.path.exists(tempdir):
-        helpers.makedirs(tempdir)
-
-    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
-    if num_threads == 1:
-        cmd.append('-XX:ParallelGCThreads=1')
-    cmd.extend([
-        'CollectInsertSizeMetrics',
-        'INPUT=' + bam_filename,
-        'OUTPUT=' + metrics_filename,
-        'HISTOGRAM_FILE=' + histogram_filename,
-        'ASSUME_SORTED=True',
-        'VALIDATION_STRINGENCY=LENIENT',
-        'TMP_DIR=' + tempdir,
-        'MAX_RECORDS_IN_RAM=150000',
-        'QUIET=true'
-    ])
-    helpers.run_cmd(cmd)
-
-
-def bam_collect_wgs_metrics(bam_filename, ref_genome, metrics_filename,
-                            mqual, bqual, count_unpaired, tempdir, num_threads=1, mem="2G"):
-    if not os.path.exists(tempdir):
-        helpers.makedirs(tempdir)
-
-    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
-    if num_threads == 1:
-        cmd.append('-XX:ParallelGCThreads=1')
-    cmd.extend([
-        'CollectWgsMetrics',
-        'INPUT=' + bam_filename,
-        'OUTPUT=' + metrics_filename,
-        'REFERENCE_SEQUENCE=' + ref_genome,
-        'MINIMUM_BASE_QUALITY=' +
-        bqual,
-        'MINIMUM_MAPPING_QUALITY=' +
-        mqual,
-        'COVERAGE_CAP=500',
-        'VALIDATION_STRINGENCY=LENIENT',
-        'COUNT_UNPAIRED=' +
-        ('True' if count_unpaired else 'False'),
-        'TMP_DIR=' + tempdir,
-        'MAX_RECORDS_IN_RAM=150000',
-        'QUIET=true'
-    ])
-    helpers.run_cmd(cmd)
-
-
-def bam_flagstat(bam, metrics):
-    script_path = pathlib.Path(__file__).parent.resolve()
-    script_path = os.path.join(script_path, 'flagstat.sh')
-    helpers.run_cmd([
-        script_path,
-        bam,
-        metrics,
-    ])
-
-
 def bam_index(infile):
     helpers.run_cmd([
         'samtools', 'index',
         infile,
         infile + '.bai'
     ])
-
-
-def is_valid_tss_error(stdout):
-    if 'Can not get any signals' in stdout:
-        return True
-    if 'Can not get any proper mapped reads' in stdout:
-        return True
-    if 'Only single end reads' in stdout:
-        return True
-    return False
-
-
-def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version, tempdir):
-    genome_version = genome_version.lower()
-
-    if genome_version not in ('grch37', 'grch38', 'hg18', 'hg19'):
-        csverve.simple_annotate_csv(
-            metrics_file,
-            annotated_metrics,
-            'tss_enrichment_score',
-            'NA',
-            dtypes()['metrics']['tss_enrichment_score']
-        )
-        return
-
-    with pysam.AlignmentFile(bamfile, "rb") as bam_reader:
-        bam_chromosomes = bam_reader.references
-
-    chromosomes = [str(v) for v in range(1, 23)] + ['X']
-    if bam_chromosomes[0].startswith('chr'):
-        chromosomes = ['chr' + v for v in chromosomes]
-    chromosomes = [v for v in chromosomes if v in bam_chromosomes]
-    assert len(chromosomes) > 1
-
-    helpers.makedirs(tempdir)
-
-    tempoutput = os.path.join(tempdir, 'temp_tss_output.txt')
-
-    scripts_directory = os.path.realpath(os.path.dirname(__file__))
-    run_rscript = os.path.join(scripts_directory, 'tss_enrichment.R')
-    cmd = [
-        run_rscript,
-        '--bamfile', bamfile,
-        '--output', tempoutput,
-        '--tempdir', tempdir,
-        '--genome_version', genome_version,
-        '--chromosomes', ','.join(chromosomes)
-    ]
-
-    stdout, stderr = helpers.run_cmd(cmd)
-
-    if not os.path.exists(tempoutput):
-        if is_valid_tss_error(stdout + stderr):
-            tss_score = float('nan')
-        else:
-            raise Exception(stdout)
-    else:
-        tss_score = open(tempoutput, 'rt').readlines()
-        assert len(tss_score) == 1
-        tss_score = tss_score[0]
-
-    csverve.simple_annotate_csv(
-        metrics_file,
-        annotated_metrics,
-        'tss_enrichment_score',
-        tss_score,
-        dtypes()['metrics']['tss_enrichment_score']
-    )
 
 
 def alignment(
@@ -396,44 +199,40 @@ def alignment(
     merge_bams(final_lane_bams, bam_merged, num_threads=num_threads, mem='4G')
 
     print("Marking Duplicates")
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'markdups'))
-    metrics_markdups = os.path.join(tempdir, cell_id, 'markdups', 'metrics.txt')
     tempdir_markdups = os.path.join(tempdir, cell_id, 'markdups')
-    bam_markdups(bam_merged, bam_output, metrics_markdups, tempdir_markdups, num_threads=num_threads, mem='4G')
-    bam_index(bam_output)
-
-    print("Collecting GC Metrics")
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'gc_metrics'))
-    metrics_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'metrics.txt')
-    summary_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'summary.txt')
-    chart_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'chart.pdf')
-    tempdir_gc = os.path.join(tempdir, cell_id, 'gc_metrics')
-    bam_collect_gc_metrics(
-        bam_output, reference, metrics_gc,
-        summary_gc, chart_gc, tempdir_gc, num_threads=num_threads, mem="4G"
+    metrics_markdups = os.path.join(tempdir, cell_id, 'markdups', 'metrics.txt')
+    parsed_markdups = os.path.join(tempdir, cell_id, 'markdups', 'metrics.csv.gz')
+    mark_duplicates(
+        bam_merged, bam_output, metrics_markdups, parsed_markdups, tempdir_markdups, cell_id,
+        num_threads=num_threads, mem='4G'
     )
+    bam_index(bam_output)
 
     print("Starting Flagstat")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'flagstat'))
     metrics_flagstat = os.path.join(tempdir, cell_id, 'flagstat', 'flagstat.txt')
-    bam_flagstat(bam_output, metrics_flagstat)
+    parsed_flagstat = os.path.join(tempdir, cell_id, 'flagstat', 'flagstat.csv.gz')
+    flagstat(bam_output, metrics_flagstat, parsed_flagstat, cell_id)
 
     print("Starting Insert Metrics")
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'insert_metrics'))
     metrics_insert = os.path.join(tempdir, cell_id, 'insert_metrics', 'metrics.txt')
     histogram_insert = os.path.join(tempdir, cell_id, 'insert_metrics', 'histogram.pdf')
     tempdir_insert = os.path.join(tempdir, cell_id, 'insert_metrics')
-    bam_collect_insert_metrics(
-        bam_output, metrics_flagstat, metrics_insert, histogram_insert, tempdir_insert, num_threads=num_threads
+    parsed_insert = os.path.join(tempdir, cell_id, 'insert_metrics', 'metrics.csv.gz')
+    insert_metrics(
+        bam_output, metrics_flagstat, metrics_insert, histogram_insert, parsed_insert,
+        tempdir_insert, cell_id, num_threads=num_threads
     )
 
     print("Starting Picard WGS metrics")
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'wgs_metrics'))
-    metrics_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics', 'metrics.txt')
     tempdir_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics')
-    bam_collect_wgs_metrics(
-        bam_output, reference, metrics_wgs, wgs_metrics_mqual,
-        wgs_metrics_bqual, wgs_metrics_count_unpaired, tempdir_wgs, num_threads=num_threads, mem='4G'
+    metrics_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics', 'metrics.txt')
+    parsed_wgs = os.path.join(tempdir, cell_id, 'wgs_metrics', 'metrics.csv.gz')
+    wgs_metrics(
+        bam_output, reference, wgs_metrics_mqual,
+        wgs_metrics_bqual, wgs_metrics_count_unpaired,
+        metrics_wgs, parsed_wgs, tempdir_wgs, cell_id,
+        num_threads=num_threads, mem='4G'
     )
 
     print("Collecting read attrition metrics")
@@ -441,43 +240,45 @@ def alignment(
     read_attrition_metrics = os.path.join(tempdir, cell_id, 'read_attrition', 'metrics.csv.gz')
     get_coverage_metrics(bam_output, read_attrition_metrics)
 
-    print("parsing all bam metrics")
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'metrics'))
-    temp_collect_metrics = os.path.join(tempdir, cell_id, 'metrics', 'temp_metrics.csv.gz')
-    collect_metrics(
-        metrics_wgs, metrics_insert, metrics_flagstat, metrics_markdups,
-        read_attrition_metrics, temp_collect_metrics, cell_id
-    )
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'tss_enrichment'))
+    print('calculating TSS score')
+    tss_tempdir = os.path.join(tempdir, cell_id, 'tss_enrichment')
     temp_tss_metrics = os.path.join(tempdir, cell_id, 'metrics', 'temp_metrics.csv.gz')
-    add_tss_enrichment(
-        bam_output, temp_collect_metrics, temp_tss_metrics, reference_version,
-        os.path.join(tempdir, cell_id, 'tss_enrichment')
+    tss_enrichment(
+        bam_output, temp_tss_metrics, reference_version, cell_id, tss_tempdir
     )
 
     print("merging fastqscreen counts")
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'fastqscreen'))
     detailed_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'detailed.csv.gz')
     summary_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'summary.csv.gz')
-    merged_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'merged_metrics.csv.gz')
-    is_contaminated_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'contaminated_metrics.csv.gz')
-
     merge_fastq_screen_counts(
         all_detailed_counts, all_summary_counts, detailed_metrics,
         summary_metrics
     )
+
+    print("merging all bam metrics")
+    merged_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'merged_metrics.csv.gz')
     csverve.merge_csv(
-        [temp_tss_metrics, summary_metrics],
+        [parsed_markdups, parsed_flagstat, parsed_insert, parsed_wgs,
+         read_attrition_metrics, temp_tss_metrics, summary_metrics],
         merged_metrics,
-        how='outer',
-        on='cell_id',
-        skip_header=False
+        how='outer', on='cell_id', skip_header=False
     )
+
+    is_contaminated_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'contaminated_metrics.csv.gz')
     alignment_utils.add_contamination_status(merged_metrics, is_contaminated_metrics, reference_name)
     alignment_utils.add_metadata(is_contaminated_metrics, metadata_yaml, metrics_output)
 
-    print("parsing GC metrics")
-    collect_gc_metrics(metrics_gc, metrics_gc_output, cell_id)
+    print("Collecting GC Metrics")
+    tempdir_gc = os.path.join(tempdir, cell_id, 'gc_metrics')
+    metrics_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'metrics.txt')
+    summary_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'summary.txt')
+    chart_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'chart.pdf')
+    parsed_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'metrics.csv.gz')
+    gc_metrics(
+        bam_output, reference, metrics_gc,
+        summary_gc, chart_gc, parsed_gc,
+        tempdir_gc, cell_id, num_threads=num_threads, mem="4G"
+    )
 
     print("building tar file of supplementary metrics")
     tar_dir = os.path.join(tempdir, '{}_metrics'.format(cell_id))
