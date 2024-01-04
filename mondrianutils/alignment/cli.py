@@ -185,8 +185,8 @@ def alignment(
         metrics_gc_output, tar_output, num_threads, run_fastqc
 ):
     reference_name, reference_version, reference = reference.split(',')
-    supplementary_references = [v.split(2) for v in supplementary_references]
-    supplementary_reference_names = [v.split(0) for v in supplementary_references]
+    supplementary_references = [v.split(',')[2] for v in supplementary_references]
+    supplementary_reference_names = [v.split(',')[0] for v in supplementary_references]
 
     mondrianutils.alignment.alignment(
         fastq_pairs, metadata_yaml,

@@ -389,6 +389,7 @@ def alignment(
     all_detailed_counts = []
     all_summary_counts = []
     for lane in fastq_pairs:
+        lane = lane.split(',')
         r1 = lane[2]
         r2 = lane[3]
         lane_id = lane[0]
