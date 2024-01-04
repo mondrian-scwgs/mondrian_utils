@@ -14,6 +14,8 @@ from mondrianutils.alignment.fastqscreen import merge_fastq_screen_counts
 from mondrianutils.alignment.fastqscreen import organism_filter
 from mondrianutils.alignment.trim_galore import trim_galore
 
+from mondrianutils.alignment import utils as alignment_utils
+
 from mondrianutils.dtypes.alignment import dtypes
 
 
@@ -50,18 +52,6 @@ def bwa_align(
         flowcell_id, center, num_threads, tempdir
     ]
     helpers.run_cmd(cmd)
-
-
-def tag_bam_with_cellid(infile, outfile, cell_id):
-    infile = pysam.AlignmentFile(infile, "rb")
-    outfile = pysam.AlignmentFile(outfile, "wb", template=infile)
-
-    iter = infile.fetch(until_eof=True)
-    for read in iter:
-        read.set_tag('CB', cell_id, replace=False)
-        outfile.write(read)
-    infile.close()
-    outfile.close()
 
 
 def bam_sort(bam_filename, sorted_bam_filename, tempdir, num_threads=1, mem="2G"):
@@ -317,63 +307,6 @@ def add_tss_enrichment(bamfile, metrics_file, annotated_metrics, genome_version,
     )
 
 
-def add_contamination_status(
-        infile, outfile,
-        reference, threshold=0.05
-):
-    def get_col_data(df, organism):
-        return df['fastqscreen_{}'.format(organism)] - df['fastqscreen_{}_multihit'.format(organism)]
-
-    data = csverve.read_csv(infile)
-
-    data = data.set_index('cell_id', drop=False)
-
-    organisms = [v for v in data.columns.values if v.startswith('fastqscreen_')]
-    organisms = sorted(set([v.split('_')[1] for v in organisms]))
-    organisms = [v for v in organisms if v not in ['nohit', 'total']]
-
-    if reference not in organisms:
-        raise Exception("Could not find the fastq screen counts")
-
-    alts = [col for col in organisms if not col == reference]
-
-    data['is_contaminated'] = False
-
-    for altcol in alts:
-        perc_alt = get_col_data(data, altcol) / data['fastqscreen_total_reads']
-        data.loc[perc_alt > threshold, 'is_contaminated'] = True
-
-    col_type = dtypes()['metrics']['is_contaminated']
-
-    data['is_contaminated'] = data['is_contaminated'].astype(col_type)
-    csverve.write_dataframe_to_csv_and_yaml(
-        data, outfile, dtypes(fastqscreen_genomes=organisms)['metrics']
-    )
-
-
-def add_metadata(metrics, metadata_yaml, output):
-    df = csverve.read_csv(metrics)
-
-    metadata = yaml.safe_load(open(metadata_yaml, 'rt'))
-
-    cells = set(df['cell_id'])
-
-    metadata['meta']['cells'] = {k: v for k, v in metadata['meta']['cells'].items() if k in cells}
-
-    for cellid, cell_info in metadata['meta']['cells'].items():
-        for colname, val in cell_info.items():
-            df.loc[df['cell_id'] == cellid, colname] = val
-
-    organisms = [v for v in df.columns.values if v.startswith('fastqscreen_')]
-    organisms = sorted(set([v.split('_')[1] for v in organisms]))
-    organisms = [v for v in organisms if v not in ['nohit', 'total']]
-
-    csverve.write_dataframe_to_csv_and_yaml(
-        df, output,
-        dtypes=dtypes(fastqscreen_genomes=organisms)['metrics']
-    )
-
-
 def alignment(
         fastq_pairs, metadata_yaml, reference,
         supplementary_references,
@@ -445,7 +378,7 @@ def alignment(
         print("Tagging Bam with cell id")
         helpers.makedirs(os.path.join(lane_tempdir, 'tagging'))
         lane_tagged_bam = os.path.join(lane_tempdir, 'tagging', 'tagged.bam')
-        tag_bam_with_cellid(
+        alignment_utils.tag_bam_with_cellid(
             lane_aligned_bam, lane_tagged_bam, cell_id
         )
 
@@ -540,8 +473,8 @@ def alignment(
         on='cell_id',
         skip_header=False
     )
-    add_contamination_status(merged_metrics, is_contaminated_metrics, reference_name)
-    add_metadata(is_contaminated_metrics, metadata_yaml, metrics_output)
+    alignment_utils.add_contamination_status(merged_metrics, is_contaminated_metrics, reference_name)
+    alignment_utils.add_metadata(is_contaminated_metrics, metadata_yaml, metrics_output)
 
     print("parsing GC metrics")
     collect_gc_metrics(metrics_gc, metrics_gc_output, cell_id)

@@ -83,12 +83,12 @@ def input_validation(meta_yaml, input_json):
                 )
 
 
-def get_cell_id_from_bam(infile):
-    infile = pysam.AlignmentFile(infile, "rb")
-
-    iter = infile.fetch(until_eof=True)
-    for read in iter:
-        return read.get_tag('CB')
+# def get_cell_id_from_bam(infile):
+#     infile = pysam.AlignmentFile(infile, "rb")
+#
+#     iter = infile.fetch(until_eof=True)
+#     for read in iter:
+#         return read.get_tag('CB')
 
 
 def get_new_header(cells, bamfile, new_header):
@@ -214,14 +214,13 @@ def tag_bam_with_cellid(infile, outfile, cell_id):
     outfile.close()
 
 
-def _get_col_data(df, organism):
-    return df['fastqscreen_{}'.format(organism)] - df['fastqscreen_{}_multihit'.format(organism)]
-
-
 def add_contamination_status(
         infile, outfile,
         reference, threshold=0.05
 ):
+    def get_col_data(df, organism):
+        return df['fastqscreen_{}'.format(organism)] - df['fastqscreen_{}_multihit'.format(organism)]
+
     data = csverve.read_csv(infile)
 
     data = data.set_index('cell_id', drop=False)
@@ -238,7 +237,7 @@ def add_contamination_status(
     data['is_contaminated'] = False
 
     for altcol in alts:
-        perc_alt = _get_col_data(data, altcol) / data['fastqscreen_total_reads']
+        perc_alt = get_col_data(data, altcol) / data['fastqscreen_total_reads']
         data.loc[perc_alt > threshold, 'is_contaminated'] = True
 
     col_type = dtypes()['metrics']['is_contaminated']
@@ -249,14 +248,15 @@ def add_contamination_status(
     )
 
 
+
 def add_metadata(metrics, metadata_yaml, output):
     df = csverve.read_csv(metrics)
 
     metadata = yaml.safe_load(open(metadata_yaml, 'rt'))
 
-    cells = metadata['meta']['cells'].keys()
+    cells = set(df['cell_id'])
 
-    assert set(cells) == set(df['cell_id'])
+    metadata['meta']['cells'] = {k: v for k, v in metadata['meta']['cells'].items() if k in cells}
 
     for cellid, cell_info in metadata['meta']['cells'].items():
         for colname, val in cell_info.items():
@@ -350,8 +350,8 @@ def generate_metadata(
         yaml.dump(data, writer, default_flow_style=False)
 
 
-def _json_file_parser(filepath):
-    return json.load(open(filepath, 'rt'))
+# def _json_file_parser(filepath):
+#     return json.load(open(filepath, 'rt'))
 
 
 def supplementary_reference_cmdline(jsonfile):
