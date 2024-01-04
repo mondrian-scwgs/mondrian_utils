@@ -161,7 +161,7 @@ def input_validation(meta_yaml, input_data_json):
 
 
 @cli.command()
-@click.option('--fastq_pairs', help='Comma-separated list of FASTQ files')
+@click.option('--fastq_pairs', multiple=True, help='Comma-separated list of FASTQ files')
 @click.option('--metadata_yaml', help='Path to the metadata YAML file')
 @click.option('--reference', help='Path to the reference file')
 @click.option('--supplementary_references', multiple=True, help='Path to supplementary references')
