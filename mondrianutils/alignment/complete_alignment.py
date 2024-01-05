@@ -273,10 +273,9 @@ def alignment(
     metrics_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'metrics.txt')
     summary_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'summary.txt')
     chart_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'chart.pdf')
-    parsed_gc = os.path.join(tempdir, cell_id, 'gc_metrics', 'metrics.csv.gz')
     gc_metrics(
         bam_output, reference, metrics_gc,
-        summary_gc, chart_gc, parsed_gc,
+        summary_gc, chart_gc, metrics_gc_output,
         tempdir_gc, cell_id, num_threads=num_threads, mem="4G"
     )
 
