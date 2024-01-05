@@ -157,8 +157,8 @@ def expected_and_aligned_coverage(bamfile):
     return expected_length / genome_length, aligned_length / genome_length
 
 
-def get_coverage_data(bamfile, mapping_qual=10, base_qual=10):
-    outdata = {}
+def get_coverage_data(bamfile, cell_id, mapping_qual=10, base_qual=10):
+    outdata = {'cell_id': cell_id}
 
     expected_cov, aligned_cov = expected_and_aligned_coverage(bamfile)
 
@@ -188,10 +188,10 @@ def get_coverage_data(bamfile, mapping_qual=10, base_qual=10):
 
 
 def get_coverage_metrics(
-        bamfile, output, mapping_qual=10, base_qual=10
+        bamfile, cell_id, output, mapping_qual=10, base_qual=10
 ):
     data = get_coverage_data(
-        bamfile, mapping_qual=mapping_qual, base_qual=base_qual
+        bamfile, cell_id, mapping_qual=mapping_qual, base_qual=base_qual
     )
 
     df = pd.DataFrame(data, index=[1])

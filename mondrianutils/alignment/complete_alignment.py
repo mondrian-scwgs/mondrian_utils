@@ -238,7 +238,7 @@ def alignment(
     print("Collecting read attrition metrics")
     helpers.makedirs(os.path.join(tempdir, cell_id, 'read_attrition'))
     read_attrition_metrics = os.path.join(tempdir, cell_id, 'read_attrition', 'metrics.csv.gz')
-    get_coverage_metrics(bam_output, read_attrition_metrics)
+    get_coverage_metrics(bam_output, cell_id, read_attrition_metrics)
 
     print('calculating TSS score')
     tss_tempdir = os.path.join(tempdir, cell_id, 'tss_enrichment')
