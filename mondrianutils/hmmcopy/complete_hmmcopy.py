@@ -12,6 +12,7 @@ from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 from mondrianutils.hmmcopy import add_mappability
 from mondrianutils.hmmcopy import add_quality
 
+
 def plot_hmmcopy(
         reads, segments, params, metrics, ref_genome, segs_out,
         bias_out, num_states=12,
@@ -116,14 +117,14 @@ def complete_hmmcopy(
         segments_output, bias_output
     )
 
-
     merged_metrics = os.path.join(hmmcopy_tempdir, 'alignment_merged_metrics.csv.gz')
     csverve.merge_csv(
         [raw_metrics, alignment_metrics], merged_metrics, how='inner', on='cell_id', write_header=True
     )
 
     quality_metrics = os.path.join(hmmcopy_tempdir, 'quality_metrics.csv.gz')
-    add_quality(raw_metrics, quality_metrics, quality_classifier_training_data,joblib_model=quality_classifier_model)
+    add_quality(merged_metrics, quality_metrics, quality_classifier_training_data,
+                joblib_model=quality_classifier_model)
 
     predictions = cell_cycle_classifier.train_classify(reads, quality_metrics, figures_prefix=None)
     raise Exception(predictions)
