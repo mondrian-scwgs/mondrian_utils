@@ -1,6 +1,7 @@
 import click
 import mondrianutils.hmmcopy
 
+
 @click.group()
 def cli():
     pass
@@ -44,15 +45,23 @@ def readcounter(infile, outdir, tempdir, chromosomes, window_size, mapping_quali
 @click.option('--bias_output', required=True)
 @click.option('--cell_id', required=True)
 @click.option('--tempdir', required=True)
+@click.option('--quality_classifier_training_data', required=True)
+@click.option('--quality_classifier_model')
 @click.option('--map_cutoff', default=0.9, type=float)
-def run_hmmcopy(readcount_wig, gc_wig_file, map_wig_file, metrics, params, reads, segments, output_tarball,
-                    reference, segments_output, bias_output, cell_id, tempdir, map_cutoff):
+def run_hmmcopy(
+        readcount_wig, gc_wig_file, map_wig_file, metrics, params, reads, segments, output_tarball,
+        reference, segments_output, bias_output, cell_id, tempdir,
+        quality_classifier_training_data, quality_classifier_model,
+        map_cutoff
+):
     mondrianutils.hmmcopy.complete_hmmcopy(
         readcount_wig, gc_wig_file, map_wig_file,
         metrics, params,
         reads, segments, output_tarball,
         reference, segments_output, bias_output,
         cell_id, tempdir,
+        quality_classifier_training_data,
+        quality_classifier_model=quality_classifier_model,
         mappability_cutoff=map_cutoff
     )
 
@@ -86,7 +95,7 @@ def add_mappability(infile, outfile):
 @click.option('--tempdir', required=True)
 def add_quality(hmmcopy_metrics, alignment_metrics, training_data, output, tempdir):
     mondrianutils.hmmcopy.add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output,
-                training_data)
+                                      training_data)
 
 
 @cli.command()
@@ -134,7 +143,7 @@ def add_clustering_order(reads, metrics, output, chromosomes):
 @click.option('--metadata_input')
 @click.option('--metadata_output')
 def generate_metadata(metrics, params, reads, segments, segments_tar_pass, segments_tar_fail, heatmap,
-                          metadata_input, metadata_output):
+                      metadata_input, metadata_output):
     mondrianutils.hmmcopy.generate_metadata(
         metrics, params, reads, segments,
         segments_tar_pass, segments_tar_fail,
