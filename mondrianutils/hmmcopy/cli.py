@@ -35,6 +35,7 @@ def readcounter(infile, outdir, tempdir, chromosomes, window_size, mapping_quali
 @click.option('--readcount_wig', required=True)
 @click.option('--gc_wig_file', required=True)
 @click.option('--map_wig_file', required=True)
+@click.option('--alignment_metrics', required=True)
 @click.option('--metrics', required=True)
 @click.option('--params', required=True)
 @click.option('--reads', required=True)
@@ -49,15 +50,15 @@ def readcounter(infile, outdir, tempdir, chromosomes, window_size, mapping_quali
 @click.option('--quality_classifier_model')
 @click.option('--map_cutoff', default=0.9, type=float)
 def run_hmmcopy(
-        readcount_wig, gc_wig_file, map_wig_file, metrics, params, reads, segments, output_tarball,
+        readcount_wig, gc_wig_file, map_wig_file, alignment_metrics,
+        metrics, params, reads, segments, output_tarball,
         reference, segments_output, bias_output, cell_id, tempdir,
         quality_classifier_training_data, quality_classifier_model,
         map_cutoff
 ):
     mondrianutils.hmmcopy.complete_hmmcopy(
-        readcount_wig, gc_wig_file, map_wig_file,
-        metrics, params,
-        reads, segments, output_tarball,
+        readcount_wig, gc_wig_file, map_wig_file, alignment_metrics,
+        metrics, params, reads, segments, output_tarball,
         reference, segments_output, bias_output,
         cell_id, tempdir,
         quality_classifier_training_data,
