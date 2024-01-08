@@ -7,6 +7,7 @@ from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
 from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 
+from mondrianutils.hmmcopy import add_mappability
 
 def plot_hmmcopy(
         reads, segments, params, metrics, ref_genome, segs_out,
@@ -97,9 +98,10 @@ def complete_hmmcopy(
 
     hmmcopy_tempdir = os.path.join(tempdir, 'hmmcopy')
     helpers.makedirs(hmmcopy_tempdir)
+    temp_reads = os.path.join(hmmcopy_tempdir, 'reads.csv.gz')
     run_hmmcopy(
         corrected_reads, hmmcopy_tempdir, metrics,
-        params, reads, segments, output_tarball
+        params, temp_reads, segments, output_tarball
     )
 
     plot_hmmcopy(
@@ -107,3 +109,4 @@ def complete_hmmcopy(
         segments_output, bias_output
     )
 
+    add_mappability(temp_reads, reads)
