@@ -116,7 +116,13 @@ def complete_hmmcopy(
         segments_output, bias_output
     )
 
+
     merged_metrics = os.path.join(hmmcopy_tempdir, 'alignment_merged_metrics.csv.gz')
+    print(raw_metrics, os.path.exists(raw_metrics))
+    print(raw_metrics+'.yaml', os.path.exists(raw_metrics+'.yaml'))
+    print(alignment_metrics, os.path.exists(alignment_metrics))
+    print(alignment_metrics+'.yaml', os.path.exists(alignment_metrics+'.yaml'))
+    raise Exception()
     csverve.merge_csv(
         [raw_metrics, alignment_metrics], merged_metrics, how='inner', on='cell_id', write_header=True
     )
