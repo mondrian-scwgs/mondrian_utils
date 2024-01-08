@@ -2,7 +2,7 @@ from .fastqscreen import organism_filter
 from .fastqscreen import merge_fastq_screen_counts
 from .utils import tag_bam_with_cellid
 from .utils import add_contamination_status
-from .utils import generate_bams
+from .utils import merge_cells
 from .coverage_metrics import get_coverage_metrics
 from .utils import generate_metadata
 from .utils import add_metadata

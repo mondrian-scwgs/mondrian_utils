@@ -76,32 +76,6 @@ def bam_sort(bam_filename, sorted_bam_filename, tempdir, num_threads=1, mem="2G"
     helpers.run_cmd(cmd)
 
 
-def merge_bams(inputs, output, num_threads=1, mem="2G"):
-    if isinstance(inputs, dict):
-        inputs = inputs.values()
-
-    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
-    if num_threads == 1:
-        cmd.append('-XX:ParallelGCThreads=1')
-    cmd.extend([
-        'MergeSamFiles',
-        'OUTPUT=' + output,
-        'SORT_ORDER=coordinate',
-        'ASSUME_SORTED=true',
-        'VALIDATION_STRINGENCY=LENIENT',
-        'MAX_RECORDS_IN_RAM=150000',
-        'QUIET=true'
-    ])
-
-    for bamfile in inputs:
-        cmd.append('I=' + os.path.abspath(bamfile))
-
-    if not num_threads == 1:
-        cmd.append('USE_THREADING=true')
-
-    helpers.run_cmd(cmd)
-
-
 def bam_index(infile):
     helpers.run_cmd([
         'samtools', 'index',
@@ -194,9 +168,9 @@ def alignment(
         final_lane_bams.append(lane_sorted_bam)
 
     print("Merging all Lanes")
-    helpers.makedirs(os.path.join(tempdir, cell_id, 'merge'))
+    merge_tempdir = os.path.join(tempdir, cell_id, 'merge')
     bam_merged = os.path.join(tempdir, cell_id, 'merge', 'merged.bam')
-    merge_bams(final_lane_bams, bam_merged, num_threads=num_threads, mem='4G')
+    helpers.merge_bams(final_lane_bams, bam_merged, merge_tempdir, num_threads)
 
     print("Marking Duplicates")
     tempdir_markdups = os.path.join(tempdir, cell_id, 'markdups')

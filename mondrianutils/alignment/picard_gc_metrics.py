@@ -3,7 +3,7 @@ Created on Sep 8, 2015
 
 @author: dgrewal
 '''
-
+import logging
 import csverve.api as csverve
 import pandas as pd
 

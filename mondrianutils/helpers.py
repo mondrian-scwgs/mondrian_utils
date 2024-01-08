@@ -182,6 +182,7 @@ def get_merge_command(bams, output, ncores=1):
 
 
 def merge_bams(infiles, outfile, tempdir, ncores):
+    makedirs(tempdir)
     assert len(infiles) > 0
 
     if len(infiles) < ncores * 2:

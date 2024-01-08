@@ -19,7 +19,7 @@ def cli():
 @click.option('--ncores', type=int, help='number of cores')
 def merge_cells(infiles, cell_ids, reference, control_outfile, contaminated_outfile, pass_outfile, metrics, tempdir,
                 ncores):
-    mondrianutils.alignment.generate_bams(
+    mondrianutils.alignment.merge_cells(
         infiles, reference, cell_ids, metrics, control_outfile, contaminated_outfile, pass_outfile, tempdir,
         ncores
     )
