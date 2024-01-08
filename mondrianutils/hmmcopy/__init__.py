@@ -8,3 +8,4 @@ from .generate_qc_html import generate_html_report
 from .clustering_order import add_clustering_order
 from .utils import generate_metadata
 from .utils import add_mappability
+from .classify import add_quality

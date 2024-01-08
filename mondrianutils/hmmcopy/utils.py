@@ -109,30 +109,7 @@ def add_mappability(reads, annotated_reads):
     )
 
 
-def add_quality(hmmcopy_metrics_csv, alignment_metrics, tempdir, output, training_data):
-    helpers.makedirs(tempdir)
-    tempout = os.path.join(tempdir, 'added_quality.csv')
 
-    model = classify.train_classifier(training_data)
-
-    feature_names = model.feature_names_
-
-    data = classify.load_data(hmmcopy_metrics_csv, alignment_metrics,
-                              feature_names)
-
-    predictions = classify.classify(model, data)
-
-    classify.write_to_output(
-        hmmcopy_metrics_csv,
-        tempout,
-        predictions)
-
-    data = pd.read_csv(tempout)
-    organisms = [v for v in data.columns.values if v.startswith('fastqscreen_')]
-    organisms = sorted(set([v.split('_')[1] for v in organisms]))
-    organisms = [v for v in organisms if v not in ['nohit', 'total']]
-
-    csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_dtypes(fastqscreen_genomes=organisms)['metrics'])
 
 
 def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):

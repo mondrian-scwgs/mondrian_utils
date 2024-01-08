@@ -3,11 +3,14 @@ import os
 import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pandas as pd
+import cell_cycle_classifier.api as cell_cycle_classifier
+
 from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
 from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
 
 from mondrianutils.hmmcopy import add_mappability
+from mondrianutils.hmmcopy import add_quality
 
 def plot_hmmcopy(
         reads, segments, params, metrics, ref_genome, segs_out,
@@ -83,8 +86,10 @@ def run_hmmcopy(
 
 
 def complete_hmmcopy(
-        readcount_wig, gc_wig_file, map_wig_file, metrics, params, reads, segments,
+        readcount_wig, gc_wig_file, map_wig_file, alignment_metrics,
+        metrics, params, reads, segments,
         output_tarball, reference, segments_output, bias_output, cell_id, tempdir,
+        quality_classifier_training_data, quality_classifier_model=None,
         mappability_cutoff=0.9
 ):
     helpers.makedirs(tempdir)
@@ -98,10 +103,11 @@ def complete_hmmcopy(
 
     hmmcopy_tempdir = os.path.join(tempdir, 'hmmcopy')
     helpers.makedirs(hmmcopy_tempdir)
-    temp_reads = os.path.join(hmmcopy_tempdir, 'reads.csv.gz')
+    raw_reads = os.path.join(hmmcopy_tempdir, 'reads.csv.gz')
+    raw_metrics = os.path.join(hmmcopy_tempdir, 'metrics.csv.gz')
     run_hmmcopy(
         corrected_reads, hmmcopy_tempdir, metrics,
-        params, temp_reads, segments, output_tarball
+        params, raw_reads, segments, output_tarball
     )
 
     plot_hmmcopy(
@@ -109,4 +115,15 @@ def complete_hmmcopy(
         segments_output, bias_output
     )
 
-    add_mappability(temp_reads, reads)
+    add_mappability(raw_reads, reads)
+
+    merged_metrics = os.path.join(hmmcopy_tempdir, 'alignment_merged_metrics.csv.gz')
+    csverve.merge_csv(
+        [raw_metrics, alignment_metrics], merged_metrics, how='inner', on='cell_id', write_header=True
+    )
+
+    quality_metrics = os.path.join(hmmcopy_tempdir, 'quality_metrics.csv.gz')
+    add_quality(raw_metrics, quality_metrics, quality_classifier_training_data,joblib_model=quality_classifier_model)
+
+    predictions = cell_cycle_classifier.train_classify(reads, quality_metrics, figures_prefix=None)
+    raise Exception(predictions)
