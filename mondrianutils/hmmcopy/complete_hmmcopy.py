@@ -126,5 +126,7 @@ def complete_hmmcopy(
     add_quality(merged_metrics, quality_metrics, quality_classifier_training_data,
                 joblib_model=quality_classifier_model)
 
+    reads_df = csverve.read_csv(reads)
+    metrics_df = csverve.read_csv(quality_metrics)
     predictions = cell_cycle_classifier.train_classify(reads, quality_metrics, figures_prefix=None)
     raise Exception(predictions)
