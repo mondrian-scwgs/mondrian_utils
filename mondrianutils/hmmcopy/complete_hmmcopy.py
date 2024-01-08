@@ -109,13 +109,12 @@ def complete_hmmcopy(
         corrected_reads, hmmcopy_tempdir, metrics,
         params, raw_reads, segments, output_tarball
     )
+    add_mappability(raw_reads, reads)
 
     plot_hmmcopy(
         reads, segments, params, metrics, reference,
         segments_output, bias_output
     )
-
-    add_mappability(raw_reads, reads)
 
     merged_metrics = os.path.join(hmmcopy_tempdir, 'alignment_merged_metrics.csv.gz')
     csverve.merge_csv(
