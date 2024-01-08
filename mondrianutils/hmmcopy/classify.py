@@ -122,16 +122,15 @@ def write_to_output(hmmcopy_filename, output, predictions):
 
 
 def add_quality(metrics, output, training_data_h5, joblib_model=None):
-
-    model = classify.train_classifier(training_data_h5, joblib_model=joblib_model)
+    model = train_classifier(training_data_h5, joblib_model=joblib_model)
 
     feature_names = model.feature_names_
 
-    data = classify.load_data(metrics, feature_names)
+    data = load_data(metrics, feature_names)
 
-    predictions = classify.classify(model, data)
+    predictions = classify(model, data)
 
-    classify.write_to_output(
+    write_to_output(
         metrics,
         output,
         predictions)
