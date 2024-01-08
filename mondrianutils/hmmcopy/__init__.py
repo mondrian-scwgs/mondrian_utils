@@ -1,5 +1,4 @@
 from .utils import readcounter
-from .complete_hmmcopy import complete_hmmcopy
 from .utils import plot_heatmap
 from .utils import add_mappability
 from .utils import add_quality
@@ -9,3 +8,4 @@ from .clustering_order import add_clustering_order
 from .utils import generate_metadata
 from .utils import add_mappability
 from .classify import add_quality
+from .complete_hmmcopy import complete_hmmcopy
