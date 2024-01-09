@@ -128,5 +128,5 @@ def complete_hmmcopy(
 
     reads_df = csverve.read_csv(reads)
     metrics_df = csverve.read_csv(quality_metrics)
-    predictions = cell_cycle_classifier.train_classify(reads, quality_metrics, figures_prefix=None)
+    predictions = cell_cycle_classifier.train_classify(reads_df, metrics_df, figures_prefix=None)
     raise Exception(predictions)
