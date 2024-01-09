@@ -127,9 +127,8 @@ def complete_hmmcopy(
                 joblib_model=quality_classifier_model)
 
     cell_cycle_preds = os.path.join(hmmcopy_tempdir, 'cellcycle.csv.gz')
-    cell_cycle_metrics = os.path.join(hmmcopy_tempdir, 'cellcycle_metrics.csv.gz')
-    reads_df = pd.read_csv(reads)
-    metrics_df = pd.read_csv(quality_metrics)
+    reads_df = csverve.read_csv(reads)
+    metrics_df = csverve.read_csv(quality_metrics)
     predictions = cell_cycle_classifier.train_classify(reads_df, metrics_df, figures_prefix=None)
     csverve.write_dataframe_to_csv_and_yaml(predictions, cell_cycle_preds, dtypes=hmmcopy_dtypes()['metrics'])
     csverve.merge_csv([quality_metrics, cell_cycle_preds], metrics, on='cell_id', how='outer')
