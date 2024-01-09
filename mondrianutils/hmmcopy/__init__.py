@@ -2,9 +2,8 @@ from .utils import readcounter
 from .utils import plot_heatmap
 from .utils import add_mappability
 from .utils import create_segs_tar
+from .utils import generate_metadata
 from .generate_qc_html import generate_html_report
 from .clustering_order import add_clustering_order
-from .utils import generate_metadata
-from .utils import add_mappability
 from .classify import add_quality
 from .complete_hmmcopy import complete_hmmcopy

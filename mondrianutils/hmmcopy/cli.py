@@ -81,23 +81,6 @@ def heatmap(reads, metrics, chromosomes, output, sidebar_column, disable_cluster
     )
 
 
-@cli.command()
-@click.option('--infile', required=True)
-@click.option('--outfile', required=True)
-def add_mappability(infile, outfile):
-    mondrianutils.hmmcopy.add_mappability(infile, outfile)
-
-
-@cli.command()
-@click.option('--hmmcopy_metrics', required=True)
-@click.option('--alignment_metrics', required=True)
-@click.option('--training_data', required=True)
-@click.option('--output', required=True)
-@click.option('--tempdir', required=True)
-def add_quality(hmmcopy_metrics, alignment_metrics, training_data, output, tempdir):
-    mondrianutils.hmmcopy.add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output,
-                                      training_data)
-
 
 @cli.command()
 @click.option('--segs_pdf', multiple=True)

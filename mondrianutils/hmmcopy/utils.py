@@ -109,9 +109,6 @@ def add_mappability(reads, annotated_reads):
     )
 
 
-
-
-
 def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
     helpers.makedirs(tempdir)
 
