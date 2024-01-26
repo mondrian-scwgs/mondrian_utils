@@ -2,7 +2,7 @@
 
 library(getopt)
 suppressPackageStartupMessages(library("ATACseqQC"))
-suppressPackageStartupMessages(library("TxDb.Hsapiens.UCSC.hg18.knownGene"))
+suppressPackageStartupMessages(library("TxDb.Hsapiens.UCSC.hg19.knownGene"))
 suppressPackageStartupMessages(library("TxDb.Hsapiens.UCSC.hg38.knownGene"))
 options(error=traceback)
 
@@ -55,12 +55,12 @@ chromosomes <-  strsplit(opt$chromosomes, ",")[[1]]
 
 
 if (opt$genome_version %in% c("grch37", "hg19")){
-  seqinformation <- seqinfo(TxDb.Hsapiens.UCSC.hg18.knownGene)
+  seqinformation <- seqinfo(TxDb.Hsapiens.UCSC.hg19.knownGene)
   which <- as(seqinformation, "GRanges")
   seqlevelsStyle(which) <- "NCBI"
   seqlevels(which, pruning.mode="coarse") <- chromosomes
 
-  txs <- transcripts(TxDb.Hsapiens.UCSC.hg18.knownGene)
+  txs <- transcripts(TxDb.Hsapiens.UCSC.hg19.knownGene)
   seqlevelsStyle(txs) <- "NCBI"
   seqlevels(txs, pruning.mode="coarse") <- chromosomes
 } else {

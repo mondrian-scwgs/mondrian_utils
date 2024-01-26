@@ -3,26 +3,16 @@ import os
 import csverve.api as csverve
 import mondrianutils.helpers as helpers
 import pandas as pd
+
 from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from mondrianutils.hmmcopy.correct_read_count import CorrectReadCount
-from mondrianutils.hmmcopy.plot_hmmcopy import GenHmmPlots
+from mondrianutils.hmmcopy.plot_hmmcopy import plot_hmmcopy
+
+from mondrianutils.hmmcopy import add_mappability
+from mondrianutils.hmmcopy import add_quality
 
 
-def plot_hmmcopy(
-        reads, segments, params, metrics, ref_genome, segs_out,
-        bias_out, num_states=12,
-        annotation_cols=None, sample_info=None, max_cn=None
-):
-    if not annotation_cols:
-        annotation_cols = ['cell_call', 'experimental_condition', 'sample_type',
-                           'mad_neutral_state', 'MSRSI_non_integerness',
-                           'total_mapped_reads_hmmcopy']
 
-    with GenHmmPlots(reads, segments, params, metrics, ref_genome, segs_out,
-                     bias_out, num_states=num_states,
-                     annotation_cols=annotation_cols,
-                     sample_info=sample_info, max_cn=max_cn) as plot:
-        plot.main()
 
 
 def run_hmmcopy(
@@ -82,8 +72,10 @@ def run_hmmcopy(
 
 
 def complete_hmmcopy(
-        readcount_wig, gc_wig_file, map_wig_file, metrics, params, reads, segments,
+        readcount_wig, gc_wig_file, map_wig_file, alignment_metrics,
+        metrics, params, reads, segments,
         output_tarball, reference, segments_output, bias_output, cell_id, tempdir,
+        quality_classifier_training_data, quality_classifier_model=None,
         mappability_cutoff=0.9
 ):
     helpers.makedirs(tempdir)
@@ -97,13 +89,23 @@ def complete_hmmcopy(
 
     hmmcopy_tempdir = os.path.join(tempdir, 'hmmcopy')
     helpers.makedirs(hmmcopy_tempdir)
+    raw_reads = os.path.join(hmmcopy_tempdir, 'reads.csv.gz')
+    raw_metrics = os.path.join(hmmcopy_tempdir, 'metrics.csv.gz')
     run_hmmcopy(
-        corrected_reads, hmmcopy_tempdir, metrics,
-        params, reads, segments, output_tarball
+        corrected_reads, hmmcopy_tempdir, raw_metrics,
+        params, raw_reads, segments, output_tarball
     )
+    add_mappability(raw_reads, reads)
 
     plot_hmmcopy(
-        reads, segments, params, metrics, reference,
+        reads, segments, params, raw_metrics, reference,
         segments_output, bias_output
     )
 
+    merged_metrics = os.path.join(hmmcopy_tempdir, 'alignment_merged_metrics.csv.gz')
+    csverve.merge_csv(
+        [raw_metrics, alignment_metrics], merged_metrics, how='inner', on='cell_id', write_header=True, lenient=True
+    )
+
+    add_quality(merged_metrics, metrics, quality_classifier_training_data,
+                joblib_model=quality_classifier_model)

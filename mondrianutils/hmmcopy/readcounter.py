@@ -63,6 +63,10 @@ class ReadCounter(object):
 
     def get_cells(self):
         header = self.__get_bam_header()
+        if isinstance(header, dict):
+            comments = [v.replace('CB:', '') for v in header['CO']]
+            return comments
+
         cells = []
         for line in str(header).split('\n'):
             if not line.startswith("@CO"):
@@ -71,6 +75,8 @@ class ReadCounter(object):
             cb = line[1]
             cell = cb.split(':')[1]
             cells.append(cell)
+
+        print('cells', cells)
         return cells
 
     def __get_chrom_excluded(self, chrom):

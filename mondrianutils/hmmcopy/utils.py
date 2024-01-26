@@ -3,7 +3,6 @@ import shutil
 
 import csverve.api as csverve
 import mondrianutils.helpers as helpers
-import mondrianutils.hmmcopy.classify as classify
 import pandas as pd
 import pysam
 import yaml
@@ -11,7 +10,7 @@ from mondrianutils import __version__
 from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
 from mondrianutils.hmmcopy.readcounter import ReadCounter
-
+import cell_cycle_classifier.api as cell_cycle
 
 def _readcounter_command(infile, outdir, chromosome, exclude_list=None, mapping_quality_threshold=0, window_size=1000):
     return [
@@ -109,34 +108,12 @@ def add_mappability(reads, annotated_reads):
     )
 
 
-def add_quality(hmmcopy_metrics_csv, alignment_metrics, tempdir, output, training_data):
+def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir, segs_samples=None):
     helpers.makedirs(tempdir)
-    tempout = os.path.join(tempdir, 'added_quality.csv')
-
-    model = classify.train_classifier(training_data)
-
-    feature_names = model.feature_names_
-
-    data = classify.load_data(hmmcopy_metrics_csv, alignment_metrics,
-                              feature_names)
-
-    predictions = classify.classify(model, data)
-
-    classify.write_to_output(
-        hmmcopy_metrics_csv,
-        tempout,
-        predictions)
-
-    data = pd.read_csv(tempout)
-    organisms = [v for v in data.columns.values if v.startswith('fastqscreen_')]
-    organisms = sorted(set([v.split('_')[1] for v in organisms]))
-    organisms = [v for v in organisms if v not in ['nohit', 'total']]
-
-    csverve.rewrite_csv_file(tempout, output, dtypes=hmmcopy_dtypes(fastqscreen_genomes=organisms)['metrics'])
-
-
-def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
-    helpers.makedirs(tempdir)
+    if segs_samples is not None:
+        segs_samples = {k: v for k, v in zip(segs_files, segs_samples)}
+    else:
+        segs_samples = {}
 
     metrics_data = csverve.read_csv(metrics)
     all_cells = metrics_data.cell_id.tolist()
@@ -152,9 +129,11 @@ def create_segs_tar(segs_files, metrics, pass_tar, fail_tar, tempdir):
     helpers.makedirs(fail_dir)
 
     for filepath in segs_files:
-        cell_id = open(filepath + '.sample', 'rt').readlines()
-        assert len(cell_id) == 1
-        cell_id = cell_id[0].strip()
+        cell_id = segs_samples.get(filepath, None)
+        if cell_id is None:
+            cell_id = open(filepath + '.sample', 'rt').readlines()
+            assert len(cell_id) == 1
+            cell_id = cell_id[0].strip()
 
         if cell_id in good_cells:
             shutil.copyfile(filepath, os.path.join(pass_dir, '{}_segments.pdf'.format(cell_id)))
@@ -235,3 +214,20 @@ def generate_metadata(
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(out_data, writer, default_flow_style=False)
+
+
+def cell_cycle_classifier(reads, alignment_metrics, hmmcopy_metrics, tempdir, output):
+    helpers.makedirs(tempdir)
+    cell_cycle_preds = os.path.join(tempdir, 'cellcycle.csv.gz')
+
+    reads_df = csverve.read_csv(reads)
+    reads_df['chr'] = reads_df['chr'].astype(str)
+
+    align_metrics_df = csverve.read_csv(alignment_metrics)
+    hmm_metrics_df = csverve.read_csv(hmmcopy_metrics)
+
+    predictions = cell_cycle.train_classify(
+        reads_df, hmm_metrics_df, align_metrics_df, figures_prefix=None
+    )
+    csverve.write_dataframe_to_csv_and_yaml(predictions, cell_cycle_preds, dtypes=hmmcopy_dtypes()['metrics'])
+    csverve.merge_csv([hmmcopy_metrics, cell_cycle_preds], output, on='cell_id', how='outer')

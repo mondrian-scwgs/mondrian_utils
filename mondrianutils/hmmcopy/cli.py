@@ -1,5 +1,10 @@
+import os
 import click
 import mondrianutils.hmmcopy
+import csverve
+import mondrianutils.helpers as helpers
+from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
+
 
 @click.group()
 def cli():
@@ -34,6 +39,7 @@ def readcounter(infile, outdir, tempdir, chromosomes, window_size, mapping_quali
 @click.option('--readcount_wig', required=True)
 @click.option('--gc_wig_file', required=True)
 @click.option('--map_wig_file', required=True)
+@click.option('--alignment_metrics', required=True)
 @click.option('--metrics', required=True)
 @click.option('--params', required=True)
 @click.option('--reads', required=True)
@@ -44,16 +50,65 @@ def readcounter(infile, outdir, tempdir, chromosomes, window_size, mapping_quali
 @click.option('--bias_output', required=True)
 @click.option('--cell_id', required=True)
 @click.option('--tempdir', required=True)
+@click.option('--quality_classifier_training_data', required=True)
+@click.option('--quality_classifier_model')
 @click.option('--map_cutoff', default=0.9, type=float)
-def run_hmmcopy(readcount_wig, gc_wig_file, map_wig_file, metrics, params, reads, segments, output_tarball,
-                    reference, segments_output, bias_output, cell_id, tempdir, map_cutoff):
+def run_hmmcopy(
+        readcount_wig, gc_wig_file, map_wig_file, alignment_metrics,
+        metrics, params, reads, segments, output_tarball,
+        reference, segments_output, bias_output, cell_id, tempdir,
+        quality_classifier_training_data, quality_classifier_model,
+        map_cutoff
+):
     mondrianutils.hmmcopy.complete_hmmcopy(
-        readcount_wig, gc_wig_file, map_wig_file,
-        metrics, params,
-        reads, segments, output_tarball,
+        readcount_wig, gc_wig_file, map_wig_file, alignment_metrics,
+        metrics, params, reads, segments, output_tarball,
         reference, segments_output, bias_output,
         cell_id, tempdir,
+        quality_classifier_training_data,
+        quality_classifier_model=quality_classifier_model,
         mappability_cutoff=map_cutoff
+    )
+
+
+@cli.command()
+@click.option('--bam_file', required=True)
+@click.option('--gc_wig_file', required=True)
+@click.option('--map_wig_file', required=True)
+@click.option('--alignment_metrics', required=True)
+@click.option('--exclude_list', required=True)
+@click.option('--chromosomes', multiple=True, default=[str(v) for v in range(1, 23)] + ['X', 'Y'],
+              help='specify target chromosomes')
+@click.option('--metrics', required=True)
+@click.option('--params', required=True)
+@click.option('--reads', required=True)
+@click.option('--segments', required=True)
+@click.option('--output_tarball', required=True)
+@click.option('--reference', required=True)
+@click.option('--segments_output', required=True)
+@click.option('--bias_output', required=True)
+@click.option('--tempdir', required=True)
+@click.option('--quality_classifier_training_data', required=True)
+@click.option('--quality_classifier_model')
+@click.option('--map_cutoff', default=0.9, type=float)
+@click.option('--binsize', default=500000, type=int)
+@click.option('--mapping_quality_threshold', default=20, type=int)
+def run_cell_hmmcopy(
+        bam_file, gc_wig_file, map_wig_file, alignment_metrics, exclude_list, chromosomes,
+        metrics, params, reads, segments, output_tarball,
+        reference, segments_output, bias_output, tempdir,
+        quality_classifier_training_data, quality_classifier_model,
+        map_cutoff, binsize, mapping_quality_threshold
+):
+    mondrianutils.hmmcopy.cell_hmmcopy(
+        bam_file, gc_wig_file, map_wig_file, alignment_metrics, exclude_list,
+        chromosomes, metrics, params, reads, segments, output_tarball,
+        reference, segments_output, bias_output,
+        tempdir, quality_classifier_training_data,
+        quality_classifier_model=quality_classifier_model,
+        mappability_cutoff=map_cutoff,
+        binsize=binsize,
+        mapping_quality_threshold=mapping_quality_threshold
     )
 
 
@@ -72,34 +127,17 @@ def heatmap(reads, metrics, chromosomes, output, sidebar_column, disable_cluster
 
 
 @cli.command()
-@click.option('--infile', required=True)
-@click.option('--outfile', required=True)
-def add_mappability(infile, outfile):
-    mondrianutils.hmmcopy.add_mappability(infile, outfile)
-
-
-@cli.command()
-@click.option('--hmmcopy_metrics', required=True)
-@click.option('--alignment_metrics', required=True)
-@click.option('--training_data', required=True)
-@click.option('--output', required=True)
-@click.option('--tempdir', required=True)
-def add_quality(hmmcopy_metrics, alignment_metrics, training_data, output, tempdir):
-    mondrianutils.hmmcopy.add_quality(hmmcopy_metrics, alignment_metrics, tempdir, output,
-                training_data)
-
-
-@cli.command()
 @click.option('--segs_pdf', multiple=True)
+@click.option('--segs_samples', multiple=True)
 @click.option('--metrics')
 @click.option('--pass_output')
 @click.option('--fail_output')
 @click.option('--tempdir')
-def create_segs_tar(segs_pdf, metrics, pass_output, fail_output, tempdir):
+def create_segs_tar(segs_pdf, segs_samples, metrics, pass_output, fail_output, tempdir):
     mondrianutils.hmmcopy.create_segs_tar(
         segs_pdf, metrics,
         pass_output, fail_output,
-        tempdir
+        tempdir, segs_samples=segs_samples
     )
 
 
@@ -124,6 +162,18 @@ def add_clustering_order(reads, metrics, output, chromosomes):
 
 
 @cli.command()
+@click.option('--reads')
+@click.option('--alignment_metrics')
+@click.option('--hmmcopy_metrics')
+@click.option('--tempdir')
+@click.option('--output')
+def cell_cycle_classifier(reads, alignment_metrics, hmmcopy_metrics, tempdir, output):
+    mondrianutils.hmmcopy.cell_cycle_classifier(
+        reads, alignment_metrics, hmmcopy_metrics, tempdir, output
+    )
+
+
+@cli.command()
 @click.option('--metrics', nargs=2)
 @click.option('--params', nargs=2)
 @click.option('--reads', nargs=2)
@@ -134,7 +184,7 @@ def add_clustering_order(reads, metrics, output, chromosomes):
 @click.option('--metadata_input')
 @click.option('--metadata_output')
 def generate_metadata(metrics, params, reads, segments, segments_tar_pass, segments_tar_fail, heatmap,
-                          metadata_input, metadata_output):
+                      metadata_input, metadata_output):
     mondrianutils.hmmcopy.generate_metadata(
         metrics, params, reads, segments,
         segments_tar_pass, segments_tar_fail,

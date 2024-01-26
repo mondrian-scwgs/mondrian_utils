@@ -68,7 +68,7 @@ def compute_chromosome_coordinates(df, ref_genome):
     df['chromosome_start'] = chromosome_info['start']
     df.reset_index(inplace=True)
     df['plot_coord'] = df['start'] + df['chromosome_start']
-    df = df.drop('chromosome_start', 1)
+    df = df.drop(columns=['chromosome_start'])
     return (df)
 
 
@@ -130,7 +130,7 @@ def add_open_grid_lines(ax):
 def get_segment_start_end(segments, remove_y=False):
     segment_diff = segments['plot_coord'] + (segments['end'] - segments['start'])
     segment_end = segments['plot_coord'][1:] - 1
-    segment_end = segment_end.append(segment_diff.tail(1))
+    segment_end = pd.concat([segment_end, segment_diff.tail(1)])
     segment_end.reset_index(inplace=True, drop=True)
     segments['plot_coord_end'] = segment_end
 

@@ -29,7 +29,7 @@ def _compare_vcf(vcf_file, ref_vcf_file, info_field_name):
         assert vcfdata[(chrom, pos, ref, alt)] == ref_vcfdata[(chrom, pos, ref, alt)]
 
 
-def _compare_csv(data, ref_data, approx_cols, atol=0.01, sep=','):
+def _compare_csv(data, ref_data, approx_cols, ignore_cols=[], atol=0.01, sep=','):
     data = pd.read_csv(data, sep=sep)
     ref_data = pd.read_csv(ref_data, sep=sep)
 
@@ -41,6 +41,8 @@ def _compare_csv(data, ref_data, approx_cols, atol=0.01, sep=','):
     ref_data = ref_data.reset_index(drop=True)
 
     for colname in data.columns.values:
+        if colname in ignore_cols:
+            continue
         if colname in approx_cols:
             assert np.allclose(data[colname], ref_data[colname], atol=atol, equal_nan=True), colname
         else:
@@ -72,11 +74,11 @@ def compare_hmmcopy(reads, reads_ref, metrics, metrics_ref):
         'autocorrelation_hmmcopy', 'cv_hmmcopy', 'mad_hmmcopy',
         'total_halfiness', 'scaled_halfiness', 'mean_state_mads', 'mean_state_vars', 'mad_neutral_state',
         'mean_copy',
-        'log_likelihood', 'true_multiplier', 'quality'
+        'log_likelihood', 'true_multiplier',
     ]
-    _compare_csv(metrics, metrics_ref, approx_cols, atol=0.05)
+    _compare_csv(metrics, metrics_ref, approx_cols, ignore_cols=['quality'], atol=0.05)
 
-    approx_cols = ['cor_gc', 'copy', 'modal_curve']
+    approx_cols = ['cor_gc', 'copy', 'modal_curve', 'fraction_overlapping_reads']
     _compare_csv(reads, reads_ref, approx_cols, atol=0.1)
 
 

@@ -83,14 +83,6 @@ def input_validation(meta_yaml, input_json):
                 )
 
 
-def get_cell_id_from_bam(infile):
-    infile = pysam.AlignmentFile(infile, "rb")
-
-    iter = infile.fetch(until_eof=True)
-    for read in iter:
-        return read.get_tag('CB')
-
-
 def get_new_header(cells, bamfile, new_header):
     subprocess.run(['samtools', 'view', '-H', bamfile, '-o', new_header])
     with open(new_header, 'at') as header:
@@ -150,17 +142,11 @@ def igvtools_count(infile, reference):
     helpers.run_cmd(cmd)
 
 
-def merge_cells(infiles, tempdir, ncores, outfile, reference, empty_bam_content):
+def merge_bams(infiles, tempdir, ncores, outfile, reference, empty_bam_content):
     if len(infiles.values()) == 0:
         pysam.AlignmentFile(outfile, "wb", header=empty_bam_content).close()
     else:
-        final_merge_output = os.path.join(tempdir, 'merged_all.bam')
-        helpers.merge_bams(list(infiles.values()), final_merge_output, tempdir, ncores)
-
-        new_header = os.path.join(tempdir, 'header.sam')
-        get_new_header(infiles.keys(), final_merge_output, new_header)
-
-        reheader(final_merge_output, new_header, outfile)
+        helpers.merge_bams(list(infiles.values()), outfile, tempdir, ncores)
 
     samtools_index(outfile)
     igvtools_count(outfile, reference)
@@ -177,7 +163,7 @@ def get_bam_header(bam):
     return header
 
 
-def generate_bams(
+def merge_cells_by_type(
         infiles, reference, cell_ids, metrics,
         control_outfile, contaminated_outfile, pass_outfile,
         tempdir, ncores
@@ -187,19 +173,19 @@ def generate_bams(
     control_bams = get_control_files(infiles, cell_ids, metrics)
     control_tempdir = os.path.join(tempdir, 'control')
     helpers.makedirs(control_tempdir)
-    merge_cells(control_bams, control_tempdir, ncores, control_outfile, reference, header)
+    merge_bams(control_bams, control_tempdir, ncores, control_outfile, reference, header)
 
     # contaminated
     contaminated_bams = get_contaminated_files(infiles, cell_ids, metrics)
     contaminated_tempdir = os.path.join(tempdir, 'contaminated')
     helpers.makedirs(contaminated_tempdir)
-    merge_cells(contaminated_bams, contaminated_tempdir, ncores, contaminated_outfile, reference, header)
+    merge_bams(contaminated_bams, contaminated_tempdir, ncores, contaminated_outfile, reference, header)
 
     # pass
     pass_bams = get_pass_files(infiles, cell_ids, metrics)
     pass_tempdir = os.path.join(tempdir, 'pass')
     helpers.makedirs(pass_tempdir)
-    merge_cells(pass_bams, pass_tempdir, ncores, pass_outfile, reference, header)
+    merge_bams(pass_bams, pass_tempdir, ncores, pass_outfile, reference, header)
 
 
 def tag_bam_with_cellid(infile, outfile, cell_id):
@@ -214,14 +200,13 @@ def tag_bam_with_cellid(infile, outfile, cell_id):
     outfile.close()
 
 
-def _get_col_data(df, organism):
-    return df['fastqscreen_{}'.format(organism)] - df['fastqscreen_{}_multihit'.format(organism)]
-
-
 def add_contamination_status(
         infile, outfile,
         reference, threshold=0.05
 ):
+    def get_col_data(df, organism):
+        return df['fastqscreen_{}'.format(organism)] - df['fastqscreen_{}_multihit'.format(organism)]
+
     data = csverve.read_csv(infile)
 
     data = data.set_index('cell_id', drop=False)
@@ -238,7 +223,7 @@ def add_contamination_status(
     data['is_contaminated'] = False
 
     for altcol in alts:
-        perc_alt = _get_col_data(data, altcol) / data['fastqscreen_total_reads']
+        perc_alt = get_col_data(data, altcol) / data['fastqscreen_total_reads']
         data.loc[perc_alt > threshold, 'is_contaminated'] = True
 
     col_type = dtypes()['metrics']['is_contaminated']
@@ -254,9 +239,9 @@ def add_metadata(metrics, metadata_yaml, output):
 
     metadata = yaml.safe_load(open(metadata_yaml, 'rt'))
 
-    cells = metadata['meta']['cells'].keys()
+    cells = set(df['cell_id'])
 
-    assert set(cells) == set(df['cell_id'])
+    metadata['meta']['cells'] = {k: v for k, v in metadata['meta']['cells'].items() if k in cells}
 
     for cellid, cell_info in metadata['meta']['cells'].items():
         for colname, val in cell_info.items():
@@ -274,7 +259,7 @@ def add_metadata(metrics, metadata_yaml, output):
 
 def generate_metadata(
         bam, control, contaminated, metrics, gc_metrics,
-        fastqscreen, tarfile, metadata_input, metadata_output
+        tarfile, metadata_input, metadata_output
 ):
     with open(metadata_input, 'rt') as reader:
         data = yaml.safe_load(reader)
@@ -331,14 +316,6 @@ def generate_metadata(
             'result_type': 'merged_cells_bam', 'filtering': 'contaminated',
             'auxiliary': helpers.get_auxiliary_files(contaminated[1])
         },
-        os.path.basename(fastqscreen[0]): {
-            'result_type': 'detailed_fastqscreen_breakdown',
-            'auxiliary': helpers.get_auxiliary_files(fastqscreen[0])
-        },
-        os.path.basename(fastqscreen[1]): {
-            'result_type': 'detailed_fastqscreen_breakdown',
-            'auxiliary': helpers.get_auxiliary_files(fastqscreen[1])
-        },
         os.path.basename(tarfile): {
             'result_type': 'alignment_metrics_plots',
             'auxiliary': helpers.get_auxiliary_files(tarfile)
@@ -358,5 +335,22 @@ def generate_metadata(
         yaml.dump(data, writer, default_flow_style=False)
 
 
-def _json_file_parser(filepath):
-    return json.load(open(filepath, 'rt'))
+def supplementary_reference_cmdline(jsonfile):
+    refs = []
+    with open(jsonfile, 'rt') as reader:
+        data = json.load(reader)
+        for entry in data:
+            refs.append(f'{entry["genome_name"]},{entry["genome_version"]},{entry["reference"]}')
+
+        refs = [f'--supplementary_references {v}' for v in refs]
+        print(" ".join(refs))
+
+
+def fastqs_cmdline(jsonfile):
+    pairs = []
+    with open(jsonfile, 'rt') as reader:
+        data = json.load(reader)
+        for entry in data:
+            pairs.append(f"{entry['lane_id']},{entry['flowcell_id']},{entry['fastq1']},{entry['fastq2']}")
+    pairs = [f'--fastq_pairs {v}' for v in pairs]
+    print(" ".join(pairs))

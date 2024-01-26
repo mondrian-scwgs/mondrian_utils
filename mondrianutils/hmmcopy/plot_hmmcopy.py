@@ -492,12 +492,18 @@ class GenHmmPlots(object):
         self.plot_bias(self.bias_pdf)
 
 
-if __name__ == '__main__':
-    args = parse_args()
+def plot_hmmcopy(
+        reads, segments, params, metrics, ref_genome, segs_out,
+        bias_out, num_states=12,
+        annotation_cols=None, sample_info=None, max_cn=None
+):
+    if not annotation_cols:
+        annotation_cols = ['cell_call', 'experimental_condition', 'sample_type',
+                           'mad_neutral_state', 'MSRSI_non_integerness',
+                           'total_mapped_reads_hmmcopy']
 
-    with GenHmmPlots(
-            args.corrected_reads, args.segments, args.params, args.quality_metrics,
-            args.ref_genome, args.segs_output, args.bias_output, args.sample_id,
-            args.multipliers, annotation_cols=args.annotation_cols,
-            num_states=args.num_states) as plot:
+    with GenHmmPlots(reads, segments, params, metrics, ref_genome, segs_out,
+                     bias_out, num_states=num_states,
+                     annotation_cols=annotation_cols,
+                     sample_info=sample_info, max_cn=max_cn) as plot:
         plot.main()

@@ -142,9 +142,9 @@ class PlotPcolor(object):
                     del sample_sets[-1]
 
                 for samples in sample_sets:
-                    genplot(data, samples)
+                    genplot(data, list(samples))
             else:
-                genplot(data, samples)
+                genplot(data, list(samples))
         pdfout.close()
 
     def main(self):

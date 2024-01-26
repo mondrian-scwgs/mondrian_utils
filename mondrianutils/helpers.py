@@ -56,6 +56,11 @@ def get_bins_per_chromosome(chromosome_length, binsize):
 def get_cells(bam_reader):
     cells = []
     header = bam_reader.header
+
+    if isinstance(header, dict):
+        comments = [v.replace('CB:','') for v in header['CO']]
+        return comments
+
     for line in str(header).split('\n'):
         if not line.startswith("@CO"):
             continue
@@ -182,6 +187,7 @@ def get_merge_command(bams, output, ncores=1):
 
 
 def merge_bams(infiles, outfile, tempdir, ncores):
+    makedirs(tempdir)
     assert len(infiles) > 0
 
     if len(infiles) < ncores * 2:
@@ -257,6 +263,8 @@ def get_auxiliary_files(filepath):
 def run_cmd(cmd, output=None):
     if isinstance(cmd, list):
         cmd = [str(v) for v in cmd]
+
+    print(f'running command: {" ".join(cmd)}')
 
     stdout = PIPE
     if output:

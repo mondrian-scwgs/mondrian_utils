@@ -238,13 +238,13 @@ class ClusterMap(object):
 
         cbar = matplotlib.colorbar.ColorbarBase(axes, cmap=cmap, norm=norm,
                                                 orientation='horizontal')
-        cbar.set_ticks([v + 0.5 for v in bounds])
+        cbar.set_ticks([v + 0.5 for v in bounds][:cmap.N])
 
         if not ticklabels:
             ticklabels = [
                 str(v).replace(str(self.max_cn), str(self.max_cn - 1) + "+") for v in bounds]
 
-        ticklabels = [str(v) for v in ticklabels]
+        ticklabels = [str(v) for v in ticklabels][:cmap.N]
 
         if ticklabels:
             cbar.set_ticklabels(ticklabels)

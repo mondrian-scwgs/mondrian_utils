@@ -4,11 +4,39 @@ Created on Sep 8, 2015
 @author: dgrewal
 '''
 import logging
-
 import csverve.api as csverve
 import pandas as pd
 
 from mondrianutils.dtypes.alignment import dtypes
+
+import os
+import mondrianutils.helpers as helpers
+
+
+def bam_collect_gc_metrics(
+        bam_filename, ref_genome, metrics_filename,
+        summary_filename, chart_filename, tempdir,
+        num_threads=1, mem="2G"
+):
+    if not os.path.exists(tempdir):
+        helpers.makedirs(tempdir)
+
+    cmd = ['picard', '-Xmx' + mem, '-Xms' + mem]
+    if num_threads == 1:
+        cmd.append('-XX:ParallelGCThreads=1')
+    cmd.extend([
+        'CollectGcBiasMetrics',
+        'INPUT=' + bam_filename,
+        'OUTPUT=' + metrics_filename,
+        'REFERENCE_SEQUENCE=' + ref_genome,
+        'S=' + summary_filename,
+        'CHART_OUTPUT=' + chart_filename,
+        'VALIDATION_STRINGENCY=LENIENT',
+        'TMP_DIR=' + tempdir,
+        'MAX_RECORDS_IN_RAM=150000',
+        'QUIET=true'
+    ])
+    helpers.run_cmd(cmd)
 
 
 def collect_gc_metrics(bias_file, output, sample_id):
@@ -39,3 +67,17 @@ def collect_gc_metrics(bias_file, output, sample_id):
         data = pd.DataFrame(dummy_data, columns=columns)
 
     csverve.write_dataframe_to_csv_and_yaml(data, output, dtypes()['gc'], skip_header=False)
+
+
+def gc_metrics(
+        bam_filename, ref_genome, metrics_filename,
+        summary_filename, chart_filename, parsed_metrics,
+        tempdir, cell_id, num_threads=1, mem="2G"
+):
+    bam_collect_gc_metrics(
+        bam_filename, ref_genome, metrics_filename,
+        summary_filename, chart_filename, tempdir,
+        num_threads=num_threads, mem=mem
+    )
+
+    collect_gc_metrics(metrics_filename, parsed_metrics, cell_id)
