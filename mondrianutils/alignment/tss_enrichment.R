@@ -38,7 +38,7 @@ if (is.null(opt$genome_version)) {
 }
 
 if (!(opt$genome_version %in% c("grch37", "grch38", "hg19", "hg38"))) {
-  stop("Invalid genome version. Please use grch37, grch38, hg18 or hg19.\n")
+  stop("Invalid genome version. Please use grch37, grch38, hg38 or hg19.\n")
 }
 
 if (!dir.exists(opt$tempdir)) {
