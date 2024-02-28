@@ -9,12 +9,22 @@ def generate_metadata(
         outputs, vartrix_outputs, metadata_input, metadata_output
 ):
     data = dict()
-    data['files'] = {
-        os.path.basename(outputs[0]): {'result_type': 'pysam_genotyping_counts', 'auxiliary': False},
-        os.path.basename(outputs[1]): {'result_type': 'pysam_genotyping_counts', 'auxiliary': True},
-        os.path.basename(vartrix_outputs[0]): {'result_type': 'vartrix_genotyping_counts', 'auxiliary': False},
-        os.path.basename(vartrix_outputs[1]): {'result_type': 'vartrix_genotyping_counts', 'auxiliary': True},
-    }
+    data['files'] = {}
+
+    if outputs is not None:
+        data['files'][os.path.basename(outputs[0])] = {
+            'result_type': 'pysam_genotyping_counts', 'auxiliary': False
+        }
+        data['files'][os.path.basename(outputs[1])] = {
+            'result_type': 'pysam_genotyping_counts', 'auxiliary': True
+        }
+    if vartrix_outputs is not None:
+        data['files'][os.path.basename(vartrix_outputs[0])] = {
+            'result_type': 'vartrix_genotyping_counts', 'auxiliary': False
+        }
+        data['files'][os.path.basename(vartrix_outputs[1])] = {
+            'result_type': 'vartrix_genotyping_counts', 'auxiliary': True
+        }
 
     with open(metadata_input, 'rt') as reader:
         meta = yaml.safe_load(reader)

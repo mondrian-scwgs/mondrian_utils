@@ -1,5 +1,5 @@
 import click
-import mondrianutils.hmmcopy
+import mondrianutils.qc
 
 
 @click.group()

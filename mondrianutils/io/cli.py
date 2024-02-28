@@ -87,7 +87,7 @@ def remove_duplicates(infile, outfile, include_ref_alt):
 @cli.command()
 @click.option('--infile', required=True, help='Path to the input VCF file')
 @click.option('--outfile', required=True, help='Path to the output VCF file')
-@click.option('--exclusion_blacklist', default=False, help='Path to the exclusion blacklist file')
+@click.option('--exclusion_blacklist', help='Path to the exclusion blacklist file')
 def exclude_blacklist(infile, outfile, exclusion_blacklist):
     mondrianutils.io.exclude_blacklist(infile, outfile, exclusion_blacklist)
 
