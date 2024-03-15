@@ -96,6 +96,37 @@ def generate_metadata(files, metadata_yaml_files, samples, metadata_output):
 
 
 @cli.command()
+@click.option('--csv', required=True)
+@click.option('--yaml', required=True)
+@click.option('--metadata_yaml')
+@click.option('--sample')
+@click.option('--metadata_output')
+def generate_infer_haps_metadata(csv, yaml, metadata_yaml, sample, metadata_output):
+    mondrianutils.haplotypes.generate_infer_haps_metadata(
+        csv, yaml, metadata_yaml, sample, metadata_output
+    )
+
+@cli.command()
+@click.option('--csv', required=True)
+@click.option('--yaml', required=True)
+@click.option('--barcodes', required=True)
+@click.option('--variants', required=True)
+@click.option('--ref_counts', required=True)
+@click.option('--alt_counts', required=True)
+@click.option('--metadata_yaml')
+@click.option('--sample')
+@click.option('--metadata_output')
+def generate_count_haps_metadata(
+        csv, yaml, barcodes, variants, ref_counts, alt_counts,
+        metadata_yaml, sample, metadata_output
+):
+    mondrianutils.haplotypes.generate_count_haps_metadata(
+        csv, yaml, barcodes, variants, ref_counts, alt_counts,
+        metadata_yaml, sample, metadata_output
+    )
+
+
+@cli.command()
 @click.option('--input_bcf_file', required=True)
 @click.option('--genetic_map', required=True)
 @click.option('--regions_file', required=True)
@@ -108,7 +139,7 @@ def generate_metadata(files, metadata_yaml_files, samples, metadata_output):
 @click.option('--shapeit_num_samples', default=100, type=int)
 @click.option('--shapeit_confidence_threshold', default=0.95, type=float)
 def run_shapeit(input_bcf_file, genetic_map, regions_file, chromosome, tempdir, output, phased_chromosomes,
-                    is_female, phased_chromosome_x, shapeit_num_samples, shapeit_confidence_threshold):
+                is_female, phased_chromosome_x, shapeit_num_samples, shapeit_confidence_threshold):
     mondrianutils.haplotypes.run_shapeit4(
         input_bcf_file, genetic_map, regions_file, chromosome,
         tempdir, output,

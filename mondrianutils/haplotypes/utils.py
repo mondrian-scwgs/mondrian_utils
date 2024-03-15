@@ -5,6 +5,7 @@ import pandas as pd
 import yaml
 from mondrianutils import helpers
 from mondrianutils.dtypes.haplotypes import dtypes
+from mondrianutils import __version__
 
 
 def add_cell_id_to_seqdata(seqdata, cellid):
@@ -47,6 +48,87 @@ def generate_metadata(
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(data, writer, default_flow_style=False)
+
+
+def generate_infer_haps_metadata(
+        csvfile, yamlfile, metadata_input, sample, metadata_output
+):
+    with open(metadata_input, 'rt') as reader:
+        data = yaml.safe_load(reader)
+
+    out_data = dict()
+    out_data['meta'] = dict(
+        type='haplotype_infer',
+        version=__version__,
+        lane_ids=data['meta']['lane_ids'],
+        sample_ids=data['meta']['sample_ids'],
+        library_ids=data['meta']['library_ids'],
+        cell_ids=data['meta']['cell_ids'],
+        sample=sample
+    )
+
+    files = {
+        os.path.basename(csvfile): {
+            'result_type': 'infer_haplotype',
+            'auxiliary': helpers.get_auxiliary_files(csvfile)
+        },
+        os.path.basename(yamlfile): {
+            'result_type': 'infer_haplotype',
+            'auxiliary': helpers.get_auxiliary_files(yamlfile)
+        }
+    }
+
+    with open(metadata_output, 'wt') as writer:
+        yaml.dump(files, writer, default_flow_style=False)
+
+
+def generate_count_haps_metadata(
+        csvfile, yamlfile, barcodes, variants, ref_counts, alt_counts,
+        metadata_input, sample, metadata_output
+):
+    with open(metadata_input, 'rt') as reader:
+        data = yaml.safe_load(reader)
+
+    out_data = dict()
+    out_data['meta'] = dict(
+        type='haplotype_count',
+        version=__version__,
+        lane_ids=data['meta']['lane_ids'],
+        sample_ids=data['meta']['sample_ids'],
+        library_ids=data['meta']['library_ids'],
+        cell_ids=data['meta']['cell_ids'],
+        sample=sample
+    )
+
+    files = {
+        os.path.basename(csvfile): {
+            'result_type': 'infer_haplotype',
+            'auxiliary': helpers.get_auxiliary_files(csvfile)
+        },
+        os.path.basename(yamlfile): {
+            'result_type': 'infer_haplotype',
+            'auxiliary': helpers.get_auxiliary_files(yamlfile)
+        },
+        os.path.basename(csvfile): {
+            'result_type': 'infer_haplotype',
+            'auxiliary': helpers.get_auxiliary_files(barcodes)
+        },
+        os.path.basename(yamlfile): {
+            'result_type': 'infer_haplotype',
+            'auxiliary': helpers.get_auxiliary_files(variants)
+        },
+        os.path.basename(csvfile): {
+            'result_type': 'infer_haplotype',
+            'auxiliary': helpers.get_auxiliary_files(ref_counts)
+        },
+        os.path.basename(yamlfile): {
+            'result_type': 'infer_haplotype',
+            'auxiliary': helpers.get_auxiliary_files(alt_counts)
+        }
+    }
+
+    with open(metadata_output, 'wt') as writer:
+        yaml.dump(files, writer, default_flow_style=False)
 
 
 def finalize_tsv(infile, outfile, seqdata, skip_header=False):
