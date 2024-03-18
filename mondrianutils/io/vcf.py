@@ -43,7 +43,7 @@ def get_calls_grouped(filepath, num_calls):
     yield calls
 
 
-def split_vcf(infile, outdir, num_splits):
+def split_vcf_into_numsplits(infile, outdir, num_splits):
     num_lines = get_num_calls(infile)
     calls_per_file = max(1, num_lines // num_splits)
 
@@ -52,6 +52,20 @@ def split_vcf(infile, outdir, num_splits):
     helpers.makedirs(outdir)
 
     for i, calls in enumerate(get_calls_grouped(infile, calls_per_file)):
+        outfile = os.path.join(outdir, '{}.vcf'.format(i))
+        with open(outfile, 'wt') as writer:
+            for line in header:
+                writer.write(line)
+            for line in calls:
+                writer.write(line)
+
+
+def split_vcf_by_lines(infile, outdir, num_lines):
+    header = get_header(infile)
+
+    helpers.makedirs(outdir)
+
+    for i, calls in enumerate(get_calls_grouped(infile, num_lines)):
         outfile = os.path.join(outdir, '{}.vcf'.format(i))
         with open(outfile, 'wt') as writer:
             for line in header:

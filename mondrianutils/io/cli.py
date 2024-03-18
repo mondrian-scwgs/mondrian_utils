@@ -61,9 +61,16 @@ def merge_pdfs_scaled(infiles, outfile):
 @cli.command()
 @click.option('--infile', required=True, help='Path to the input VCF file')
 @click.option('--outdir', required=True, help='Directory for output VCF files')
-@click.option('--num_splits', type=int, required=True, help='Number of splits for split_vcf command')
-def split_vcf(infile, outdir, num_splits):
-    mondrianutils.io.split_vcf(infile, outdir, num_splits)
+@click.option('--num_splits', type=int, help='Number of splits for split_vcf command')
+@click.option('--num_lines', type=int, help='Number of splits for split_vcf command')
+def split_vcf(infile, outdir, num_splits=None, num_lines=None):
+    if num_splits is not None and num_lines is not None:
+        raise Exception("specify num_splits or num_lines, but not both")
+
+    if num_lines is not None:
+        mondrianutils.io.split_vcf_by_lines(infile, outdir, num_lines)
+    else:
+        mondrianutils.io.split_vcf_into_numsplits(infile, outdir, num_splits)
 
 
 @cli.command()

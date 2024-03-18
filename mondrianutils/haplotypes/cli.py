@@ -99,30 +99,22 @@ def generate_metadata(files, metadata_yaml_files, samples, metadata_output):
 @click.option('--csv', required=True)
 @click.option('--yaml', required=True)
 @click.option('--metadata_yaml')
-@click.option('--sample')
 @click.option('--metadata_output')
-def generate_infer_haps_metadata(csv, yaml, metadata_yaml, sample, metadata_output):
+def generate_infer_haps_metadata(csv, yaml, metadata_yaml, metadata_output):
     mondrianutils.haplotypes.generate_infer_haps_metadata(
-        csv, yaml, metadata_yaml, sample, metadata_output
+        csv, yaml, metadata_yaml,  metadata_output
     )
 
 @cli.command()
 @click.option('--csv', required=True)
 @click.option('--yaml', required=True)
-@click.option('--barcodes', required=True)
-@click.option('--variants', required=True)
-@click.option('--ref_counts', required=True)
-@click.option('--alt_counts', required=True)
 @click.option('--metadata_yaml')
-@click.option('--sample')
 @click.option('--metadata_output')
 def generate_count_haps_metadata(
-        csv, yaml, barcodes, variants, ref_counts, alt_counts,
-        metadata_yaml, sample, metadata_output
+        csv, yaml, metadata_yaml,  metadata_output
 ):
     mondrianutils.haplotypes.generate_count_haps_metadata(
-        csv, yaml, barcodes, variants, ref_counts, alt_counts,
-        metadata_yaml, sample, metadata_output
+        csv, yaml, metadata_yaml, metadata_output
     )
 
 

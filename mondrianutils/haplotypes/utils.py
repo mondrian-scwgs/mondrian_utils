@@ -51,7 +51,7 @@ def generate_metadata(
 
 
 def generate_infer_haps_metadata(
-        csvfile, yamlfile, metadata_input, sample, metadata_output
+        csvfile, yamlfile, metadata_input, metadata_output
 ):
     with open(metadata_input, 'rt') as reader:
         data = yaml.safe_load(reader)
@@ -64,7 +64,6 @@ def generate_infer_haps_metadata(
         sample_ids=data['meta']['sample_ids'],
         library_ids=data['meta']['library_ids'],
         cell_ids=data['meta']['cell_ids'],
-        sample=sample
     )
 
     files = {
@@ -83,8 +82,8 @@ def generate_infer_haps_metadata(
 
 
 def generate_count_haps_metadata(
-        csvfile, yamlfile, barcodes, variants, ref_counts, alt_counts,
-        metadata_input, sample, metadata_output
+        csvfile, yamlfile,
+        metadata_input, metadata_output
 ):
     with open(metadata_input, 'rt') as reader:
         data = yaml.safe_load(reader)
@@ -97,33 +96,16 @@ def generate_count_haps_metadata(
         sample_ids=data['meta']['sample_ids'],
         library_ids=data['meta']['library_ids'],
         cell_ids=data['meta']['cell_ids'],
-        sample=sample
     )
 
     files = {
         os.path.basename(csvfile): {
-            'result_type': 'infer_haplotype',
+            'result_type': 'count_haplotype',
             'auxiliary': helpers.get_auxiliary_files(csvfile)
         },
         os.path.basename(yamlfile): {
-            'result_type': 'infer_haplotype',
+            'result_type': 'count_haplotype',
             'auxiliary': helpers.get_auxiliary_files(yamlfile)
-        },
-        os.path.basename(csvfile): {
-            'result_type': 'infer_haplotype',
-            'auxiliary': helpers.get_auxiliary_files(barcodes)
-        },
-        os.path.basename(yamlfile): {
-            'result_type': 'infer_haplotype',
-            'auxiliary': helpers.get_auxiliary_files(variants)
-        },
-        os.path.basename(csvfile): {
-            'result_type': 'infer_haplotype',
-            'auxiliary': helpers.get_auxiliary_files(ref_counts)
-        },
-        os.path.basename(yamlfile): {
-            'result_type': 'infer_haplotype',
-            'auxiliary': helpers.get_auxiliary_files(alt_counts)
         }
     }
 
