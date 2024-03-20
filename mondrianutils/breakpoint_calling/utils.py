@@ -76,7 +76,7 @@ def generate_per_sample_metadata(
         }
     for filepath in destruct:
         files[os.path.basename(filepath)] = {
-            'result_type': 'breakpoint_destruct', 'auxiliary': helpers.get_auxilliary_files(filepath)
+            'result_type': 'breakpoint_destruct', 'auxiliary': helpers.get_auxiliary_files(filepath)
         }
 
     with open(metadata_output, 'wt') as writer:
