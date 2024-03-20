@@ -76,9 +76,9 @@ def generate_infer_haps_metadata(
             'auxiliary': helpers.get_auxiliary_files(yamlfile)
         }
     }
-
+    out_data['files'] = files
     with open(metadata_output, 'wt') as writer:
-        yaml.dump(files, writer, default_flow_style=False)
+        yaml.dump(out_data, writer, default_flow_style=False)
 
 
 def generate_count_haps_metadata(

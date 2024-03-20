@@ -78,6 +78,6 @@ def generate_per_sample_metadata(
         files[os.path.basename(filepath)] = {
             'result_type': 'breakpoint_destruct', 'auxiliary': helpers.get_auxiliary_files(filepath)
         }
-
+    out_data['files'] = files
     with open(metadata_output, 'wt') as writer:
-        yaml.dump(files, writer, default_flow_style=False)
+        yaml.dump(out_data, writer, default_flow_style=False)
