@@ -55,6 +55,21 @@ def breakpoint_generate_metadata(files, metadata_yaml_files, samples, metadata_o
         files, metadata_yaml_files, samples, metadata_output
     )
 
+@cli.command()
+@click.option('--destruct', multiple=True)
+@click.option('--consensus', multiple=True)
+@click.option('--lumpy')
+@click.option('--svaba')
+@click.option('--gridss')
+@click.option('--metadata_yaml')
+@click.option('--metadata_output')
+def breakpoint_generate_per_sample_metadata(
+        destruct, consensus, lumpy, svaba, gridss, metadata_yaml, metadata_output
+):
+    mondrianutils.breakpoint_calling.generate_per_sample_metadata(
+        destruct, consensus, lumpy, svaba, gridss, metadata_yaml, metadata_output
+    )
+
 
 if __name__ == '__main__':
     cli()

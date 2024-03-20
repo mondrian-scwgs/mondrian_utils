@@ -1,7 +1,10 @@
+import os
 import json
 import yaml
 
 from mondrianutils import helpers
+from mondrianutils import __version__
+
 
 def infer_type(files):
     with open(files, 'rt') as reader:
@@ -36,3 +39,45 @@ def generate_metadata(
         yaml.dump(data, writer, default_flow_style=False)
 
 
+def generate_per_sample_metadata(
+        destruct, consensus, lumpy, svaba, gridss, metadata_input, metadata_output
+):
+    with open(metadata_input, 'rt') as reader:
+        data = yaml.safe_load(reader)
+
+    out_data = dict()
+    out_data['meta'] = dict(
+        type='haplotype_count',
+        version=__version__,
+        lane_ids=data['meta']['lane_ids'],
+        sample_ids=data['meta']['sample_ids'],
+        library_ids=data['meta']['library_ids'],
+        cell_ids=data['meta']['cell_ids'],
+    )
+
+    files = {
+        os.path.basename(lumpy): {
+            'result_type': 'breakpoint_lumpy',
+            'auxiliary': helpers.get_auxiliary_files(lumpy)
+        },
+        os.path.basename(svaba): {
+            'result_type': 'breakpoint_svaba',
+            'auxiliary': helpers.get_auxiliary_files(svaba)
+        },
+        os.path.basename(gridss): {
+            'result_type': 'breakpoint_gridss',
+            'auxiliary': helpers.get_auxiliary_files(gridss)
+        }
+    }
+
+    for filepath in consensus:
+        files[os.path.basename(filepath)] = {
+            'result_type': 'breakpoint_consensus', 'auxiliary': helpers.get_auxiliary_files(filepath)
+        }
+    for filepath in destruct:
+        files[os.path.basename(filepath)] = {
+            'result_type': 'breakpoint_destruct', 'auxiliary': helpers.get_auxilliary_files(filepath)
+        }
+
+    with open(metadata_output, 'wt') as writer:
+        yaml.dump(files, writer, default_flow_style=False)
