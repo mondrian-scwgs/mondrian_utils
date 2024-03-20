@@ -61,7 +61,7 @@ def breakpoint_generate_metadata(files, metadata_yaml_files, samples, metadata_o
 @click.option('--lumpy')
 @click.option('--svaba')
 @click.option('--gridss')
-@click.option('--metadata_yaml')
+@click.option('--metadata_input')
 @click.option('--metadata_output')
 def breakpoint_generate_per_sample_metadata(
         destruct, consensus, lumpy, svaba, gridss, metadata_input, metadata_output
