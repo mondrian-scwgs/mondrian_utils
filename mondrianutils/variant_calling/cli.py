@@ -128,5 +128,21 @@ def generate_metadata(files, metadata_yaml_files, samples, metadata_output):
     mondrianutils.variant_calling.generate_metadata(files, metadata_yaml_files, samples, metadata_output)
 
 
+@cli.command()
+@click.option('--consensus_maf', multiple=True)
+@click.option('--consensus_vcf', multiple=True)
+@click.option('--museq_vcf', multiple=True)
+@click.option('--mutect_vcf', multiple=True)
+@click.option('--strelka_vcf', multiple=True)
+@click.option('--metadata_yaml')
+@click.option('--metadata_output')
+def generate_variant_metadata(
+        consensus_maf, consensus_vcf, museq_vcf, mutect_vcf, strelka_vcf, metadata_input, metadata_output
+):
+    mondrianutils.variant_calling.generate_variant_metadata(
+        consensus_maf, consensus_vcf, museq_vcf, mutect_vcf, strelka_vcf, metadata_input, metadata_output
+    )
+
+
 if __name__ == '__main__':
     cli()

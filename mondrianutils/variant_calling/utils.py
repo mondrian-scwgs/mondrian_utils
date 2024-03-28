@@ -1,3 +1,4 @@
+import os
 import gzip
 import json
 
@@ -7,6 +8,7 @@ import pandas as pd
 import pysam
 import yaml
 from mondrianutils import helpers
+from mondrianutils import __version__
 
 def get_header(infile):
     with helpers.getFileHandle(infile, 'rt') as reader:
@@ -313,3 +315,48 @@ def generate_metadata(
     with open(metadata_output, 'wt') as writer:
         yaml.dump(data, writer, default_flow_style=False)
 
+def generate_variant_metadata(
+        consensus_maf, consensus_vcf, museq_vcf, mutect_vcf, strelka_vcf, metadata_input, metadata_output
+):
+    files = {}
+    files[os.path.basename(consensus_maf)] = {
+        'result_type': 'variant_calling',
+        'auxiliary': helpers.get_auxiliary_files(consensus_maf)
+    }
+    files[os.path.basename(consensus_vcf)] = {
+        'result_type': 'variant_consensus',
+        'auxiliary': helpers.get_auxiliary_files(consensus_vcf)
+    }
+
+    for filepath in museq_vcf:
+        files[os.path.basename(filepath)] = {
+            'result_type': 'variant_museq',
+            'auxiliary': helpers.get_auxiliary_files(filepath)
+        }
+    for filepath in strelka_vcf:
+        files[os.path.basename(filepath)] = {
+            'result_type': 'variant_strelka',
+            'auxiliary': helpers.get_auxiliary_files(filepath)
+        }
+    for filepath in mutect_vcf:
+        files[os.path.basename(filepath)] = {
+            'result_type': 'variant_mutect',
+            'auxiliary': helpers.get_auxiliary_files(filepath)
+        }
+
+    with open(metadata_input, 'rt') as reader:
+        data = yaml.safe_load(reader)
+
+    out_data = dict()
+    out_data['meta'] = dict(
+        type='haplotype_count',
+        version=__version__,
+        lane_ids=data['meta']['lane_ids'],
+        sample_ids=data['meta']['sample_ids'],
+        library_ids=data['meta']['library_ids'],
+        cell_ids=data['meta']['cell_ids'],
+    )
+    out_data['files'] = files
+
+    with open(metadata_output, 'wt') as writer:
+        yaml.dump(files, writer, default_flow_style=False)

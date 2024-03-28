@@ -12,3 +12,4 @@ from .utils import merge_mafs
 from .utils import concatenate_csv
 from .utils import fix_museq_vcf
 from .utils import generate_metadata
+from .utils import generate_variant_metadata
