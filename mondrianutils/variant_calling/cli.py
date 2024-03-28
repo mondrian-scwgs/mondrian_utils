@@ -129,7 +129,7 @@ def generate_metadata(files, metadata_yaml_files, samples, metadata_output):
 
 
 @cli.command()
-@click.option('--consensus_maf', multiple=True)
+@click.option('--consensus_maf')
 @click.option('--consensus_vcf', multiple=True)
 @click.option('--museq_vcf', multiple=True)
 @click.option('--mutect_vcf', multiple=True)

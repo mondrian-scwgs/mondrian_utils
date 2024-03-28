@@ -323,10 +323,12 @@ def generate_variant_metadata(
         'result_type': 'variant_calling',
         'auxiliary': helpers.get_auxiliary_files(consensus_maf)
     }
-    files[os.path.basename(consensus_vcf)] = {
-        'result_type': 'variant_consensus',
-        'auxiliary': helpers.get_auxiliary_files(consensus_vcf)
-    }
+
+    for filepath in consensus_vcf:
+        files[os.path.basename(filepath)] = {
+            'result_type': 'variant_consensus',
+            'auxiliary': helpers.get_auxiliary_files(filepath)
+        }
 
     for filepath in museq_vcf:
         files[os.path.basename(filepath)] = {
