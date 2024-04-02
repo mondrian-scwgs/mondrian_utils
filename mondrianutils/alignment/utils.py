@@ -157,8 +157,6 @@ def get_bam_header(bam):
 
     header = infile.header
 
-    if 'CO' in header:
-        del header['CO']
 
     return header
 
