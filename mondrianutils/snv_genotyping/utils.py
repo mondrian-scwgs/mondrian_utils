@@ -19,12 +19,10 @@ def generate_metadata(
             'result_type': 'pysam_genotyping_counts', 'auxiliary': True
         }
     if vartrix_outputs is not None:
-        data['files'][os.path.basename(vartrix_outputs[0])] = {
-            'result_type': 'vartrix_genotyping_counts', 'auxiliary': False
-        }
-        data['files'][os.path.basename(vartrix_outputs[1])] = {
-            'result_type': 'vartrix_genotyping_counts', 'auxiliary': True
-        }
+        for filepath in vartrix_outputs:
+            data['files'][os.path.basename(filepath)] = {
+                'result_type': 'vartrix_genotyping_counts', 'auxiliary': helpers.get_auxiliary_files(filepath)
+            }
 
     with open(metadata_input, 'rt') as reader:
         meta = yaml.safe_load(reader)
