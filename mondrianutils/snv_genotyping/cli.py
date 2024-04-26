@@ -44,7 +44,6 @@ def generate_cell_barcodes(
 @cli.command()
 @click.option('--outputs', nargs=2)
 @click.option('--vartrix_outputs', nargs=6)
-@click.option('--pysam_genotyper', nargs=2)
 @click.option('--metadata_input')
 @click.option('--metadata_output')
 def generate_metadata(
