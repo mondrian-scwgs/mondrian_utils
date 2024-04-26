@@ -48,10 +48,10 @@ def generate_cell_barcodes(
 @click.option('--metadata_input')
 @click.option('--metadata_output')
 def generate_metadata(
-        outputs, vartrix_outputs, pysam_genotyper_outputs, metadata_input, metadata_output
+        outputs, vartrix_outputs, metadata_input, metadata_output
 ):
     mondrianutils.snv_genotyping.generate_metadata(
-        outputs, vartrix_outputs, pysam_genotyper_outputs, metadata_input, metadata_output
+        outputs, vartrix_outputs, metadata_input, metadata_output
     )
 
 
