@@ -152,19 +152,12 @@ class CorrectReadCount(object):
                 modal_quantile: quantile selected as the mode (should be the same for all bins)
                 modal_corrected: corrected read count (i.e., reads / modal_curve)
         '''
+        assert len(df_regression) >= 10, f'Expecting at least 10 bins, got {len(df_regression) >= 10}'
+        assert df_regression.reads.sum() >= 100, f'Expecting at least 100 reads in total, got {sum(df_regression.reads)}'
 
         q_range = range(10, 91, 1)
         quantiles = np.array(q_range) / 100
         quantile_names = [str(x) for x in q_range]
-
-        # need at least 3 values to compute the quantiles
-        if len(df_regression) < 10 or sum(df_regression['reads']) < 100:
-            df_regression['modal_quantile'] = None
-            df_regression['modal_curve'] = None
-            df_regression['modal_corrected'] = None
-            return df_regression
-
-
 
         poly_quantile_model = smf.quantreg(f'reads ~ bs(gc, degree={degree}, knots={knots}, include_intercept = True)',
                                            data=df_regression)
@@ -243,18 +236,24 @@ class CorrectReadCount(object):
         df_regression = pd.DataFrame.copy(df_non_zero)
 
         df_regression.sort_values(by='gc', inplace=True)
-
-        # modal quantile regression
-        df_regression = self.modal_quantile_regression(df_regression, lowess_frac=0.2)
-
-        # map results back to full data frame
-        df_regression = df_regression[['chr', 'start', 'end', 'modal_quantile', 'modal_curve', 'modal_corrected']]
-        df = df.merge(df_regression, on=['chr', 'start', 'end'], how='outer')
-
+        
+        if len(df_regression) >= 10 and sum(df_regression.reads) >= 100:
+            # modal quantile regression
+            df_regression = self.modal_quantile_regression(df_regression, lowess_frac=0.2)
+            # map results back to full data frame
+            df_regression = df_regression[['chr', 'start', 'end', 'modal_quantile', 'modal_curve', 'modal_corrected']]
+            df = df.merge(df_regression, on=['chr', 'start', 'end'], how='outer')
+        else:
+            df['modal_quantile'] = None
+            df['modal_curve'] = 1
+            df['modal_corrected'] = df.reads
+        
         # filter by mappability
         df['copy'] = df['modal_corrected']
-        df['copy'][df['map'] < self.mappability] = float('NaN')
-
+        df.loc[(df.reads == 0), 'copy'] = 0
+        df.loc[df['map'] < self.mappability, 'copy'] = float('NaN')
+        df.loc[df.gc < 0, 'copy'] = float('NaN')
+        
         df = df.rename(columns=({"modal_corrected": "cor_gc"}))
 
         df["cor_map"] = float("NaN")
