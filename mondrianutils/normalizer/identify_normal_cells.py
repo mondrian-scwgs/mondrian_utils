@@ -114,7 +114,6 @@ def get_coverage(metrics, normal_cells):
 
     return readcount, coverage
 
-
 def identify_normal_cells(
         hmmcopy_reads_path: str,
         metrics_data_path: str,
@@ -123,53 +122,80 @@ def identify_normal_cells(
         blacklist_file: str = None,
         min_reads: int = 500000,
         min_quality: float = 0.85,
+        # TODO: change allowed_aneuploidy_score to "normal_allowed_aneuploidy_score" for clarity
         allowed_aneuploidy_score: float = 0,
+        # TODO: change relative_aneuploidy_threshold to "supernormal_aneuploidy_threshold" for clarity
         relative_aneuploidy_threshold: float = 0.005,
         ploidy_threshold: float = 2.5
 ):
+    """
+    Identify normal cells based on the provided HMMcopy reads and metrics data.
+    
+    Parameters
+    ----------
+    hmmcopy_reads_path : str
+        Path to the HMMcopy reads data.
+    metrics_data_path : str
+        Path to the metrics data.
+    output_yaml : str
+        Path to the output YAML file.
+    output_csv : str
+        Path to the output CSV file.
+    blacklist_file : str, optional
+        Path to the blacklist file.
+    min_reads : int, optional
+        Minimum number of reads to consider a cell.
+    min_quality : float, optional
+        Minimum quality to consider a cell.
+    supernormal_aneuploidy_threshold : float, optional
+        Maximum allowed aneuploidy score for a cell to be considered for normal X copy estimation. 
+    normal_aneuploidy_score_threshold : float, optional
+        Relative aneuploidy threshold for a score 
+    """
     metrics = load_metrics(metrics_data_path, min_reads, min_quality)
 
     cn_data = load_reads_data(hmmcopy_reads_path, metrics['cell_id'])
 
-    # drop Y-chromosome immediately
+    # drop Y-chromosome immediately -- unreliable for CN inference
     my_columns = np.where([a[0] not in ['Y']
                            for a in cn_data.columns])[0]
     cn_data = cn_data.iloc[:, my_columns]
 
+    # compute ploidy and relative aneuploidy
     observations = pd.DataFrame(index=cn_data.index)
     observations['ploidy'] = cn_data.apply(lambda x: np.nanmean(x), axis=1)
     observations['rel_aneuploidy'] = get_relative_aneuploidy(cn_data)
 
+    # use obviously normal ("supernormal") cells to estimate normal X copy number
     normal_reads = get_supernormal_reads_data(
         cn_data, observations,
         relative_aneuploidy_threshold=relative_aneuploidy_threshold,
         ploidy_threshold=ploidy_threshold
     )
-
     xcopies = get_mean_copy_by_chromosome(normal_reads, 'X')
-
     if not (xcopies == 1 or xcopies == 2):
         warnings.warn(f"Found abnormal sex chromosome copies: chrX={xcopies}")
 
+    # remove blacklist bins
     if blacklist_file is not None:
         non_blacklist_bins = remove_blacklist_bins(cn_data.columns, blacklist_file)
     else:
         non_blacklist_bins = cn_data.columns
-
     observed = cn_data[non_blacklist_bins]
     observed = observed.to_numpy()
 
+    # determine expected normal copy-number profile
     expected = pd.DataFrame(columns=non_blacklist_bins)
     expected.loc[0] = 2
     expected[[v for v in expected if v[0] == 'X']] = xcopies
     expected = expected.to_numpy()
 
+    # compute aneuploidy score
     aneu = cdist(observed, expected, metric='hamming')
-
     observations['aneuploidy_score'] = aneu
+    assert not observations.aneuploidy_score.isna().any()
 
-    assert len(observations[observations['aneuploidy_score'].isna()]) == 0
-
+    # filter cells
     normal_cells = observations.query(f'aneuploidy_score <= {allowed_aneuploidy_score}').index
     aneuploidy_scores = observations['aneuploidy_score'].to_dict()
 
