@@ -13,8 +13,7 @@ def cli():
 
 @cli.command()
 @click.option('--infile', required=True)
-@click.option('--outdir', required=True)
-@click.option('--tempdir')
+@click.option('--outdir', required=True, help='output directory for wigs or output file for .csv.gz')
 @click.option('--chromosomes', multiple=True, default=[str(v) for v in range(1, 23)] + ['X', 'Y'],
               help='specify target chromosomes')
 @click.option('-w', '--window_size', type=int, default=500000, help='specify bin size')
@@ -25,7 +24,8 @@ def cli():
 @click.option('--discover_cells', is_flag=True, default=False, type=bool, help='discover cell barcodes instead of reading from header')
 @click.option('--ignore_missing_tags', is_flag=True, default=False, type=bool, help='ignore missing tags')
 @click.option('--ncores', default=12, type=int, help='number of cores to use')
-def readcounter(infile, outdir, tempdir, chromosomes, window_size, mapping_quality_threshold, exclude_list, tag_name, discover_cells, ignore_missing_tags, ncores):
+@click.option('--tabular', is_flag=True, default=False, type=bool, help='output .csv.gz file instead of .wig files')
+def readcounter(infile, outdir, chromosomes, window_size, mapping_quality_threshold, exclude_list, tag_name, discover_cells, ignore_missing_tags, ncores, tabular):
     mondrianutils.hmmcopy.readcounter(
         infile,
         outdir,
@@ -37,6 +37,7 @@ def readcounter(infile, outdir, tempdir, chromosomes, window_size, mapping_quali
         tag_name=tag_name,
         discover_cells=discover_cells,
         ignore_missing_tags=ignore_missing_tags,
+        tabular=tabular
     )
 
 
