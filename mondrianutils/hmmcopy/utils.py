@@ -43,6 +43,7 @@ def readcounter(
         tag_name='CB',
         discover_cells=False,
         ignore_missing_tags=False,
+        tabular=False
 ):
     readcounter = ReadCounter(
         infile, window_size, mapping_quality_threshold,
@@ -64,7 +65,10 @@ def readcounter(
     if not discover_cells:
         cells = get_cells_from_bam(infile, tag_name)
 
-    counts.write_wig_files(outdir, cells=cells)
+    if tabular:
+        counts.write_dataframe(outdir, cells=cells)
+    else:
+        counts.write_wig_files(outdir, cells=cells)
 
 
 def plot_heatmap(reads, metrics, chromosomes, output, sidebar_column='pick_met', disable_clustering=None):
