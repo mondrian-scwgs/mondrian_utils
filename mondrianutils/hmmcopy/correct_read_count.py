@@ -152,6 +152,8 @@ class CorrectReadCount(object):
                 modal_quantile: quantile selected as the mode (should be the same for all bins)
                 modal_corrected: corrected read count (i.e., reads / modal_curve)
         '''
+        # seed RNG so that statsmodels results are reproducible
+        np.random.seed(0)
 
         q_range = range(10, 91, 1)
         quantiles = np.array(q_range) / 100
