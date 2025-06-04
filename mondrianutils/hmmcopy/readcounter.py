@@ -133,7 +133,10 @@ class CellReadCounts:
 
             data.append(cell_data)
 
-        data = pd.concat(data, ignore_index=True)
+        if len(data) == 0:
+            data = pd.DataFrame(columns=['cell_id', 'chromosome', 'start', 'end', 'count'])
+        else:
+            data = pd.concat(data, ignore_index=True)
 
         data.to_csv(output_filename, index=False)
 
