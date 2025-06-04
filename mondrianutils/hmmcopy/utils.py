@@ -6,77 +6,69 @@ import mondrianutils.helpers as helpers
 import pandas as pd
 import pysam
 import yaml
+from multiprocessing import Pool
 from mondrianutils import __version__
 from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
 from mondrianutils.hmmcopy.plot_heatmap import PlotPcolor
-from mondrianutils.hmmcopy.readcounter import ReadCounter
+from mondrianutils.hmmcopy.readcounter import ReadCounter, merge_cell_read_counts
 import cell_cycle_classifier.api as cell_cycle
 
-def _readcounter_command(infile, outdir, chromosome, exclude_list=None, mapping_quality_threshold=0, window_size=1000):
-    return [
-        'hmmcopy_utils', 'readcounter',
-        '--infile', infile,
-        '--outdir', outdir,
-        '-w', window_size,
-        '--chromosomes', chromosome,
-        '-m', mapping_quality_threshold,
-        '--exclude_list', exclude_list,
-        '--ncores', 1
-    ]
 
+def get_cells_from_bam(bam_filename, tag_name):
+    with pysam.AlignmentFile(bam_filename, 'rb') as bam:
+        if isinstance(bam.header, dict):
+            comments = [v.replace(tag_name+':', '') for v in bam.header['CO']]
+            return comments
 
-def _merge_wig(infiles, outfile, cell):
-    with open(outfile, 'wt') as writer:
-        writer.write(f'track type=wiggle_0 name={cell}\n')
-        for infile in infiles:
-            with open(infile, 'rt') as reader:
-                for line in reader:
-                    if line.startswith('track type'):
-                        continue
-                    writer.write(line)
+        cells = []
+        for line in str(bam.header).split('\n'):
+            if not line.startswith("@CO"):
+                continue
+            line = line.strip().split()
+            cb = line[1]
+            cell = cb.split(':')[1]
+            cells.append(cell)
+
+        return cells
 
 
 def readcounter(
         infile,
         outdir,
-        tempdir,
         chromosomes,
         exclude_list=None,
         ncores=16,
         mapping_quality_threshold=20,
-        window_size=500000
+        window_size=500000,
+        tag_name='CB',
+        discover_cells=False,
+        ignore_missing_tags=False,
+        tabular=False
 ):
+    readcounter = ReadCounter(
+        infile, window_size, mapping_quality_threshold,
+        excluded=exclude_list, tag_name=tag_name,
+        ignore_missing_tags=ignore_missing_tags)
+
     if ncores == 1:
-        with ReadCounter(infile, outdir, window_size,
-                         chromosomes, mapping_quality_threshold,
-                         excluded=exclude_list) as rcount:
-            rcount.main()
-        return
+        counts = []
+        for chromosome in chromosomes:
+            counts.append(readcounter.get_data(chromosome))
 
-    if os.path.exists(tempdir):
-        shutil.rmtree(tempdir)
-    if os.path.exists(outdir):
-        shutil.rmtree(outdir)
+    else:
+        with Pool(processes=ncores) as pool:
+            counts = pool.map(readcounter.get_data, chromosomes)
 
-    os.makedirs(tempdir)
-    os.makedirs(outdir)
+    counts = merge_cell_read_counts(counts, chromosomes)
 
-    cells = helpers.get_cells(pysam.AlignmentFile(infile, 'rb'))
+    cells = None
+    if not discover_cells:
+        cells = get_cells_from_bam(infile, tag_name)
 
-    commands = [
-        _readcounter_command(infile, os.path.join(tempdir, chromosome), chromosome, exclude_list=exclude_list,
-                             mapping_quality_threshold=mapping_quality_threshold, window_size=window_size)
-        for chromosome in chromosomes
-    ]
-
-    scripts_tempdir = os.path.join(tempdir, 'scripts_split')
-
-    helpers.run_in_gnu_parallel(commands, scripts_tempdir, ncores)
-
-    for cell in cells:
-        wig_files = [os.path.join(tempdir, chromosome, f'{cell}.wig') for chromosome in chromosomes]
-
-        _merge_wig(wig_files, os.path.join(outdir, f'{cell}.wig'), cell)
+    if tabular:
+        counts.write_dataframe(outdir, cells=cells)
+    else:
+        counts.write_wig_files(outdir, cells=cells)
 
 
 def plot_heatmap(reads, metrics, chromosomes, output, sidebar_column='pick_met', disable_clustering=None):
