@@ -301,9 +301,9 @@ def _skip_ahead(lines, i, skip_fields):
     return i
 
 
-def parse_kraken_output(results_dir, cell_id, output_table, output_human, output_nonhuman):
+def parse_kraken_output(kraken_output_file, output_table, output_human, output_nonhuman):
     """Parse Kraken2 output and separate human vs non-human reads."""
-    df = pd.read_table(os.path.join(results_dir, cell_id, cell_id + '_output.txt'),
+    df = pd.read_table(kraken_output_file,
                        names=['is_classified', 'qname', 'result', 'lengths', 'kmers'])
 
     my_re = re.compile(r'([A-Za-z0-9 -_\.]+) \(taxid ([0-9]+)\)')

@@ -48,15 +48,14 @@ def parse_bamstats(stats_file, output_file):
 
 
 @cli.command()
-@click.option('--results_dir', required=True, help='Kraken2 results directory')
-@click.option('--cell_id', required=True, help='Cell ID')
+@click.option('--kraken_output_file', required=True, help='Kraken2 output file')
 @click.option('--output_table', required=True, help='Output table file')
 @click.option('--output_human', required=True, help='Output human reads file')
 @click.option('--output_nonhuman', required=True, help='Output non-human reads file')
-def parse_kraken_output(results_dir, cell_id, output_table, output_human, output_nonhuman):
+def parse_kraken_output(kraken_output_file, output_table, output_human, output_nonhuman):
     """Parse Kraken2 output and separate human vs non-human reads."""
     mondrianutils.qc.parse_kraken_output(
-        results_dir, cell_id, output_table, output_human, output_nonhuman
+        kraken_output_file, output_table, output_human, output_nonhuman
     )
 
 
