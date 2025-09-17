@@ -330,7 +330,14 @@ def generate_contamination_table_figures(
         pipeline_outputs_dir,
         hmmcopy_metrics_filename,
         library_id,
-        output_dir,
+        summary_table_output,
+        multipanel_figure_output,
+        chip_figure_output,
+        control_cells_output,
+        nonhuman_percentage_taxon_output,
+        nonhuman_percentage_clade_output,
+        nonhuman_composition_output,
+        contam_by_column_output,
         ncbi_taxonomy_database='/data1/shahs3/users/myersm2/repos/contamination/kraken_db/ncbi_taxonomy/taxa.sqlite',
         min_percent_aggregate=0.0,
         min_percent_show=2.0,
@@ -349,13 +356,13 @@ def generate_contamination_table_figures(
 
     print('got summary table')
 
-    df.to_csv(os.path.join(output_dir, library_id + '_summary_table.csv.gz'), index = False)
+    df.to_csv(summary_table_output, index=False)
 
     print('wrote summary table')
 
 
     # make 6-pane plot
-    _plot_summary_multipanel(df, library_id, fname=os.path.join(output_dir, library_id + '_multipanel_figure.pdf'))
+    _plot_summary_multipanel(df, library_id, fname=multipanel_figure_output)
 
     print('generated multipanel summary figure')
 
@@ -364,7 +371,7 @@ def generate_contamination_table_figures(
     fig, ax = plt.subplots(figsize=(5,4), dpi = 200)
     sns.scatterplot(data=df, x='col', y='row', hue='kraken2_prop_nonhuman', s = 15, hue_norm=(0,1), ax=ax)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, library_id + '_chip_figure.pdf'))
+    plt.savefig(chip_figure_output)
     
     print('generated chip figure')
 
@@ -401,7 +408,7 @@ def generate_contamination_table_figures(
     axes[1].set_title(f'Positive controls (n={len(positive_control_cells)})')
     plt.suptitle(library_id)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, library_id + '_control_cells.pdf'), dpi = 200)
+    plt.savefig(control_cells_output, dpi=200)
     print('plotted control cells')
 
 
@@ -429,11 +436,11 @@ def generate_contamination_table_figures(
         condensed = _condense_table(bac_pcc, bac_pct, min_percent_show, ncbi, sciname2taxid)
     else:
         condensed = bac_pct.copy()
-    bac_pct.to_csv(os.path.join(output_dir, library_id + '_nonhuman_percentage_taxon.csv.gz'))
-    bac_pcc.to_csv(os.path.join(output_dir, library_id + '_nonhuman_percentage_clade.csv.gz'))
+    bac_pct.to_csv(nonhuman_percentage_taxon_output)
+    bac_pcc.to_csv(nonhuman_percentage_clade_output)
 
     _plot_triple_cell_composition(condensed, pcc, df.set_index('cell_id').kraken2_total_classified,
-                                 fname=os.path.join(output_dir, library_id + '_nonhuman_composition.pdf'))
+                                 fname=nonhuman_composition_output)
 
     print('plotted cell composition figure')
 
@@ -448,7 +455,7 @@ def generate_contamination_table_figures(
                 hue='is_control', s = 10)
     plt.xticks(*plt.xticks(), rotation=90)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, library_id + '_contam_by_column.pdf'), dpi = 200)
+    plt.savefig(contam_by_column_output, dpi=200)
 
 
 # Helper functions for contamination analysis (originally from generate_table_figures.py)

@@ -63,7 +63,14 @@ def parse_kraken_output(kraken_output_file, output_table, output_human, output_n
 @click.option('--pipeline_outputs_dir', required=True, help='Pipeline output directory')
 @click.option('--hmmcopy_metrics_filename', required=True, help='HMMcopy metrics file')
 @click.option('--library_id', required=True, help='Library ID')
-@click.option('--output_dir', required=True, help='Output directory')
+@click.option('--summary_table_output', required=True, help='Output path for summary table CSV')
+@click.option('--multipanel_figure_output', required=True, help='Output path for multipanel figure PDF')
+@click.option('--chip_figure_output', required=True, help='Output path for chip figure PDF')
+@click.option('--control_cells_output', required=True, help='Output path for control cells figure PDF')
+@click.option('--nonhuman_percentage_taxon_output', required=True, help='Output path for non-human percentage taxon CSV')
+@click.option('--nonhuman_percentage_clade_output', required=True, help='Output path for non-human percentage clade CSV')
+@click.option('--nonhuman_composition_output', required=True, help='Output path for non-human composition figure PDF')
+@click.option('--contam_by_column_output', required=True, help='Output path for contamination by column figure PDF')
 @click.option('--ncbi_taxonomy_database', default='/data1/shahs3/users/myersm2/repos/contamination/kraken_db/ncbi_taxonomy/taxa.sqlite', help='Path to ete3.NCBITaxa sqlite database file')
 @click.option('--min_percent_aggregate', default=0.0, help='Minimum percent of non-human reads required to include a taxon in data table')
 @click.option('--min_percent_show', default=2.0, help='Minimum percent of non-human reads required to show a taxon in bar graph')
@@ -72,7 +79,14 @@ def generate_contamination_table_figures(
         pipeline_outputs_dir,
         hmmcopy_metrics_filename,
         library_id,
-        output_dir,
+        summary_table_output,
+        multipanel_figure_output,
+        chip_figure_output,
+        control_cells_output,
+        nonhuman_percentage_taxon_output,
+        nonhuman_percentage_clade_output,
+        nonhuman_composition_output,
+        contam_by_column_output,
         ncbi_taxonomy_database,
         min_percent_aggregate,
         min_percent_show,
@@ -83,7 +97,14 @@ def generate_contamination_table_figures(
         pipeline_outputs_dir,
         hmmcopy_metrics_filename,
         library_id,
-        output_dir,
+        summary_table_output,
+        multipanel_figure_output,
+        chip_figure_output,
+        control_cells_output,
+        nonhuman_percentage_taxon_output,
+        nonhuman_percentage_clade_output,
+        nonhuman_composition_output,
+        contam_by_column_output,
         ncbi_taxonomy_database,
         min_percent_aggregate,
         min_percent_show,
