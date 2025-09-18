@@ -661,20 +661,18 @@ def _aggregate_field_from_files(kraken_report_files, cell_list, field, id_vars=[
         if filename.endswith('_report.txt'):
             cell_id = filename.replace('_report.txt', '')
             cell_to_file[cell_id] = file_path
-    
-    cell_list = sorted(cell_list)    
-    cell_id = cell_list[0]
-    combined_report = _read_kraken_report(cell_to_file[cell_id])
-    
-    combined_report = combined_report[id_vars + [field]].set_index(id_vars).rename(columns={field:cell_id})
-    combined_report = combined_report[combined_report.iloc[:, 0] > min_val]
-    
-    for cell_id in tqdm.tqdm(cell_list[1:]):    
+
+    cell_list = sorted(cell_list)
+
+    combined_report = []
+    for cell_id in cell_list:
         report = _read_kraken_report(cell_to_file[cell_id])
         report = report[id_vars +  [field]].set_index(id_vars).rename(columns={field:cell_id})
         report = report[report.iloc[:, 0] > min_val]
-        combined_report = combined_report.merge(report, left_index=True, right_index=True, how = 'outer')
-    return combined_report.fillna(0)
+        combined_report.append(report)
+    combined_report = pd.concat(combined_report, axis=1).fillna(0)
+
+    return combined_report
 
 
 def _condense_table(bac_pcc, bac_pct, cut_threshold, ncbi, sciname2taxid):
