@@ -60,7 +60,10 @@ def parse_kraken_output(kraken_output_file, output_table, output_human, output_n
 
 
 @cli.command()
-@click.option('--pipeline_outputs_dir', required=True, help='Pipeline output directory')
+@click.option('--kraken_report_files', required=True, multiple=True, help='Kraken2 report files (one per cell)')
+@click.option('--all_reads_stats_files', required=True, multiple=True, help='All reads BAM stats pickle files (one per cell)')
+@click.option('--human_reads_stats_files', required=True, multiple=True, help='Human reads BAM stats pickle files (one per cell)')
+@click.option('--nonhuman_reads_stats_files', required=True, multiple=True, help='Non-human reads BAM stats pickle files (one per cell)')
 @click.option('--hmmcopy_metrics_filename', required=True, help='HMMcopy metrics file')
 @click.option('--library_id', required=True, help='Library ID')
 @click.option('--summary_table_output', required=True, help='Output path for summary table CSV')
@@ -76,7 +79,10 @@ def parse_kraken_output(kraken_output_file, output_table, output_human, output_n
 @click.option('--min_percent_show', default=2.0, help='Minimum percent of non-human reads required to show a taxon in bar graph')
 @click.option('--min_num_taxa_condense', default=25, help='Minimum number of taxa required to perform tree-cutting procedure')
 def generate_contamination_table_figures(
-        pipeline_outputs_dir,
+        kraken_report_files,
+        all_reads_stats_files,
+        human_reads_stats_files,
+        nonhuman_reads_stats_files,
         hmmcopy_metrics_filename,
         library_id,
         summary_table_output,
@@ -94,7 +100,10 @@ def generate_contamination_table_figures(
 ):
     """Generate contamination analysis tables and figures from pipeline outputs."""
     mondrianutils.qc.generate_contamination_table_figures(
-        pipeline_outputs_dir,
+        kraken_report_files,
+        all_reads_stats_files,
+        human_reads_stats_files,
+        nonhuman_reads_stats_files,
         hmmcopy_metrics_filename,
         library_id,
         summary_table_output,

@@ -327,7 +327,10 @@ def parse_kraken_output(kraken_output_file, output_table, output_human, output_n
 
 
 def generate_contamination_table_figures(
-        pipeline_outputs_dir,
+        kraken_report_files,
+        all_reads_stats_files,
+        human_reads_stats_files,
+        nonhuman_reads_stats_files,
         hmmcopy_metrics_filename,
         library_id,
         summary_table_output,
@@ -350,7 +353,13 @@ def generate_contamination_table_figures(
     # summarize kraken2 reports and samtools stats results
     print('started')
 
-    df = _get_summary_table(pipeline_outputs_dir, hmmcopy_metrics_filename)
+    df = _get_summary_table_from_files(
+        kraken_report_files,
+        all_reads_stats_files,
+        human_reads_stats_files,
+        nonhuman_reads_stats_files,
+        hmmcopy_metrics_filename
+    )
     df['prop_unmapped_nonhuman'] = df.nonhuman_reads_unmapped / df.unmapped_reads
     df['prop_mapped_nonhuman'] = (df.nonhuman_reads_bamstats - df.nonhuman_reads_unmapped) / df.total_mapped_reads
 
@@ -377,11 +386,11 @@ def generate_contamination_table_figures(
 
     ## load detailed kraken2 results
     cell_list = sorted(df.cell_id.unique())
-    pct = _aggregate_field(pipeline_outputs_dir, cell_list, 'percentage_taxon', id_vars=['scientific_name'], min_val=min_percent_aggregate)
+    pct = _aggregate_field_from_files(kraken_report_files, cell_list, 'percentage_taxon', id_vars=['scientific_name'], min_val=min_percent_aggregate)
     print(pct.shape)
     print('loaded pct')
 
-    pcc = _aggregate_field(pipeline_outputs_dir, cell_list, 'percentage_clade', id_vars=['scientific_name'], min_val=min_percent_aggregate)
+    pcc = _aggregate_field_from_files(kraken_report_files, cell_list, 'percentage_clade', id_vars=['scientific_name'], min_val=min_percent_aggregate)
     print(pcc.shape)
     print('loaded pcc')
 
@@ -430,7 +439,7 @@ def generate_contamination_table_figures(
         ncbi = NCBITaxa(dbfile=ncbi_taxonomy_database)
 
         # get mapping from taxon ID (int used in database) to scientific name (str) from Kraken2 output
-        cr = _aggregate_field(pipeline_outputs_dir, cell_list, 'number_clade', id_vars=['scientific_name', 'taxon_id', 'taxon_rank'])
+        cr = _aggregate_field_from_files(kraken_report_files, cell_list, 'number_clade', id_vars=['scientific_name', 'taxon_id', 'taxon_rank'])
         sciname2taxid = {r.scientific_name:r.taxon_id for _, r in cr.iloc[:, :0].reset_index().iterrows()}
 
         condensed = _condense_table(bac_pcc, bac_pct, min_percent_show, ncbi, sciname2taxid)
@@ -481,9 +490,43 @@ def _pad_cell_id(c):
     return '-'.join(tkns)
 
 
-def _get_summary_table(outdir, hmmcopy_metrics_filename):
-    """Build a summary table for the given library from per-cell outputs."""
-    cells = [a for a in os.listdir(outdir) if not (a.endswith('.txt') or a == 'summary')]
+def _get_summary_table_from_files(kraken_report_files, all_reads_stats_files, human_reads_stats_files, nonhuman_reads_stats_files, hmmcopy_metrics_filename):
+    """Build a summary table for the given library from explicit file lists."""
+    # Create mappings from cell_id to files
+    cell_to_report = {}
+    cell_to_all_stats = {}
+    cell_to_human_stats = {}
+    cell_to_nonhuman_stats = {}
+    
+    # Extract cell IDs and create mappings
+    for file_path in kraken_report_files:
+        filename = os.path.basename(file_path)
+        if filename.endswith('_report.txt'):
+            cell_id = filename.replace('_report.txt', '')
+            cell_to_report[cell_id] = file_path
+    
+    for file_path in all_reads_stats_files:
+        filename = os.path.basename(file_path)
+        if filename.endswith('_all_reads_stats.pickle'):
+            cell_id = filename.replace('_all_reads_stats.pickle', '')
+            cell_to_all_stats[cell_id] = file_path
+    
+    for file_path in human_reads_stats_files:
+        filename = os.path.basename(file_path)
+        if filename.endswith('_human_reads_stats.pickle'):
+            cell_id = filename.replace('_human_reads_stats.pickle', '')
+            cell_to_human_stats[cell_id] = file_path
+    
+    for file_path in nonhuman_reads_stats_files:
+        filename = os.path.basename(file_path)
+        if filename.endswith('_nonhuman_reads_stats.pickle'):
+            cell_id = filename.replace('_nonhuman_reads_stats.pickle', '')
+            cell_to_nonhuman_stats[cell_id] = file_path
+    
+    # Get list of cells that have all required files
+    cells = set(cell_to_report.keys()) & set(cell_to_all_stats.keys()) & set(cell_to_human_stats.keys()) & set(cell_to_nonhuman_stats.keys())
+    cells = sorted(list(cells))
+    
     useful_fields = {'reads unmapped:':int, 'reads MQ0:':int, 'reads properly paired:':int, 'reads duplicated:':int,
                      'insert size average:':float, 'insert size standard deviation:':float, 'mismatches:':float, 'error rate:':float,
                      'average length:':float, 'percentage of properly paired reads (%):':float}
@@ -493,7 +536,7 @@ def _get_summary_table(outdir, hmmcopy_metrics_filename):
     summary_rows = []
     
     for cell_id in tqdm.tqdm(sorted(cells)):
-        kraken_report = _read_kraken_report(os.path.join(outdir, cell_id, f'{cell_id}_report.txt')).set_index('scientific_name')
+        kraken_report = _read_kraken_report(cell_to_report[cell_id]).set_index('scientific_name')
         kraken_total_reads = kraken_report.number_taxon.sum()
         if 'unclassified' in kraken_report.index:
             kraken_total_classified = kraken_total_reads - kraken_report.loc['unclassified', 'number_taxon']
@@ -510,14 +553,13 @@ def _get_summary_table(outdir, hmmcopy_metrics_filename):
             'kraken2_total_classified':kraken_total_classified,
             'kraken2_prop_human':kraken_prop_human,
             'kraken2_prop_nonhuman':kraken_prop_nonhuman,
-            'contamination_pipeline_output_directory':os.path.join(outdir, cell_id)
-                    }
+        }
 
-        
         # load BAM stats
-        human_stats_file = os.path.join(outdir, cell_id, f'{cell_id}_human_reads_stats.pickle')
-        nonhuman_stats_file = os.path.join(outdir, cell_id, f'{cell_id}_nonhuman_reads_stats.pickle')
-        all_stats_file = os.path.join(outdir, cell_id, f'{cell_id}_all_reads_stats.pickle')
+        human_stats_file = cell_to_human_stats[cell_id]
+        nonhuman_stats_file = cell_to_nonhuman_stats[cell_id]
+        all_stats_file = cell_to_all_stats[cell_id]
+        
         if os.path.exists(human_stats_file) and os.path.exists(nonhuman_stats_file) and os.path.exists(all_stats_file):
             sa = defaultdict(lambda:0, pickle.load(open(all_stats_file, 'rb')))
             sh = defaultdict(lambda:0, pickle.load(open(human_stats_file, 'rb')))
@@ -609,17 +651,26 @@ def _plot_summary_multipanel(df, title, figsize=(8,6), dpi=300, fname=None):
         plt.savefig(fname, dpi=dpi)
 
 
-def _aggregate_field(outdir, cell_list, field, id_vars=['scientific_name'], min_val=0):
-    """Aggregate field across cells."""
+def _aggregate_field_from_files(kraken_report_files, cell_list, field, id_vars=['scientific_name'], min_val=0):
+    """Aggregate field across cells using explicit file paths."""
+    # Create mapping from cell_id to report file
+    cell_to_file = {}
+    for file_path in kraken_report_files:
+        # Extract cell_id from filename (assuming format: {cell_id}_report.txt)
+        filename = os.path.basename(file_path)
+        if filename.endswith('_report.txt'):
+            cell_id = filename.replace('_report.txt', '')
+            cell_to_file[cell_id] = file_path
+    
     cell_list = sorted(cell_list)    
     cell_id = cell_list[0]
-    combined_report = _read_kraken_report(os.path.join(outdir, cell_id, f'{cell_id}_report.txt'))
+    combined_report = _read_kraken_report(cell_to_file[cell_id])
     
-    combined_report = combined_report[id_vars +  [field]].set_index(id_vars).rename(columns={field:cell_id})
+    combined_report = combined_report[id_vars + [field]].set_index(id_vars).rename(columns={field:cell_id})
     combined_report = combined_report[combined_report.iloc[:, 0] > min_val]
     
     for cell_id in tqdm.tqdm(cell_list[1:]):    
-        report = _read_kraken_report(os.path.join(outdir, cell_id, f'{cell_id}_report.txt'))
+        report = _read_kraken_report(cell_to_file[cell_id])
         report = report[id_vars +  [field]].set_index(id_vars).rename(columns={field:cell_id})
         report = report[report.iloc[:, 0] > min_val]
         combined_report = combined_report.merge(report, left_index=True, right_index=True, how = 'outer')
