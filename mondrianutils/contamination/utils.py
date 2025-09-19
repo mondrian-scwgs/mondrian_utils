@@ -386,7 +386,7 @@ def generate_contamination_table_figures(
 
     # plot on chip
     fig, ax = plt.subplots(figsize=(5,4), dpi = 200)
-    sns.scatterplot(data=df, x='col', y='row', hue='kraken2_prop_nonhuman', s = 15, hue_norm=(0,1), ax=ax)
+    sns.scatterplot(data=df, x='column', y='row', hue='kraken2_prop_nonhuman', s = 15, hue_norm=(0,1), ax=ax)
     plt.tight_layout()
     plt.savefig(chip_figure_output)
     
@@ -463,7 +463,7 @@ def generate_contamination_table_figures(
 
     plt.figure(dpi = 300, figsize=(6,8))
     plt.subplot(2, 1, 1)
-    sns.boxplot(data=df, x='col', y ='kraken2_prop_nonhuman')
+    sns.boxplot(data=df, x='column', y ='kraken2_prop_nonhuman')
     plt.xticks(*plt.xticks(), rotation=90)
     plt.title(library_id)
 
@@ -577,9 +577,6 @@ def _get_summary_table_from_files(kraken_report_files, all_reads_stats_files, hu
     
     # Merge with HMMcopy metrics
     df = _merge_with_hmmcopy_metrics(df, hmmcopy_metrics_filename)
-    
-    # Add spatial coordinates (row/col from cell_id)
-    df = _add_spatial_coordinates(df)
     
     return df
 
@@ -702,13 +699,6 @@ def _merge_with_hmmcopy_metrics(df, hmmcopy_metrics_filename):
     hmmcopy_metrics['total_reads_hmmcopy'] = hmmcopy_metrics.total_reads
     
     return df.merge(hmmcopy_metrics, on=['cell_id'], how='left', suffixes=('_bamstats', ''))
-
-
-def _add_spatial_coordinates(df):
-    """Add row/col coordinates extracted from cell_id."""
-    df['row'] = df['cell_id'].str.split('-', expand=True)[1].str.slice(1).astype(int)
-    df['col'] = df['cell_id'].str.split('-', expand=True)[2].str.slice(1).astype(int)
-    return df
 
 
 def _plot_summary_multipanel(df, title, figsize=(8,6), dpi=300, fname=None):
@@ -858,7 +848,7 @@ def _plot_triple_cell_composition(bacteria_df, pcc, total_classified, figsize=(1
     ## identify which cells to include
     # always include the first cell in each row
     celldf = plotdf.columns.to_series().str.split('-', expand=True).reset_index(names=['cell_id'])
-    celldf = celldf.rename(columns={celldf.columns[-2]:'row', celldf.columns[-1]:'col'})
+    celldf = celldf.rename(columns={celldf.columns[-2]:'row', celldf.columns[-1]:'column'})
     celldf['include'] = np.concatenate([[True], celldf['row'].iloc[:-1].values != celldf['row'].iloc[1:].values])
     
     # also include every other cell s.t. no two adjacent cells are shown
