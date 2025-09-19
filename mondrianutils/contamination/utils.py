@@ -532,13 +532,13 @@ def _aggregate_field_from_files(kraken_report_files, cell_list, field, id_vars=[
 
     cell_list = sorted(cell_list)
 
-    combined_report = []
+    combined_report = {}
     for cell_id in cell_list:
         report = _read_kraken_report(cell_to_file[cell_id])
-        report = report[id_vars +  [field]].set_index(id_vars).rename(columns={field:cell_id})
-        report = report[report.iloc[:, 0] > min_val]
-        combined_report.append(report)
-    combined_report = pd.concat(combined_report, axis=1).fillna(0)
+        report = report.groupby(id_vars)[field].sum()
+        report = report[report > min_val]
+        combined_report[cell_id] = report
+    combined_report = pd.DataFrame(combined_report).fillna(0)
 
     return combined_report
 
