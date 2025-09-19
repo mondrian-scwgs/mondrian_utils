@@ -1,3 +1,14 @@
+import os
+import pandas as pd
+import numpy as np
+import tqdm
+from collections import defaultdict
+import pickle
+import matplotlib.pyplot as plt
+import seaborn as sns
+import re
+
+
 def parse_bamstat(fname):
     """Parse BAM statistics from samtools stats output file."""
     skip_fields = set(['#', 'CHK', 'GCT', 'GCC', 'GCT', 'FBC', 'FTC', 'LBC', 'LTC', 'BCC', 'CRC', 'OXC', 'RXC', 'GCD'])
