@@ -5,6 +5,7 @@ import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
+from collections import defaultdict
 from io import StringIO
 
 
@@ -609,9 +610,9 @@ def _process_kraken_data(kraken_report_file):
 def _process_bam_stats_data(cell_id, all_stats_file, human_stats_file, nonhuman_stats_file):
     """Process BAM stats files and extract key metrics."""
     # Parse BAM stats files
-    sa = parse_bamstat(all_stats_file)
-    sh = parse_bamstat(human_stats_file)
-    sn = parse_bamstat(nonhuman_stats_file)
+    all_bam_stats = parse_bamstat(all_stats_file)
+    human_bam_stats = parse_bamstat(human_stats_file)
+    nonhuman_bam_stats = parse_bamstat(nonhuman_stats_file)
     
     # Define fields to extract from summary
     useful_fields = {
@@ -624,63 +625,63 @@ def _process_bam_stats_data(cell_id, all_stats_file, human_stats_file, nonhuman_
     result = {'cell_id': cell_id}
     for field, dtype in useful_fields.items():
         key = field.strip(':').replace(' ', '_')
-        result[f'human_{key}'] = dtype(sh['summary'][field])
-        result[f'nonhuman_{key}'] = dtype(sn['summary'][field])
+        result[f'human_{key}'] = dtype(human_bam_stats['summary'][field])
+        result[f'nonhuman_{key}'] = dtype(nonhuman_bam_stats['summary'][field])
     
     # Add dummy data for missing sections
-    _add_dummy_data_if_missing(sh, sn)
+    _add_dummy_data_if_missing(human_bam_stats, nonhuman_bam_stats)
     
     # Calculate derived metrics
-    result.update(_calculate_derived_metrics(sa, sh, sn))
+    result.update(_calculate_derived_metrics(all_bam_stats, human_bam_stats, nonhuman_bam_stats))
     
     return result
 
 
-def _add_dummy_data_if_missing(sh, sn):
+def _add_dummy_data_if_missing(human_bam_stats, nonhuman_bam_stats):
     """Add dummy data for missing indels/mapq sections."""
     dummy_indel_table = pd.DataFrame({'length': [1], 'n_insertions': [0], 'n_deletions': [0]})
     dummy_mapq_table = pd.DataFrame({'mapq': [0], 'count': [1]})
     
-    for stats in [sh, sn]:
+    for stats in [human_bam_stats, nonhuman_bam_stats]:
         if 'indels' not in stats or len(stats['indels']) == 0:
             stats['indels'] = dummy_indel_table.copy()
         if 'mapq' not in stats or len(stats['mapq']) == 0:
             stats['mapq'] = dummy_mapq_table.copy()
 
 
-def _calculate_derived_metrics(sa, sh, sn):
+def _calculate_derived_metrics(all_bam_stats, human_bam_stats, nonhuman_bam_stats):
     """Calculate derived metrics from BAM stats."""
     result = {}
     
     # MAPQ averages
-    result['human_average_mapq'] = np.prod(sh['mapq'], axis=1).sum() / sh['mapq']['count'].sum()
-    result['nonhuman_average_mapq'] = np.prod(sn['mapq'], axis=1).sum() / sn['mapq']['count'].sum()
+    result['human_average_mapq'] = np.prod(human_bam_stats['mapq'], axis=1).sum() / human_bam_stats['mapq']['count'].sum()
+    result['nonhuman_average_mapq'] = np.prod(nonhuman_bam_stats['mapq'], axis=1).sum() / nonhuman_bam_stats['mapq']['count'].sum()
     
     # Indel metrics
-    result['human_n_indels'] = sh['indels'].n_insertions.sum() + sh['indels'].n_deletions.sum()
-    result['nonhuman_n_indels'] = sn['indels'].n_insertions.sum() + sn['indels'].n_deletions.sum()
+    result['human_n_indels'] = human_bam_stats['indels'].n_insertions.sum() + human_bam_stats['indels'].n_deletions.sum()
+    result['nonhuman_n_indels'] = nonhuman_bam_stats['indels'].n_insertions.sum() + nonhuman_bam_stats['indels'].n_deletions.sum()
     
     # Average indel lengths
     human_indel_length = (
-        np.prod(sh['indels'][['length', 'n_insertions']], axis=1).sum() +
-        np.prod(sh['indels'][['length', 'n_deletions']], axis=1).sum()
+        np.prod(human_bam_stats['indels'][['length', 'n_insertions']], axis=1).sum() +
+        np.prod(human_bam_stats['indels'][['length', 'n_deletions']], axis=1).sum()
     ) / np.maximum(1, result['human_n_indels'])
     
     nonhuman_indel_length = (
-        np.prod(sn['indels'][['length', 'n_insertions']], axis=1).sum() +
-        np.prod(sn['indels'][['length', 'n_deletions']], axis=1).sum()
+        np.prod(nonhuman_bam_stats['indels'][['length', 'n_insertions']], axis=1).sum() +
+        np.prod(nonhuman_bam_stats['indels'][['length', 'n_deletions']], axis=1).sum()
     ) / np.maximum(1, result['nonhuman_n_indels'])
     
     result['human_average_indel_length'] = human_indel_length
     result['nonhuman_average_indel_length'] = nonhuman_indel_length
     
     # Read counts
-    result['all_reads_bamstats'] = int(sa['summary']['raw total sequences:'])
-    result['human_reads_bamstats'] = int(sh['summary']['raw total sequences:'])
-    result['nonhuman_reads_bamstats'] = int(sn['summary']['raw total sequences:'])
+    result['all_reads_bamstats'] = int(all_bam_stats['summary']['raw total sequences:'])
+    result['human_reads_bamstats'] = int(human_bam_stats['summary']['raw total sequences:'])
+    result['nonhuman_reads_bamstats'] = int(nonhuman_bam_stats['summary']['raw total sequences:'])
     
     # Mapping metrics
-    result['total_mapped_reads'] = sa['summary']['reads unmapped:']
+    result['total_mapped_reads'] = all_bam_stats['summary']['reads unmapped:']
     result['prop_reads_unmapped'] = result['total_mapped_reads'] / np.maximum(result['all_reads_bamstats'], 1)
     
     return result
