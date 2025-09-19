@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import tqdm
 from collections import defaultdict
-import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
@@ -487,128 +486,226 @@ def _read_kraken_report(filename):
     return report
 
 
+def _extract_cell_id_from_filename(filepath, suffix):
+    """Extract cell ID from filename by removing the suffix."""
+    filename = os.path.basename(filepath)
+    if not filename.endswith(suffix):
+        raise ValueError(f"File {filename} does not end with expected suffix {suffix}")
+    return filename[:-len(suffix)]
+
+
+def _create_file_mappings(file_lists_and_suffixes):
+    """Create cell_id -> filepath mappings from lists of files with expected suffixes."""
+    mappings = {}
+    
+    for file_list, suffix, mapping_name in file_lists_and_suffixes:
+        cell_to_file = {}
+        for filepath in file_list:
+            try:
+                cell_id = _extract_cell_id_from_filename(filepath, suffix)
+                cell_to_file[cell_id] = filepath
+            except ValueError as e:
+                print(f"Warning: Skipping file due to naming issue: {e}")
+                continue
+        mappings[mapping_name] = cell_to_file
+    
+    return mappings
+
+
+def _get_complete_cells(file_mappings):
+    """Get list of cell IDs that have all required file types."""
+    if not file_mappings:
+        return []
+    
+    # Find intersection of all cell ID sets
+    cell_sets = [set(mapping.keys()) for mapping in file_mappings.values()]
+    complete_cells = set.intersection(*cell_sets)
+    
+    return sorted(list(complete_cells))
+
+
 def _get_summary_table_from_files(kraken_report_files, all_reads_stats_files, human_reads_stats_files, nonhuman_reads_stats_files, hmmcopy_metrics_filename):
     """Build a summary table for the given library from explicit file lists."""
-    # Create mappings from cell_id to files
-    cell_to_report = {}
-    cell_to_all_stats = {}
-    cell_to_human_stats = {}
-    cell_to_nonhuman_stats = {}
     
-    # Extract cell IDs and create mappings
-    for file_path in kraken_report_files:
-        filename = os.path.basename(file_path)
-        if filename.endswith('_report.txt'):
-            cell_id = filename.replace('_report.txt', '')
-            cell_to_report[cell_id] = file_path
+    # Define file types and their expected suffixes
+    file_specs = [
+        (kraken_report_files, '_report.txt', 'reports'),
+        (all_reads_stats_files, '_all_reads_stats.txt', 'all_stats'),
+        (human_reads_stats_files, '_human_reads_stats.txt', 'human_stats'),
+        (nonhuman_reads_stats_files, '_nonhuman_reads_stats.txt', 'nonhuman_stats')
+    ]
     
-    for file_path in all_reads_stats_files:
-        filename = os.path.basename(file_path)
-        if filename.endswith('_all_reads_stats.txt'):
-            cell_id = filename.replace('_all_reads_stats.txt', '')
-            cell_to_all_stats[cell_id] = file_path
+    # Create file mappings
+    file_mappings = _create_file_mappings(file_specs)
     
-    for file_path in human_reads_stats_files:
-        filename = os.path.basename(file_path)
-        if filename.endswith('_human_reads_stats.txt'):
-            cell_id = filename.replace('_human_reads_stats.txt', '')
-            cell_to_human_stats[cell_id] = file_path
+    # Get cells that have all required files
+    complete_cells = _get_complete_cells(file_mappings)
     
-    for file_path in nonhuman_reads_stats_files:
-        filename = os.path.basename(file_path)
-        if filename.endswith('_nonhuman_reads_stats.txt'):
-            cell_id = filename.replace('_nonhuman_reads_stats.txt', '')
-            cell_to_nonhuman_stats[cell_id] = file_path
+    if not complete_cells:
+        print("Warning: No cells found with complete file sets")
+        return pd.DataFrame()
     
-    # Get list of cells that have all required files
-    cells = set(cell_to_report.keys()) & set(cell_to_all_stats.keys()) & set(cell_to_human_stats.keys()) & set(cell_to_nonhuman_stats.keys())
-    cells = sorted(list(cells))
-    
-    useful_fields = {'reads unmapped:':int, 'reads MQ0:':int, 'reads properly paired:':int, 'reads duplicated:':int,
-                     'insert size average:':float, 'insert size standard deviation:':float, 'mismatches:':float, 'error rate:':float,
-                     'average length:':float, 'percentage of properly paired reads (%):':float}
-    dummy_indel_table = pd.DataFrame({'length':[1], 'n_insertions':[0], 'n_deletions':[0]})
-    dummy_mapq_table = pd.DataFrame({'mapq':[0], 'count':[1]})
-    
+    # Process each cell
     summary_rows = []
+    for cell_id in tqdm.tqdm(complete_cells):
+        try:
+            # Process Kraken data
+            kraken_data = _process_kraken_data(file_mappings['reports'][cell_id])
+            
+            # Process BAM stats data
+            bam_data = _process_bam_stats_data(
+                cell_id,
+                file_mappings['all_stats'][cell_id],
+                file_mappings['human_stats'][cell_id],
+                file_mappings['nonhuman_stats'][cell_id]
+            )
+            
+            # Combine data for this cell
+            summary_rows.append({**kraken_data, **bam_data})
+            
+        except Exception as e:
+            print(f"Error processing cell {cell_id}: {e}")
+            continue
     
-    for cell_id in tqdm.tqdm(sorted(cells)):
-        kraken_report = _read_kraken_report(cell_to_report[cell_id]).set_index('scientific_name')
-        kraken_total_reads = kraken_report.number_taxon.sum()
-        if 'unclassified' in kraken_report.index:
-            kraken_total_classified = kraken_total_reads - kraken_report.loc['unclassified', 'number_taxon']
-        else:
-            print(kraken_report.index)
-            kraken_total_classified = kraken_total_reads
-        kraken_total_human = kraken_report.loc['Homo sapiens', 'number_taxon']
-        kraken_prop_human = kraken_total_human / kraken_total_classified
-        kraken_prop_nonhuman = (kraken_total_classified-kraken_total_human) / kraken_total_classified
-        
-        kraken_data = {
-            'kraken2_total_fragments':kraken_total_reads,
-            'kraken2_total_human':kraken_total_human,
-            'kraken2_total_classified':kraken_total_classified,
-            'kraken2_prop_human':kraken_prop_human,
-            'kraken2_prop_nonhuman':kraken_prop_nonhuman,
-        }
-
-        # load BAM stats
-        human_stats_file = cell_to_human_stats[cell_id]
-        nonhuman_stats_file = cell_to_nonhuman_stats[cell_id]
-        all_stats_file = cell_to_all_stats[cell_id]
-        
-        if os.path.exists(human_stats_file) and os.path.exists(nonhuman_stats_file) and os.path.exists(all_stats_file):
-            sa = defaultdict(lambda:0, parse_bamstat(all_stats_file))
-            sh = defaultdict(lambda:0, parse_bamstat(human_stats_file))
-            sn = defaultdict(lambda:0, parse_bamstat(nonhuman_stats_file))
-            
-            my_entry = {}
-            my_entry['cell_id'] = cell_id
-            for k, dtype in useful_fields.items():
-                key = k.strip(':').replace(' ', '_')
-                my_entry['human_' + key] = dtype(sh['summary'][k])
-                my_entry['nonhuman_' + key] = dtype(sn['summary'][k])
-            
-            if 'indels' not in sn or len(sn['indels']) == 0:
-                sn['indels'] = dummy_indel_table.copy()
-            
-            if 'indels' not in sh or len(sh['indels']) == 0:
-                sh['indels'] = dummy_indel_table.copy()
-
-            if 'mapq' not in sn or len(sn['mapq']) == 0:
-                sn['mapq'] = dummy_mapq_table.copy()
-            
-            if 'mapq' not in sh or len(sh['mapq']) == 0:
-                sh['mapq'] = dummy_mapq_table.copy()
-            
-            my_entry['human_average_mapq'] = np.prod(sh['mapq'], axis = 1).sum() / sh['mapq']['count'].sum()
-            my_entry['human_n_indels'] = sh['indels'].n_insertions.sum() + sh['indels'].n_deletions.sum()
-            my_entry['human_average_indel_length'] = (np.prod(sh['indels'][['length', 'n_insertions']], axis = 1).sum() + np.prod(sh['indels'][['length', 'n_deletions']], axis = 1).sum()) / np.maximum(1, my_entry['human_n_indels'])
-
-            my_entry['nonhuman_average_mapq'] = np.prod(sn['mapq'], axis = 1).sum() / sn['mapq']['count'].sum()
-            my_entry['nonhuman_n_indels'] = sn['indels'].n_insertions.sum() + sn['indels'].n_deletions.sum()
-            my_entry['nonhuman_average_indel_length'] = (np.prod(sn['indels'][['length', 'n_insertions']], axis = 1).sum() + np.prod(sn['indels'][['length', 'n_deletions']], axis = 1).sum()) / np.maximum(1, my_entry['nonhuman_n_indels'])
-
-            my_entry['all_reads_bamstats'] = int(sa['summary']['raw total sequences:'])
-            my_entry['human_reads_bamstats'] = int(sh['summary']['raw total sequences:'])
-            my_entry['nonhuman_reads_bamstats'] = int(sn['summary']['raw total sequences:'])
-
-            my_entry['total_mapped_reads'] = sa['summary']['reads unmapped:']
-            my_entry['prop_reads_unmapped'] = my_entry['total_mapped_reads'] / np.maximum(my_entry['all_reads_bamstats'], 1)
-            
-            summary_rows.append(kraken_data | my_entry)
-        else:
-            print(f"Missing BAM stats files for cell id {cell_id}")
+    if not summary_rows:
+        print("Warning: No cells were successfully processed")
+        return pd.DataFrame()
     
+    # Create main DataFrame and add computed columns
+    df = pd.DataFrame(summary_rows)
+    df = _add_computed_columns(df)
+    
+    # Merge with HMMcopy metrics
+    df = _merge_with_hmmcopy_metrics(df, hmmcopy_metrics_filename)
+    
+    # Add spatial coordinates (row/col from cell_id)
+    df = _add_spatial_coordinates(df)
+    
+    return df
+
+
+def _process_kraken_data(kraken_report_file):
+    """Process Kraken report file and extract key metrics."""
+    kraken_report = _read_kraken_report(kraken_report_file).set_index('scientific_name')
+    kraken_total_reads = kraken_report.number_taxon.sum()
+    
+    if 'unclassified' in kraken_report.index:
+        kraken_total_classified = kraken_total_reads - kraken_report.loc['unclassified', 'number_taxon']
+    else:
+        kraken_total_classified = kraken_total_reads
+    
+    kraken_total_human = kraken_report.loc['Homo sapiens', 'number_taxon']
+    kraken_prop_human = kraken_total_human / kraken_total_classified if kraken_total_classified > 0 else 0
+    kraken_prop_nonhuman = (kraken_total_classified - kraken_total_human) / kraken_total_classified if kraken_total_classified > 0 else 0
+    
+    return {
+        'kraken2_total_fragments': kraken_total_reads,
+        'kraken2_total_human': kraken_total_human,
+        'kraken2_total_classified': kraken_total_classified,
+        'kraken2_prop_human': kraken_prop_human,
+        'kraken2_prop_nonhuman': kraken_prop_nonhuman,
+    }
+
+
+def _process_bam_stats_data(cell_id, all_stats_file, human_stats_file, nonhuman_stats_file):
+    """Process BAM stats files and extract key metrics."""
+    # Parse BAM stats files
+    sa = defaultdict(lambda: 0, parse_bamstat(all_stats_file))
+    sh = defaultdict(lambda: 0, parse_bamstat(human_stats_file))
+    sn = defaultdict(lambda: 0, parse_bamstat(nonhuman_stats_file))
+    
+    # Define fields to extract from summary
+    useful_fields = {
+        'reads unmapped:': int, 'reads MQ0:': int, 'reads properly paired:': int, 'reads duplicated:': int,
+        'insert size average:': float, 'insert size standard deviation:': float, 'mismatches:': float, 'error rate:': float,
+        'average length:': float, 'percentage of properly paired reads (%):': float
+    }
+    
+    # Extract basic metrics
+    result = {'cell_id': cell_id}
+    for field, dtype in useful_fields.items():
+        key = field.strip(':').replace(' ', '_')
+        result[f'human_{key}'] = dtype(sh['summary'][field])
+        result[f'nonhuman_{key}'] = dtype(sn['summary'][field])
+    
+    # Add dummy data for missing sections
+    _add_dummy_data_if_missing(sh, sn)
+    
+    # Calculate derived metrics
+    result.update(_calculate_derived_metrics(sa, sh, sn))
+    
+    return result
+
+
+def _add_dummy_data_if_missing(sh, sn):
+    """Add dummy data for missing indels/mapq sections."""
+    dummy_indel_table = pd.DataFrame({'length': [1], 'n_insertions': [0], 'n_deletions': [0]})
+    dummy_mapq_table = pd.DataFrame({'mapq': [0], 'count': [1]})
+    
+    for stats in [sh, sn]:
+        if 'indels' not in stats or len(stats['indels']) == 0:
+            stats['indels'] = dummy_indel_table.copy()
+        if 'mapq' not in stats or len(stats['mapq']) == 0:
+            stats['mapq'] = dummy_mapq_table.copy()
+
+
+def _calculate_derived_metrics(sa, sh, sn):
+    """Calculate derived metrics from BAM stats."""
+    result = {}
+    
+    # MAPQ averages
+    result['human_average_mapq'] = np.prod(sh['mapq'], axis=1).sum() / sh['mapq']['count'].sum()
+    result['nonhuman_average_mapq'] = np.prod(sn['mapq'], axis=1).sum() / sn['mapq']['count'].sum()
+    
+    # Indel metrics
+    result['human_n_indels'] = sh['indels'].n_insertions.sum() + sh['indels'].n_deletions.sum()
+    result['nonhuman_n_indels'] = sn['indels'].n_insertions.sum() + sn['indels'].n_deletions.sum()
+    
+    # Average indel lengths
+    human_indel_length = (
+        np.prod(sh['indels'][['length', 'n_insertions']], axis=1).sum() +
+        np.prod(sh['indels'][['length', 'n_deletions']], axis=1).sum()
+    ) / np.maximum(1, result['human_n_indels'])
+    
+    nonhuman_indel_length = (
+        np.prod(sn['indels'][['length', 'n_insertions']], axis=1).sum() +
+        np.prod(sn['indels'][['length', 'n_deletions']], axis=1).sum()
+    ) / np.maximum(1, result['nonhuman_n_indels'])
+    
+    result['human_average_indel_length'] = human_indel_length
+    result['nonhuman_average_indel_length'] = nonhuman_indel_length
+    
+    # Read counts
+    result['all_reads_bamstats'] = int(sa['summary']['raw total sequences:'])
+    result['human_reads_bamstats'] = int(sh['summary']['raw total sequences:'])
+    result['nonhuman_reads_bamstats'] = int(sn['summary']['raw total sequences:'])
+    
+    # Mapping metrics
+    result['total_mapped_reads'] = sa['summary']['reads unmapped:']
+    result['prop_reads_unmapped'] = result['total_mapped_reads'] / np.maximum(result['all_reads_bamstats'], 1)
+    
+    return result
+
+
+def _add_computed_columns(df):
+    """Add computed columns to the main DataFrame."""
+    df['total_reads_bamstats'] = df.human_reads_bamstats + df.nonhuman_reads_bamstats
+    df['prop_nonhuman_bamstats'] = df.nonhuman_reads_bamstats / df.total_reads_bamstats
+    return df
+
+
+def _merge_with_hmmcopy_metrics(df, hmmcopy_metrics_filename):
+    """Merge DataFrame with HMMcopy metrics."""
     hmmcopy_metrics = pd.read_csv(hmmcopy_metrics_filename)
     hmmcopy_metrics['prop_reads_mapped'] = hmmcopy_metrics.total_mapped_reads / hmmcopy_metrics.total_reads
     hmmcopy_metrics['prop_reads_unmapped'] = 1 - hmmcopy_metrics.prop_reads_mapped
     hmmcopy_metrics['total_reads_hmmcopy'] = hmmcopy_metrics.total_reads
     
-    df = pd.DataFrame(summary_rows)
-    df['total_reads_bamstats'] = df.human_reads_bamstats + df.nonhuman_reads_bamstats
-    df['prop_nonhuman_bamstats'] = df.nonhuman_reads_bamstats / df.total_reads_bamstats
-    df = df.merge(hmmcopy_metrics, on=['cell_id'], how = 'left', suffixes =('_bamstats', ''))
+    return df.merge(hmmcopy_metrics, on=['cell_id'], how='left', suffixes=('_bamstats', ''))
+
+
+def _add_spatial_coordinates(df):
+    """Add row/col coordinates extracted from cell_id."""
     df['row'] = df.cell_id.str.split('-', expand=True)[1].str.slice(1).astype(int)
     df['col'] = df.cell_id.str.split('-', expand=True)[2].str.slice(1).astype(int)
     return df
