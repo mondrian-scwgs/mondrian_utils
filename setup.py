@@ -14,6 +14,7 @@ setup(
             'alignment_utils = mondrianutils.alignment.cli:cli',
             'hmmcopy_utils = mondrianutils.hmmcopy.cli:cli',
             'qc_utils = mondrianutils.qc.cli:cli',
+            'contamination_utils = mondrianutils.contamination.cli:cli',
             'breakpoint_utils = mondrianutils.breakpoint_calling.cli:cli',
             'haplotype_utils = mondrianutils.haplotypes.cli:cli',
             'variant_utils = mondrianutils.variant_calling.cli:cli',
