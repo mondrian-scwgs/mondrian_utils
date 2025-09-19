@@ -7,9 +7,10 @@ import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
+from io import StringIO
 
 
-def parse_bamstat(fname):
+def parse_bamstat_old(fname):
     """Parse BAM statistics from samtools stats output file."""
     skip_fields = set(['#', 'CHK', 'GCT', 'GCC', 'GCT', 'FBC', 'FTC', 'LBC', 'LTC', 'BCC', 'CRC', 'OXC', 'RXC', 'GCD'])
     lines = open(fname).readlines()
@@ -179,6 +180,134 @@ def _skip_ahead(lines, i, skip_fields):
     while i < len(lines) and (lines[i].startswith('#') or lines[i].split('\t')[0] in skip_fields):
         i += 1
     return i
+
+
+def parse_bamstat(fname):
+    """Parse BAM statistics from samtools stats output file using a refactored approach."""
+    # Read all lines and organize by section
+    with open(fname, 'r') as f:
+        lines = f.readlines()
+    
+    # Parse lines into sections
+    sections = defaultdict(list)
+    skip_fields = set(['CHK', 'GCT', 'GCC', 'GCT', 'FBC', 'FTC', 'LBC', 'LTC', 'BCC', 'CRC', 'OXC', 'RXC', 'GCD'])
+    
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+
+        parts = line.split('\t', maxsplit=1)
+        if len(parts) < 2:
+            continue
+
+        section_key = parts[0]
+        data = parts[1]
+
+        if section_key in skip_fields:
+            continue
+
+        sections[section_key].append(data)
+    
+    result = {}
+    
+    # Process SN (Summary Numbers) section
+    if 'SN' in sections:
+        summary = {}
+        for line in sections['SN']:
+            parts = line.split('\t')
+            key = parts[0]
+            value = float(parts[1].split('#')[0].strip())  # Remove comments
+            summary[key] = value
+        result['summary'] = summary
+    
+    # Early return if no mapped paired reads
+    if result.get('summary', {}).get('reads mapped and paired:', 0) == 0:
+        return result
+    
+    # Process FFQ (First Fragment Qualities) - matrix data
+    if 'FFQ' in sections:
+        ffq_data = []
+        for line in sections['FFQ']:
+            values = line.split('\t')
+            ffq_data.append([int(x) for x in values[1:]])  # Skip cycle number
+        result['first_fragment_quality'] = np.array(ffq_data)
+    
+    # Process LFQ (Last Fragment Qualities) - matrix data
+    if 'LFQ' in sections:
+        lfq_data = []
+        for line in sections['LFQ']:
+            values = line.split('\t')
+            lfq_data.append([int(x) for x in values[1:]])  # Skip cycle number
+        result['last_fragment_quality'] = np.array(lfq_data)
+    
+    # Process GCF (First Fragment GC Content) - matrix data
+    if 'GCF' in sections:
+        gcf_data = []
+        for line in sections['GCF']:
+            values = line.split('\t')
+            gcf_data.append(values)  # Keep all values including cycle
+        result['first_fragment_gc'] = np.array(gcf_data)
+    
+    # Process GCL (Last Fragment GC Content) - matrix data
+    if 'GCL' in sections:
+        gcl_data = []
+        for line in sections['GCL']:
+            values = line.split('\t')
+            gcl_data.append(values)  # Keep all values including cycle
+        result['last_fragment_gc'] = np.array(gcl_data)
+    
+    # Process IS (Insert Sizes) - tabular data
+    if 'IS' in sections:
+        csv_data = StringIO('\n'.join(sections['IS']))
+        insert_sizes = pd.read_csv(csv_data, sep='\t', names=['insert_size', 'pairs_total', 'inward_oriented_pairs', 'outward_oriented_pairs', 'other_pairs'])
+        result['insert_sizes'] = insert_sizes
+    
+    # Process RL (Read Lengths) - tabular data
+    if 'RL' in sections:
+        csv_data = StringIO('\n'.join(sections['RL']))
+        read_lengths = pd.read_csv(csv_data, sep='\t', names=['read_length', 'count'])
+        result['read_lengths'] = read_lengths
+    
+    # Process FRL (First Fragment Lengths) - tabular data
+    if 'FRL' in sections:
+        csv_data = StringIO('\n'.join(sections['FRL']))
+        first_fragment_lengths = pd.read_csv(csv_data, sep='\t', names=['fragment_length', 'count'])
+        result['first_fragment_lengths'] = first_fragment_lengths
+    
+    # Process LRL (Last Fragment Lengths) - tabular data
+    if 'LRL' in sections:
+        csv_data = StringIO('\n'.join(sections['LRL']))
+        last_fragment_lengths = pd.read_csv(csv_data, sep='\t', names=['fragment_length', 'count'])
+        result['last_fragment_lengths'] = last_fragment_lengths
+    
+    # Process MAPQ (Mapping Qualities) - tabular data
+    if 'MAPQ' in sections:
+        csv_data = StringIO('\n'.join(sections['MAPQ']))
+        mapq = pd.read_csv(csv_data, sep='\t', names=['mapq', 'count'])
+        result['mapq'] = mapq
+    
+    # Process ID (Indels) - tabular data
+    if 'ID' in sections:
+        csv_data = StringIO('\n'.join(sections['ID']))
+        indels = pd.read_csv(csv_data, sep='\t', names=['length', 'n_insertions', 'n_deletions'])
+        result['indels'] = indels
+    
+    # Process IC (Indels per Cycle) - tabular data
+    if 'IC' in sections:
+        csv_data = StringIO('\n'.join(sections['IC']))
+        indels_per_cycle = pd.read_csv(csv_data, sep='\t', names=['cycle', 'n_insertions_fwd', 'n_insertions_rev', 'n_deletions_fwd', 'n_deletions_rev'])
+        result['indels_per_cycle'] = indels_per_cycle
+    
+    # Process COV (Coverage) - tabular data
+    if 'COV' in sections:
+        csv_data = StringIO('\n'.join(sections['COV']))
+        coverage = pd.read_csv(csv_data, sep='\t', names=['rg', 'cov', 'n_bases'])
+        # Keep only the cov and n_bases columns
+        coverage = coverage[['cov', 'n_bases']]
+        result['coverage'] = coverage
+    
+    return result
 
 
 def parse_kraken_output(kraken_output_file, output_table, output_human, output_nonhuman):
