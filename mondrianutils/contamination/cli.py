@@ -8,17 +8,6 @@ def cli():
 
 
 @cli.command()
-@click.option('--stats_file', required=True, help='Input BAM stats file')
-@click.option('--output_file', required=True, help='Output pickle file')
-def parse_bamstats(stats_file, output_file):
-    """Parse BAM statistics from samtools stats output."""
-    import pickle
-    result = mondrianutils.contamination.parse_bamstat(stats_file)
-    with open(output_file, 'wb') as f:
-        pickle.dump(result, f)
-
-
-@cli.command()
 @click.option('--kraken_output_file', required=True, help='Kraken2 output file')
 @click.option('--output_table', required=True, help='Output table file')
 @click.option('--output_human', required=True, help='Output human reads file')
@@ -32,9 +21,9 @@ def parse_kraken_output(kraken_output_file, output_table, output_human, output_n
 
 @cli.command()
 @click.option('--kraken_report_files', required=True, multiple=True, help='Kraken2 report files (one per cell)')
-@click.option('--all_reads_stats_files', required=True, multiple=True, help='All reads BAM stats pickle files (one per cell)')
-@click.option('--human_reads_stats_files', required=True, multiple=True, help='Human reads BAM stats pickle files (one per cell)')
-@click.option('--nonhuman_reads_stats_files', required=True, multiple=True, help='Non-human reads BAM stats pickle files (one per cell)')
+@click.option('--all_reads_stats_files', required=True, multiple=True, help='All reads BAM stats text files (one per cell)')
+@click.option('--human_reads_stats_files', required=True, multiple=True, help='Human reads BAM stats text files (one per cell)')
+@click.option('--nonhuman_reads_stats_files', required=True, multiple=True, help='Non-human reads BAM stats text files (one per cell)')
 @click.option('--hmmcopy_metrics_filename', required=True, help='HMMcopy metrics file')
 @click.option('--library_id', required=True, help='Library ID')
 @click.option('--summary_table_output', required=True, help='Output path for summary table CSV')

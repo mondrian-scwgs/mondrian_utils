@@ -504,20 +504,20 @@ def _get_summary_table_from_files(kraken_report_files, all_reads_stats_files, hu
     
     for file_path in all_reads_stats_files:
         filename = os.path.basename(file_path)
-        if filename.endswith('_all_reads_stats.pickle'):
-            cell_id = filename.replace('_all_reads_stats.pickle', '')
+        if filename.endswith('_all_reads_stats.txt'):
+            cell_id = filename.replace('_all_reads_stats.txt', '')
             cell_to_all_stats[cell_id] = file_path
     
     for file_path in human_reads_stats_files:
         filename = os.path.basename(file_path)
-        if filename.endswith('_human_reads_stats.pickle'):
-            cell_id = filename.replace('_human_reads_stats.pickle', '')
+        if filename.endswith('_human_reads_stats.txt'):
+            cell_id = filename.replace('_human_reads_stats.txt', '')
             cell_to_human_stats[cell_id] = file_path
     
     for file_path in nonhuman_reads_stats_files:
         filename = os.path.basename(file_path)
-        if filename.endswith('_nonhuman_reads_stats.pickle'):
-            cell_id = filename.replace('_nonhuman_reads_stats.pickle', '')
+        if filename.endswith('_nonhuman_reads_stats.txt'):
+            cell_id = filename.replace('_nonhuman_reads_stats.txt', '')
             cell_to_nonhuman_stats[cell_id] = file_path
     
     # Get list of cells that have all required files
@@ -558,9 +558,9 @@ def _get_summary_table_from_files(kraken_report_files, all_reads_stats_files, hu
         all_stats_file = cell_to_all_stats[cell_id]
         
         if os.path.exists(human_stats_file) and os.path.exists(nonhuman_stats_file) and os.path.exists(all_stats_file):
-            sa = defaultdict(lambda:0, pickle.load(open(all_stats_file, 'rb')))
-            sh = defaultdict(lambda:0, pickle.load(open(human_stats_file, 'rb')))
-            sn = defaultdict(lambda:0, pickle.load(open(nonhuman_stats_file, 'rb')))
+            sa = defaultdict(lambda:0, parse_bamstat(all_stats_file))
+            sh = defaultdict(lambda:0, parse_bamstat(human_stats_file))
+            sn = defaultdict(lambda:0, parse_bamstat(nonhuman_stats_file))
             
             my_entry = {}
             my_entry['cell_id'] = cell_id
