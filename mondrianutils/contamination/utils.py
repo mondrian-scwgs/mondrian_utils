@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import numpy as np
 import tqdm
-from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
@@ -610,9 +609,9 @@ def _process_kraken_data(kraken_report_file):
 def _process_bam_stats_data(cell_id, all_stats_file, human_stats_file, nonhuman_stats_file):
     """Process BAM stats files and extract key metrics."""
     # Parse BAM stats files
-    sa = defaultdict(lambda: 0, parse_bamstat(all_stats_file))
-    sh = defaultdict(lambda: 0, parse_bamstat(human_stats_file))
-    sn = defaultdict(lambda: 0, parse_bamstat(nonhuman_stats_file))
+    sa = parse_bamstat(all_stats_file)
+    sh = parse_bamstat(human_stats_file)
+    sn = parse_bamstat(nonhuman_stats_file)
     
     # Define fields to extract from summary
     useful_fields = {
