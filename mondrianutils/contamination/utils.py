@@ -318,7 +318,7 @@ def parse_kraken_output(kraken_output_file, output_table, output_human, output_n
 
     taxon = []
     taxon_id = []
-    for t in df.result:
+    for t in df['result']:
         match = my_re.search(t)
         taxon.append(match[1])
         taxon_id.append(int(match[2]))
@@ -326,12 +326,12 @@ def parse_kraken_output(kraken_output_file, output_table, output_human, output_n
     df['taxon'] = taxon
     df['taxon_id'] = taxon_id
 
-    human_reads = df[df.taxon_id == 9606]
-    nonhuman_reads = df[df.taxon_id != 9606]
+    human_reads = df[df['taxon_id'] == 9606]
+    nonhuman_reads = df[df['taxon_id'] != 9606]
 
     df.to_csv(output_table, index=False)
-    human_reads.qname.to_csv(output_human, index=False, header=False)
-    nonhuman_reads.qname.to_csv(output_nonhuman, index=False, header=False)
+    human_reads['qname'].to_csv(output_human, index=False, header=False)
+    nonhuman_reads['qname'].to_csv(output_nonhuman, index=False, header=False)
 
 
 def generate_contamination_table_figures(
@@ -368,8 +368,8 @@ def generate_contamination_table_figures(
         nonhuman_reads_stats_files,
         hmmcopy_metrics_filename
     )
-    df['prop_unmapped_nonhuman'] = df.nonhuman_reads_unmapped / df.unmapped_reads
-    df['prop_mapped_nonhuman'] = (df.nonhuman_reads_bamstats - df.nonhuman_reads_unmapped) / df.total_mapped_reads
+    df['prop_unmapped_nonhuman'] = df['nonhuman_reads_unmapped'] / df['unmapped_reads']
+    df['prop_mapped_nonhuman'] = (df['nonhuman_reads_bamstats'] - df['nonhuman_reads_unmapped']) / df['total_mapped_reads']
 
     print('got summary table')
 
@@ -393,7 +393,7 @@ def generate_contamination_table_figures(
     print('generated chip figure')
 
     ## load detailed kraken2 results
-    cell_list = sorted(df.cell_id.unique())
+    cell_list = sorted(df['cell_id'].unique())
     pct = _aggregate_field_from_files(kraken_report_files, cell_list, 'percentage_taxon', id_vars=['scientific_name'], min_val=min_percent_aggregate)
     print(pct.shape)
     print('loaded pct')
@@ -456,7 +456,7 @@ def generate_contamination_table_figures(
     bac_pct.to_csv(nonhuman_percentage_taxon_output)
     bac_pcc.to_csv(nonhuman_percentage_clade_output)
 
-    _plot_triple_cell_composition(condensed, pcc, df.set_index('cell_id').kraken2_total_classified,
+    _plot_triple_cell_composition(condensed, pcc, df.set_index('cell_id')['kraken2_total_classified'],
                                  fname=nonhuman_composition_output)
 
     print('plotted cell composition figure')
@@ -658,8 +658,8 @@ def _calculate_derived_metrics(all_bam_stats, human_bam_stats, nonhuman_bam_stat
     result['nonhuman_average_mapq'] = np.prod(nonhuman_bam_stats['mapq'], axis=1).sum() / nonhuman_bam_stats['mapq']['count'].sum()
     
     # Indel metrics
-    result['human_n_indels'] = human_bam_stats['indels'].n_insertions.sum() + human_bam_stats['indels'].n_deletions.sum()
-    result['nonhuman_n_indels'] = nonhuman_bam_stats['indels'].n_insertions.sum() + nonhuman_bam_stats['indels'].n_deletions.sum()
+    result['human_n_indels'] = human_bam_stats['indels']['n_insertions'].sum() + human_bam_stats['indels']['n_deletions'].sum()
+    result['nonhuman_n_indels'] = nonhuman_bam_stats['indels']['n_insertions'].sum() + nonhuman_bam_stats['indels']['n_deletions'].sum()
     
     # Average indel lengths
     human_indel_length = (
@@ -689,8 +689,8 @@ def _calculate_derived_metrics(all_bam_stats, human_bam_stats, nonhuman_bam_stat
 
 def _add_computed_columns(df):
     """Add computed columns to the main DataFrame."""
-    df['total_reads_bamstats'] = df.human_reads_bamstats + df.nonhuman_reads_bamstats
-    df['prop_nonhuman_bamstats'] = df.nonhuman_reads_bamstats / df.total_reads_bamstats
+    df['total_reads_bamstats'] = df['human_reads_bamstats'] + df['nonhuman_reads_bamstats']
+    df['prop_nonhuman_bamstats'] = df['nonhuman_reads_bamstats'] / df['total_reads_bamstats']
     return df
 
 
@@ -706,8 +706,8 @@ def _merge_with_hmmcopy_metrics(df, hmmcopy_metrics_filename):
 
 def _add_spatial_coordinates(df):
     """Add row/col coordinates extracted from cell_id."""
-    df['row'] = df.cell_id.str.split('-', expand=True)[1].str.slice(1).astype(int)
-    df['col'] = df.cell_id.str.split('-', expand=True)[2].str.slice(1).astype(int)
+    df['row'] = df['cell_id'].str.split('-', expand=True)[1].str.slice(1).astype(int)
+    df['col'] = df['cell_id'].str.split('-', expand=True)[2].str.slice(1).astype(int)
     return df
 
 
@@ -859,14 +859,14 @@ def _plot_triple_cell_composition(bacteria_df, pcc, total_classified, figsize=(1
     # always include the first cell in each row
     celldf = plotdf.columns.to_series().str.split('-', expand=True).reset_index(names=['cell_id'])
     celldf = celldf.rename(columns={celldf.columns[-2]:'row', celldf.columns[-1]:'col'})
-    celldf['include'] = np.concatenate([[True], celldf.row.iloc[:-1].values != celldf.row.iloc[1:].values])
+    celldf['include'] = np.concatenate([[True], celldf['row'].iloc[:-1].values != celldf['row'].iloc[1:].values])
     
     # also include every other cell s.t. no two adjacent cells are shown
     # i.e., flip the middle entry of each 'False-False-False' triplet
     for i in range(2, len(celldf)):
-        if not celldf.include.iloc[i-2:i+1].any():
+        if not celldf['include'].iloc[i-2:i+1].any():
             celldf.iloc[i-1, -1] = True
-    plt.xticks(celldf[celldf.include].index, celldf[celldf.include].cell_id, rotation=90, fontsize='x-small')
+    plt.xticks(celldf[celldf['include']].index, celldf[celldf['include']]['cell_id'], rotation=90, fontsize='x-small')
 
     if fname is not None:
         plt.savefig(fname, dpi=dpi, bbox_inches='tight')
