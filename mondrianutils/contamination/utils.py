@@ -285,12 +285,18 @@ def parse_bamstat(fname):
         csv_data = StringIO('\n'.join(sections['MAPQ']))
         mapq = pd.read_csv(csv_data, sep='\t', names=['mapq', 'count'])
         result['mapq'] = mapq
+    else:
+        # Create empty MAPQ table with correct schema
+        result['mapq'] = pd.DataFrame(columns=['mapq', 'count'], dtype=int)
     
     # Process ID (Indels) - tabular data
     if 'ID' in sections:
         csv_data = StringIO('\n'.join(sections['ID']))
         indels = pd.read_csv(csv_data, sep='\t', names=['length', 'n_insertions', 'n_deletions'])
         result['indels'] = indels
+    else:
+        # Create empty indels table with correct schema
+        result['indels'] = pd.DataFrame(columns=['length', 'n_insertions', 'n_deletions'], dtype=int)
     
     # Process IC (Indels per Cycle) - tabular data
     if 'IC' in sections:
@@ -625,25 +631,10 @@ def _process_bam_stats_data(cell_id, all_stats_file, human_stats_file, nonhuman_
         result[f'human_{key}'] = dtype(human_bam_stats['summary'][field])
         result[f'nonhuman_{key}'] = dtype(nonhuman_bam_stats['summary'][field])
     
-    # Add dummy data for missing sections
-    _add_dummy_data_if_missing(human_bam_stats, nonhuman_bam_stats)
-    
     # Calculate derived metrics
     result.update(_calculate_derived_metrics(all_bam_stats, human_bam_stats, nonhuman_bam_stats))
     
     return result
-
-
-def _add_dummy_data_if_missing(human_bam_stats, nonhuman_bam_stats):
-    """Add dummy data for missing indels/mapq sections."""
-    dummy_indel_table = pd.DataFrame({'length': [1], 'n_insertions': [0], 'n_deletions': [0]})
-    dummy_mapq_table = pd.DataFrame({'mapq': [0], 'count': [1]})
-    
-    for stats in [human_bam_stats, nonhuman_bam_stats]:
-        if 'indels' not in stats or len(stats['indels']) == 0:
-            stats['indels'] = dummy_indel_table.copy()
-        if 'mapq' not in stats or len(stats['mapq']) == 0:
-            stats['mapq'] = dummy_mapq_table.copy()
 
 
 def _calculate_derived_metrics(all_bam_stats, human_bam_stats, nonhuman_bam_stats):
