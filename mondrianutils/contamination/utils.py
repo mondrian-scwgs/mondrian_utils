@@ -226,13 +226,31 @@ def generate_contamination_table_figures(
     
     print('generated chip figure')
 
-    ## load detailed kraken2 results
+    ## Read all kraken reports once and create consolidated dataframe
+    print('Reading kraken reports once...')
+    kraken_reports_df = _read_all_kraken_reports(kraken_report_files)
+    print(f'Loaded kraken reports for {kraken_reports_df["cell_id"].nunique()} cells')
+    
     cell_list = sorted(df['cell_id'].unique())
-    pct = _aggregate_field_from_files(kraken_report_files, cell_list, 'percentage_taxon', id_vars=['scientific_name'], min_val=min_percent_aggregate)
+    pct = (
+        kraken_reports_df
+        .groupby(['scientific_name', 'cell_id'])['percentage_taxon']
+        .sum()
+        .loc[lambda x: x > min_percent_aggregate]
+        .unstack(fill_value=0)
+        .reindex(columns=cell_list, fill_value=0)
+    )
     print(pct.shape)
     print('loaded pct')
 
-    pcc = _aggregate_field_from_files(kraken_report_files, cell_list, 'percentage_clade', id_vars=['scientific_name'], min_val=min_percent_aggregate)
+    pcc = (
+        kraken_reports_df
+        .groupby(['scientific_name', 'cell_id'])['percentage_clade']
+        .sum()
+        .loc[lambda x: x > min_percent_aggregate]
+        .unstack(fill_value=0)
+        .reindex(columns=cell_list, fill_value=0)
+    )
     print(pcc.shape)
     print('loaded pcc')
 
@@ -281,9 +299,16 @@ def generate_contamination_table_figures(
         ncbi = NCBITaxa(dbfile=ncbi_taxonomy_database)
 
         # get mapping from taxon ID (int used in database) to scientific name (str) from Kraken2 output
-        cr = _aggregate_field_from_files(kraken_report_files, cell_list, 'number_clade', id_vars=['scientific_name', 'taxon_id', 'taxon_rank'])
-        sciname2taxid = {r.scientific_name:r.taxon_id for _, r in cr.iloc[:, :0].reset_index().iterrows()}
+        cr = (
+            kraken_reports_df
+            .groupby(['scientific_name', 'taxon_id', 'taxon_rank', 'cell_id'])['number_clade']
+            .sum()
+            .loc[lambda x: x > 0]
+            .unstack(fill_value=0)
+            .reindex(columns=cell_list, fill_value=0)
+        )
 
+        sciname2taxid = {r.scientific_name:r.taxon_id for _, r in cr.iloc[:, :0].reset_index().iterrows()}
         condensed = _condense_table(bac_pcc, bac_pct, min_percent_show, ncbi, sciname2taxid)
     else:
         condensed = bac_pct.copy()
@@ -554,28 +579,27 @@ def _plot_summary_multipanel(df, title, figsize=(8,6), dpi=300, fname=None):
         plt.savefig(fname, dpi=dpi)
 
 
-def _aggregate_field_from_files(kraken_report_files, cell_list, field, id_vars=['scientific_name'], min_val=0):
-    """Aggregate field across cells using explicit file paths."""
-    # Create mapping from cell_id to report file
-    cell_to_file = {}
+def _read_all_kraken_reports(kraken_report_files):
+    """Read all kraken reports once and return consolidated dataframe with cell_id column."""
+    all_reports = []
+    
     for file_path in kraken_report_files:
         # Extract cell_id from filename (assuming format: {cell_id}_report.txt)
         filename = os.path.basename(file_path)
         if filename.endswith('_report.txt'):
             cell_id = filename.replace('_report.txt', '')
-            cell_to_file[cell_id] = file_path
-
-    cell_list = sorted(cell_list)
-
-    combined_report = {}
-    for cell_id in cell_list:
-        report = _read_kraken_report(cell_to_file[cell_id])
-        report = report.groupby(id_vars)[field].sum()
-        report = report[report > min_val]
-        combined_report[cell_id] = report
-    combined_report = pd.DataFrame(combined_report).fillna(0)
-
-    return combined_report
+        else:
+            # Fallback: use filename without extension
+            cell_id = os.path.splitext(filename)[0]
+        
+        # Read the kraken report
+        report = _read_kraken_report(file_path)
+        report['cell_id'] = cell_id
+        all_reports.append(report)
+    
+    # Combine all reports
+    consolidated_df = pd.concat(all_reports, ignore_index=True)
+    return consolidated_df
 
 
 def _condense_table(bac_pcc, bac_pct, cut_threshold, ncbi, sciname2taxid):
