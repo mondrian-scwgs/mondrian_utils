@@ -5,6 +5,7 @@ import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
+import ete3
 from collections import defaultdict
 from io import StringIO
 
@@ -188,8 +189,6 @@ def generate_contamination_table_figures(
         min_num_taxa_condense=25
     ):
     """Generate contamination analysis tables and figures from pipeline outputs."""
-    # this package requires a taxonomy database file -- use mine: /data1/shahs3/users/myersm2/repos/contamination/kraken_db/ncbi_taxonomy/taxa.sqlite
-    from ete3 import NCBITaxa
     
     # summarize kraken2 reports and samtools stats results
     print('started')
@@ -295,7 +294,7 @@ def generate_contamination_table_figures(
 
     if pct.shape[0] >= min_num_taxa_condense:
         # load NCBI taxonomy database
-        ncbi = NCBITaxa(dbfile=ncbi_taxonomy_database)
+        ncbi = ete3.NCBITaxa(dbfile=ncbi_taxonomy_database)
         sciname2taxid = kraken_reports_df.set_index('scientific_name')['taxon_id'].to_dict()
         condensed = _condense_table(bac_pcc, bac_pct, min_percent_show, ncbi, sciname2taxid)
     else:
