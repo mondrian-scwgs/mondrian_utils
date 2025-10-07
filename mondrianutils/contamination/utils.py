@@ -48,9 +48,8 @@ def parse_bamstat(fname):
             summary[key] = value
         result['summary'] = summary
     
-    # Early return if no mapped paired reads
-    if result.get('summary', {}).get('reads mapped and paired:', 0) == 0:
-        return result
+    else:
+        result['summary'] = {}
     
     # Process FFQ (First Fragment Qualities) - matrix data
     if 'FFQ' in sections:
@@ -183,7 +182,7 @@ def generate_contamination_table_figures(
         nonhuman_percentage_clade_output,
         nonhuman_composition_output,
         contam_by_column_output,
-        ncbi_taxonomy_database='/data1/shahs3/users/myersm2/repos/contamination/kraken_db/ncbi_taxonomy/taxa.sqlite',
+        ncbi_taxonomy_database,
         min_percent_aggregate=0.0,
         min_percent_show=2.0,
         min_num_taxa_condense=25
@@ -202,6 +201,7 @@ def generate_contamination_table_figures(
         nonhuman_reads_stats_files,
         hmmcopy_metrics_filename
     )
+
     df['prop_unmapped_nonhuman'] = df['nonhuman_reads_unmapped'] / df['unmapped_reads']
     df['prop_mapped_nonhuman'] = (df['nonhuman_reads_bamstats'] - df['nonhuman_reads_unmapped']) / df['total_mapped_reads']
 
@@ -293,22 +293,10 @@ def generate_contamination_table_figures(
     bac_pcc = bac_pcc * (100/bac_pcc.loc['Bacteria'])
     bac_pct = 100 * bac_pct / bac_pct.sum(axis = 0)
 
-
     if pct.shape[0] >= min_num_taxa_condense:
         # load NCBI taxonomy database
         ncbi = NCBITaxa(dbfile=ncbi_taxonomy_database)
-
-        # get mapping from taxon ID (int used in database) to scientific name (str) from Kraken2 output
-        cr = (
-            kraken_reports_df
-            .groupby(['scientific_name', 'taxon_id', 'taxon_rank', 'cell_id'])['number_clade']
-            .sum()
-            .loc[lambda x: x > 0]
-            .unstack(fill_value=0)
-            .reindex(columns=cell_list, fill_value=0)
-        )
-
-        sciname2taxid = {r.scientific_name:r.taxon_id for _, r in cr.iloc[:, :0].reset_index().iterrows()}
+        sciname2taxid = kraken_reports_df.set_index('scientific_name')['taxon_id'].to_dict()
         condensed = _condense_table(bac_pcc, bac_pct, min_percent_show, ncbi, sciname2taxid)
     else:
         condensed = bac_pct.copy()
@@ -338,10 +326,17 @@ def generate_contamination_table_figures(
 def _read_kraken_report(filename):
     """Read and parse Kraken2 report file."""
     report = pd.read_table(filename, names=['percentage_clade', 'number_clade', 'number_taxon', 'taxon_rank', 'taxon_id', 'scientific_name'])
+
+    # Empty report means no reads were classified, likely an empty BAM file
+    if report.empty:
+        report['percentage_taxon'] = []
+        return report
+
     report.scientific_name = report.scientific_name.str.strip()
     r = report[report.scientific_name == 'root'].iloc[0]
     ratio = r.percentage_clade / r.number_clade
     report['percentage_taxon'] = np.round(report.number_taxon * ratio, 2)
+
     return report
 
 
@@ -450,7 +445,11 @@ def _process_kraken_data(kraken_report_file):
     else:
         kraken_total_classified = kraken_total_reads
     
-    kraken_total_human = kraken_report.loc['Homo sapiens', 'number_taxon']
+    if 'Homo sapiens' in kraken_report.index:
+        kraken_total_human = kraken_report.loc['Homo sapiens', 'number_taxon']
+    else:
+        kraken_total_human = 0
+
     kraken_prop_human = kraken_total_human / kraken_total_classified if kraken_total_classified > 0 else 0
     kraken_prop_nonhuman = (kraken_total_classified - kraken_total_human) / kraken_total_classified if kraken_total_classified > 0 else 0
     
@@ -481,8 +480,8 @@ def _process_bam_stats_data(cell_id, all_stats_file, human_stats_file, nonhuman_
     result = {'cell_id': cell_id}
     for field, dtype in useful_fields.items():
         key = field.strip(':').replace(' ', '_')
-        result[f'human_{key}'] = dtype(human_bam_stats['summary'][field])
-        result[f'nonhuman_{key}'] = dtype(nonhuman_bam_stats['summary'][field])
+        result[f'human_{key}'] = dtype(human_bam_stats['summary'].get(field, 0))
+        result[f'nonhuman_{key}'] = dtype(nonhuman_bam_stats['summary'].get(field, 0))
     
     # Calculate derived metrics
     result.update(_calculate_derived_metrics(all_bam_stats, human_bam_stats, nonhuman_bam_stats))
@@ -517,12 +516,12 @@ def _calculate_derived_metrics(all_bam_stats, human_bam_stats, nonhuman_bam_stat
     result['nonhuman_average_indel_length'] = nonhuman_indel_length
     
     # Read counts
-    result['all_reads_bamstats'] = int(all_bam_stats['summary']['raw total sequences:'])
-    result['human_reads_bamstats'] = int(human_bam_stats['summary']['raw total sequences:'])
-    result['nonhuman_reads_bamstats'] = int(nonhuman_bam_stats['summary']['raw total sequences:'])
+    result['all_reads_bamstats'] = int(all_bam_stats['summary'].get('raw total sequences:', 0))
+    result['human_reads_bamstats'] = int(human_bam_stats['summary'].get('raw total sequences:', 0))
+    result['nonhuman_reads_bamstats'] = int(nonhuman_bam_stats['summary'].get('raw total sequences:', 0))
     
     # Mapping metrics
-    result['total_mapped_reads'] = all_bam_stats['summary']['reads unmapped:']
+    result['total_mapped_reads'] = all_bam_stats['summary'].get('reads unmapped:', 0)
     result['prop_reads_unmapped'] = result['total_mapped_reads'] / np.maximum(result['all_reads_bamstats'], 1)
     
     return result
