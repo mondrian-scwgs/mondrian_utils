@@ -142,9 +142,24 @@ def igvtools_count(infile, reference):
     helpers.run_cmd(cmd)
 
 
-def merge_bams(infiles, tempdir, ncores, outfile, reference, empty_bam_content):
+def create_empty_bam(outfile, reference):
+    with pysam.FastaFile(reference) as fasta:
+        seq_lengths = [
+            {"SN": seq, "LN": fasta.get_reference_length(seq)}
+            for seq in fasta.references]
+
+    header = {
+        "HD": {
+            "VN": "1.6",
+            "SO": "coordinate"},
+        "SQ": seq_lengths }
+
+    pysam.AlignmentFile(outfile, "wb", header=header).close()
+
+
+def merge_bams(infiles, tempdir, ncores, outfile, reference):
     if len(infiles.values()) == 0:
-        pysam.AlignmentFile(outfile, "wb", header=empty_bam_content).close()
+        create_empty_bam(outfile, reference)
     else:
         helpers.merge_bams(list(infiles.values()), outfile, tempdir, ncores)
 
@@ -152,38 +167,28 @@ def merge_bams(infiles, tempdir, ncores, outfile, reference, empty_bam_content):
     igvtools_count(outfile, reference)
 
 
-def get_bam_header(bam):
-    infile = pysam.AlignmentFile(bam, "rb")
-
-    header = infile.header
-
-
-    return header
-
-
 def merge_cells_by_type(
         infiles, reference, cell_ids, metrics,
         control_outfile, contaminated_outfile, pass_outfile,
         tempdir, ncores
 ):
-    header = get_bam_header(infiles[0])
     # controls
     control_bams = get_control_files(infiles, cell_ids, metrics)
     control_tempdir = os.path.join(tempdir, 'control')
     helpers.makedirs(control_tempdir)
-    merge_bams(control_bams, control_tempdir, ncores, control_outfile, reference, header)
+    merge_bams(control_bams, control_tempdir, ncores, control_outfile, reference)
 
     # contaminated
     contaminated_bams = get_contaminated_files(infiles, cell_ids, metrics)
     contaminated_tempdir = os.path.join(tempdir, 'contaminated')
     helpers.makedirs(contaminated_tempdir)
-    merge_bams(contaminated_bams, contaminated_tempdir, ncores, contaminated_outfile, reference, header)
+    merge_bams(contaminated_bams, contaminated_tempdir, ncores, contaminated_outfile, reference)
 
     # pass
     pass_bams = get_pass_files(infiles, cell_ids, metrics)
     pass_tempdir = os.path.join(tempdir, 'pass')
     helpers.makedirs(pass_tempdir)
-    merge_bams(pass_bams, pass_tempdir, ncores, pass_outfile, reference, header)
+    merge_bams(pass_bams, pass_tempdir, ncores, pass_outfile, reference)
 
 
 def tag_bam_with_cellid(infile, outfile, cell_id):
