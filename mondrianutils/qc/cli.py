@@ -34,4 +34,3 @@ def generate_metadata(
         alignment_tar, hmmcopy_tar,
         metadata_input, metadata_output
     )
-

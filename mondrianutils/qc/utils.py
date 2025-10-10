@@ -119,4 +119,3 @@ def generate_metadata(
 
     with open(metadata_output, 'wt') as writer:
         yaml.dump(data, writer, default_flow_style=False)
-
