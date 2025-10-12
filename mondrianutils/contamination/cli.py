@@ -34,7 +34,7 @@ def parse_kraken_output(kraken_output_file, output_table, output_human, output_n
 @click.option('--nonhuman_percentage_clade_output', required=True, help='Output path for non-human percentage clade CSV')
 @click.option('--nonhuman_composition_output', required=True, help='Output path for non-human composition figure PDF')
 @click.option('--contam_by_column_output', required=True, help='Output path for contamination by column figure PDF')
-@click.option('--ncbi_taxonomy_database', default='/data1/shahs3/users/myersm2/repos/contamination/kraken_db/ncbi_taxonomy/taxa.sqlite', help='Path to ete3.NCBITaxa sqlite database file')
+@click.option('--ncbi_taxonomy_database', required=True, help='Path to ete3.NCBITaxa sqlite database file')
 @click.option('--min_percent_aggregate', default=0.0, help='Minimum percent of non-human reads required to include a taxon in data table')
 @click.option('--min_percent_show', default=2.0, help='Minimum percent of non-human reads required to show a taxon in bar graph')
 @click.option('--min_num_taxa_condense', default=25, help='Minimum number of taxa required to perform tree-cutting procedure')
