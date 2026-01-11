@@ -4,26 +4,9 @@ import csverve.api as csverve
 import numpy as np
 import pandas as pd
 import yaml
-from mondrianutils import helpers
-from mondrianutils.dtypes.hmmcopy import dtypes as hmmcopy_dtypes
+import csv
+from mondrianutils.normalizer.heatmap import aneuploidy_heatmap
 from scipy.spatial.distance import cdist
-from scipy.stats import mode
-
-
-def get_relative_aneuploidy(cn_data):
-    # ignore sex chromosomes for this calculation
-    my_columns = np.where([a[0] not in ['X', 'Y']
-                           for a in cn_data.columns])[0]
-    cn_data = cn_data.iloc[:, my_columns]
-
-    ampdel = np.zeros(cn_data.shape, np.int8)
-    modes = mode(cn_data, axis=1, keepdims=True)[0]
-    ampdel[cn_data > modes] = 1
-    ampdel[cn_data < modes] = -1
-
-    rel_aneuploidy = np.sum(ampdel != 0, axis=1) / ampdel.shape[1]
-
-    return rel_aneuploidy
 
 
 def load_metrics(
@@ -42,70 +25,6 @@ def load_metrics(
     return metrics
 
 
-def get_supernormal_reads_data(
-        reads, observations,
-        relative_aneuploidy_threshold=0.05,
-        ploidy_threshold=2.5
-):
-    supernormal = observations.query(
-        f'rel_aneuploidy < {relative_aneuploidy_threshold}'
-    ).query(
-        f'ploidy < {ploidy_threshold}'
-    )
-    return reads[reads.index.isin(supernormal.index)]
-
-
-def remove_blacklist_bins(bins, blacklist_file):
-
-    blacklist = pd.read_csv(blacklist_file, dtype='str')
-    blacklist_bins = blacklist['chr'] + '-' + blacklist['start'] + ':' + blacklist['end']
-    return [v for v in bins if v not in blacklist_bins]
-
-
-def get_mean_copy_by_chromosome(reads_data, chromosome):
-    copies = reads_data[[v for v in reads_data if v[0] in (chromosome, 'chr' + chromosome)]]
-    copies = np.mean(copies.to_numpy()).round()
-
-    return copies
-
-
-def load_reads_data(reads_data, cells):
-    df = helpers.load_and_pivot_reads_data(reads_data, 'state')
-    df = df[df.index.isin(cells)]
-    return df
-
-
-def get_overlapping_bin(value, bins):
-    if np.isnan(value):
-        return 'nan'
-
-    contains = bins.contains(value)
-
-    idx = np.where(contains == True)
-
-    assert len(idx) == 1
-
-    return str(bins[idx][0])
-
-
-def annotate_metrics(input_metrics, output_metrics, normal_cells, aneuploidy_scores):
-    normal_cells = set(normal_cells)
-    df = csverve.read_csv(input_metrics)
-
-    df['is_normal'] = df['cell_id'].apply(lambda x: 'Normal' if x in normal_cells else 'Tumor')
-
-    df['aneuploidy_score'] = df['cell_id'].apply(lambda x: aneuploidy_scores.get(x, float('nan')))
-
-    organisms = [v for v in df.columns.values if v.startswith('fastqscreen_')]
-    organisms = sorted(set([v.split('_')[1] for v in organisms]))
-    organisms = [v for v in organisms if v not in ['nohit', 'total']]
-
-    csverve.write_dataframe_to_csv_and_yaml(
-        df, output_metrics,
-        hmmcopy_dtypes(fastqscreen_genomes=organisms)['metrics']
-    )
-
-
 def get_coverage(metrics, normal_cells):
     normal_metrics = metrics[metrics['cell_id'].isin(normal_cells)]
     readcount = sum(normal_metrics['total_reads'])
@@ -114,18 +33,17 @@ def get_coverage(metrics, normal_cells):
 
     return readcount, coverage
 
+
 def identify_normal_cells(
         hmmcopy_reads_path: str,
         metrics_data_path: str,
+        normal_copy_path: str,
         output_yaml: str,
         output_csv: str,
-        blacklist_file: str = None,
+        output_plot: str,
         min_reads: int = 500000,
         min_quality: float = 0.85,
-        # TODO: change allowed_aneuploidy_score to "normal_allowed_aneuploidy_score" for clarity
-        allowed_aneuploidy_score: float = 0,
-        # TODO: change relative_aneuploidy_threshold to "supernormal_aneuploidy_threshold" for clarity
-        relative_aneuploidy_threshold: float = 0.005,
+        aneuploidy_score_threshold: float = 0.005,
         ploidy_threshold: float = 2.5
 ):
     """
@@ -137,69 +55,72 @@ def identify_normal_cells(
         Path to the HMMcopy reads data.
     metrics_data_path : str
         Path to the metrics data.
+    normal_copy_path : str
+        Path to the normal copy-number profile.
     output_yaml : str
         Path to the output YAML file.
     output_csv : str
         Path to the output CSV file.
-    blacklist_file : str, optional
-        Path to the blacklist file.
+    output_plot : str
+        Path to the output aneuploidy heatmap file.
     min_reads : int, optional
         Minimum number of reads to consider a cell.
     min_quality : float, optional
         Minimum quality to consider a cell.
-    supernormal_aneuploidy_threshold : float, optional
-        Maximum allowed aneuploidy score for a cell to be considered for normal X copy estimation. 
-    normal_aneuploidy_score_threshold : float, optional
-        Relative aneuploidy threshold for a score 
+    aneuploidy_score_threshold : float, optional
+        Relative aneuploidy threshold score for calling normal cells.
+    ploidy_threshold : float, optional
+        Ploidy threshold for calling normal cells.
     """
+
+    cn_data = pd.read_csv(
+        hmmcopy_reads_path,
+        dtype={'chr': 'str', 'cell_id': 'str'},
+        usecols=[
+            'cell_id',
+            'chr',
+            'start',
+            'end',
+            'state',
+        ])
+
+    # Filter cells based on metrics
     metrics = load_metrics(metrics_data_path, min_reads, min_quality)
+    cn_data = cn_data[cn_data['cell_id'].isin(metrics['cell_id'].values)]
 
-    cn_data = load_reads_data(hmmcopy_reads_path, metrics['cell_id'])
+    normal_cn = pd.read_csv(
+        normal_copy_path,
+        dtype={'chr': 'str'},
+        usecols=[
+            'chr',
+            'start',
+            'end',
+            'state',
+        ])
+    normal_cn = normal_cn.set_index(['chr', 'start', 'end'])['state']
 
-    # drop Y-chromosome immediately -- unreliable for CN inference
-    my_columns = np.where([a[0] not in ['Y']
-                           for a in cn_data.columns])[0]
-    cn_data = cn_data.iloc[:, my_columns]
-
-    # compute ploidy and relative aneuploidy
-    observations = pd.DataFrame(index=cn_data.index)
-    observations['ploidy'] = cn_data.apply(lambda x: np.nanmean(x), axis=1)
-    observations['rel_aneuploidy'] = get_relative_aneuploidy(cn_data)
-
-    # use obviously normal ("supernormal") cells to estimate normal X copy number
-    normal_reads = get_supernormal_reads_data(
-        cn_data, observations,
-        relative_aneuploidy_threshold=relative_aneuploidy_threshold,
-        ploidy_threshold=ploidy_threshold
+    # Create a matrix of cn data
+    cn_matrix = cn_data.pivot_table(
+        index='cell_id',
+        columns=('chr', 'start', 'end'),
+        values='state',
     )
-    xcopies = get_mean_copy_by_chromosome(normal_reads, 'X')
-    if not (xcopies == 1 or xcopies == 2):
-        warnings.warn(f"Found abnormal sex chromosome copies: chrX={xcopies}")
 
-    # remove blacklist bins
-    if blacklist_file is not None:
-        non_blacklist_bins = remove_blacklist_bins(cn_data.columns, blacklist_file)
-    else:
-        non_blacklist_bins = cn_data.columns
-    observed = cn_data[non_blacklist_bins]
-    observed = observed.to_numpy()
+    # Subset cn_matrix to bins in normal profile
+    cn_matrix = cn_matrix.loc[:, normal_cn.index].copy()
 
-    # determine expected normal copy-number profile
-    expected = pd.DataFrame(columns=non_blacklist_bins)
-    expected.loc[0] = 2
-    expected[[v for v in expected if v[0] == 'X']] = xcopies
-    expected = expected.to_numpy()
+    scores = pd.DataFrame(index=cn_matrix.index)
+    scores['ploidy'] = cn_matrix.mean(axis=1)
+    scores['aneuploidy_score'] = cdist(cn_matrix.values, normal_cn.values[None, :], metric='hamming')[:, 0]
+    assert not scores['aneuploidy_score'].isna().any()
 
-    # compute aneuploidy score
-    aneu = cdist(observed, expected, metric='hamming')
-    observations['aneuploidy_score'] = aneu
-    assert not observations.aneuploidy_score.isna().any()
+    scores['is_normal'] = scores['aneuploidy_score'] <= aneuploidy_score_threshold
 
-    # filter cells
-    normal_cells = observations.query(f'aneuploidy_score <= {allowed_aneuploidy_score}').index
-    aneuploidy_scores = observations['aneuploidy_score'].to_dict()
+    normal_cells = scores.query('is_normal').index.tolist()
 
     num_reads_normal, coverage_normal = get_coverage(metrics, normal_cells)
+
+    aneuploidy_heatmap(cn_matrix, scores, output_plot, aneuploidy_score_threshold=aneuploidy_score_threshold)
 
     with open(output_yaml, 'wt') as writer:
         yamldata = {
@@ -207,8 +128,7 @@ def identify_normal_cells(
             'params': {
                 'min_reads': min_reads,
                 'min_quality': min_quality,
-                'allowed_aneuploidy_score': allowed_aneuploidy_score,
-                'relative_aneuploidy_threshold': relative_aneuploidy_threshold,
+                'aneuploidy_score_threshold': aneuploidy_score_threshold,
                 'ploidy_threshold': ploidy_threshold
             },
             'normal_metrics': {
@@ -220,4 +140,4 @@ def identify_normal_cells(
         }
         yaml.dump(yamldata, writer, default_flow_style=False)
 
-    annotate_metrics(metrics_data_path, output_csv, normal_cells, aneuploidy_scores)
+    scores.to_csv(output_csv, index=True, quoting=csv.QUOTE_NONNUMERIC)
