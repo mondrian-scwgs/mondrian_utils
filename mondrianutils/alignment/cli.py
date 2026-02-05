@@ -74,11 +74,12 @@ def input_validation(meta_yaml, input_data_json):
 @click.option('--tar_output', help='Path to the TAR output file')
 @click.option('--num_threads', default=1, help='Number of threads')
 @click.option('--run_fastqc', is_flag=True, help='Run FastQC')
+@click.option('--run_tss_enrichment/--no_tss_enrichment', default=True, help='Run TSS enrichment analysis (default: enabled)')
 def alignment(
         fastq_pairs, metadata_yaml, reference, supplementary_references,
         tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired, bam_output, metrics_output,
-        metrics_gc_output, tar_output, num_threads, run_fastqc
+        metrics_gc_output, tar_output, num_threads, run_fastqc, run_tss_enrichment
 ):
     mondrianutils.alignment.alignment(
         fastq_pairs, metadata_yaml,
@@ -86,7 +87,8 @@ def alignment(
         tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual,
         wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output,
-        tar_output, num_threads, run_fastqc=run_fastqc
+        tar_output, num_threads, run_fastqc=run_fastqc,
+        run_tss_enrichment=run_tss_enrichment
     )
 
 

@@ -106,7 +106,7 @@ def alignment(
         supplementary_references,
         tempdir, adapter1, adapter2, cell_id, wgs_metrics_mqual, wgs_metrics_bqual, wgs_metrics_count_unpaired,
         bam_output, metrics_output, metrics_gc_output,
-        tar_output, num_threads, run_fastqc=False
+        tar_output, num_threads, run_fastqc=False, run_tss_enrichment=True
 ):
     reference_name, reference_version, reference = reference.split(',')
     supplementary_reference_files = [v.split(',')[2] for v in supplementary_references]
@@ -236,12 +236,16 @@ def alignment(
     read_attrition_metrics = os.path.join(tempdir, cell_id, 'read_attrition', 'metrics.csv.gz')
     get_coverage_metrics(bam_output, cell_id, read_attrition_metrics)
 
-    print('calculating TSS score')
-    tss_tempdir = os.path.join(tempdir, cell_id, 'tss_enrichment')
-    temp_tss_metrics = os.path.join(tempdir, cell_id, 'tss_enrichment', 'temp_metrics.csv.gz')
-    tss_enrichment(
-        bam_output, temp_tss_metrics, reference_version, cell_id, tss_tempdir
-    )
+    if run_tss_enrichment:
+        print('calculating TSS score')
+        tss_tempdir = os.path.join(tempdir, cell_id, 'tss_enrichment')
+        temp_tss_metrics = os.path.join(tempdir, cell_id, 'tss_enrichment', 'temp_metrics.csv.gz')
+        tss_enrichment(
+            bam_output, temp_tss_metrics, reference_version, cell_id, tss_tempdir
+        )
+    else:
+        print('skipping TSS enrichment (disabled)')
+        temp_tss_metrics = None
 
     print("merging fastqscreen counts")
     detailed_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'detailed.csv.gz')
@@ -253,9 +257,12 @@ def alignment(
 
     print("merging all bam metrics")
     merged_metrics = os.path.join(tempdir, cell_id, 'fastqscreen', 'merged_metrics.csv.gz')
+    metrics_to_merge = [parsed_markdups, parsed_flagstat, parsed_insert, parsed_wgs,
+                        read_attrition_metrics, summary_metrics]
+    if temp_tss_metrics is not None:
+        metrics_to_merge.append(temp_tss_metrics)
     csverve.merge_csv(
-        [parsed_markdups, parsed_flagstat, parsed_insert, parsed_wgs,
-         read_attrition_metrics, temp_tss_metrics, summary_metrics],
+        metrics_to_merge,
         merged_metrics,
         how='outer', on='cell_id', skip_header=False
     )
